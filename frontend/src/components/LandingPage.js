@@ -78,15 +78,15 @@ const LandingPage = () => {
   useEffect(() => {
     const fetchServerStats = async () => {
       try {
-        // FIX: Changed axios.post to axios.get to match the backend route definition
+        // FIX: Changed the endpoint to call the public stats route
         const response = await axios.get(
-          `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/auth/server-stats`
+          `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/server/public-stats`
         );
         
-        if (response.data.success && response.data.stats) {
+        if (response.data.success && response.data.data) { // Access response.data.data
           setServerStats({
-            onlinePlayers: response.data.stats.onlinePlayers,
-            serverStatus: 'online',
+            onlinePlayers: response.data.data.onlinePlayers,
+            serverStatus: response.data.data.serverStatus,
           });
         } else {
           console.error('API call successful, but no stats data received or success was false.');
