@@ -1,3 +1,4 @@
+// backend/controllers/adminController.js
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
@@ -10,37 +11,63 @@ const { FIREBASE_DB } = require('../config/firebase');
  * @access  Private/Admin
  */
 exports.getAdminDashboard = async (req, res) => {
-    try {
-        // Fetch application data
-        const usersSnapshot = await getDocs(collection(FIREBASE_DB, 'users'));
-        const productsSnapshot = await getDocs(collection(FIREBASE_DB, 'products'));
-        const allOrders = await Order.findAll();
+    // Initialize variables with default values
+    let totalUsers = 0;
+    let totalProducts = 0;
+    let allOrders = [];
+    let serverStats = { onlinePlayers: 0, maxPlayers: 0, newPlayersToday: 0 };
 
-        // Fetch real-time server stats from the plugin
+    // Fetch each piece of data in its own try-catch block to prevent a single failure
+    // from crashing the entire endpoint.
+    try {
+        const usersSnapshot = await getDocs(collection(FIREBASE_DB, 'users'));
+        totalUsers = usersSnapshot.size;
+    } catch (e) {
+        console.error("Dashboard Error: Failed to fetch users.", e.message);
+    }
+
+    try {
+        const productsSnapshot = await getDocs(collection(FIREBASE_DB, 'products'));
+        totalProducts = productsSnapshot.size;
+    } catch (e) {
+        console.error("Dashboard Error: Failed to fetch products.", e.message);
+    }
+
+    try {
+        allOrders = await Order.findAll();
+    } catch (e) {
+        console.error("Dashboard Error: Failed to fetch orders.", e.message);
+        // allOrders is already initialized to [], so we can proceed safely.
+    }
+    
+    try {
         const statsDocRef = doc(FIREBASE_DB, 'server', 'stats');
         const statsDoc = await getDoc(statsDocRef);
-        const serverStats = statsDoc.exists() ? statsDoc.data() : { onlinePlayers: 0, maxPlayers: 0, newPlayersToday: 0 };
-
-        // Calculate order status counts
-        const orderStatusCounts = allOrders.reduce((acc, order) => {
-            acc[order.status] = (acc[order.status] || 0) + 1;
-            return acc;
-        }, {});
-
-        res.status(200).json({
-            success: true,
-            data: {
-                totalUsers: usersSnapshot.size,
-                totalProducts: productsSnapshot.size,
-                totalOrders: allOrders.length,
-                orderStatusCounts,
-                ...serverStats // Merge server stats into the response
-            },
-        });
-    } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        res.status(500).json({ success: false, message: 'Server error' });
+        if (statsDoc.exists()) {
+            serverStats = statsDoc.data();
+        }
+    } catch (e) {
+        console.error("Dashboard Error: Failed to fetch server stats.", e.message);
     }
+
+    // This calculation is now safe because allOrders is guaranteed to be an array.
+    const orderStatusCounts = allOrders.reduce((acc, order) => {
+        const status = order.status || 'unknown'; // Handle cases where an order might not have a status
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Always return a successful response with whatever data was successfully fetched.
+    res.status(200).json({
+        success: true,
+        data: {
+            totalUsers,
+            totalProducts,
+            totalOrders: allOrders.length,
+            orderStatusCounts,
+            ...serverStats,
+        },
+    });
 };
 
 /**
@@ -56,7 +83,6 @@ exports.updateServerStats = async (req, res) => {
             return res.status(400).json({ message: 'Missing required stats fields.' });
         }
 
-        // 1. Update the main, real-time stats document
         const statsDocRef = doc(FIREBASE_DB, 'server', 'stats');
         const statsData = {
             onlinePlayers,
@@ -66,7 +92,6 @@ exports.updateServerStats = async (req, res) => {
         };
         await setDoc(statsDocRef, statsData, { merge: true });
 
-        // 2. Update the daily trend document for historical charts
         const today = new Date();
         const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
         const dailyStatsDocRef = doc(FIREBASE_DB, 'daily_stats', todayUTC.toISOString().split('T')[0]);
@@ -95,13 +120,14 @@ exports.getDailyRegistrationTrends = async (req, res) => {
         const usersSnapshot = await getDocs(collection(FIREBASE_DB, 'users'));
         const trends = Array(7).fill(0).map((_, i) => {
             const d = new Date();
-            d.setDate(d.getDate() - i);
+            d.setUTCHours(0, 0, 0, 0);
+            d.setUTCDate(d.getUTCDate() - i);
             return { date: d.toISOString().split('T')[0], count: 0 };
         }).reverse();
 
         usersSnapshot.forEach(doc => {
             const user = doc.data();
-            if (user.created_at && user.created_at.toDate) {
+            if (user.created_at && typeof user.created_at.toDate === 'function') {
                 const registrationDate = user.created_at.toDate().toISOString().split('T')[0];
                 const trend = trends.find(t => t.date === registrationDate);
                 if (trend) {
@@ -111,7 +137,7 @@ exports.getDailyRegistrationTrends = async (req, res) => {
         });
 
         const chartData = trends.map(t => ({
-            name: new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            name: new Date(t.date).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' }),
             'New Registrations': t.count
         }));
 
@@ -135,21 +161,24 @@ exports.getNewPlayerTrends = async (req, res) => {
 
         const trends = Array(7).fill(0).map((_, i) => {
             const d = new Date();
-            d.setDate(d.getDate() - i);
+            d.setUTCHours(0, 0, 0, 0);
+            d.setUTCDate(d.getUTCDate() - i);
             return { date: d.toISOString().split('T')[0], count: 0 };
         }).reverse();
 
         statsSnapshot.forEach(doc => {
             const stat = doc.data();
-            const statDate = stat.date.toDate().toISOString().split('T')[0];
-            const trend = trends.find(t => t.date === statDate);
-            if (trend) {
-                trend.count = stat.newPlayersToday || 0;
+            if (stat.date && typeof stat.date.toDate === 'function') {
+                const statDate = stat.date.toDate().toISOString().split('T')[0];
+                const trend = trends.find(t => t.date === statDate);
+                if (trend) {
+                    trend.count = stat.newPlayersToday || 0;
+                }
             }
         });
 
         const chartData = trends.map(t => ({
-            name: new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            name: new Date(t.date).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' }),
             'New Players': t.count
         }));
 
@@ -161,7 +190,6 @@ exports.getNewPlayerTrends = async (req, res) => {
 };
 
 // --- Category Management ---
-
 exports.getAllCategories = async (req, res) => {
     try {
         const categories = await Category.findAll();
@@ -204,7 +232,6 @@ exports.deleteCategory = async (req, res) => {
 };
 
 // --- User Management ---
-
 exports.updateUserAdminStatus = async (req, res) => {
     const { is_admin } = req.body;
     try {

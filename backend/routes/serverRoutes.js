@@ -1,20 +1,21 @@
-const express_server = require('express');
-const server_router = express_server.Router();
-const serverController = require('../controllers/serverController');
+const express = require('express');
+const router = express.Router();
 
-// Middleware to protect the stats endpoint from unauthorized access
-const protectStatsEndpoint = (req, res, next) => {
-    const secret = process.env.PLUGIN_STATS_SECRET;
-    const authHeader = req.headers.authorization;
-    if (!secret || !authHeader || authHeader !== `Bearer ${secret}`) {
-        return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-    next();
-};
+// Corrected imports to match auth.js exports
+const { protect, authorizeAdmin, verifySecretKey } = require('../middleware/auth');
+const { 
+    getServerStats, 
+    getPublicStats,
+    updateServerStats
+} = require('../controllers/serverController');
 
-// Route for the plugin to POST stats to
-server_router.post('/stats', protectStatsEndpoint, serverController.updateStats);
-// Route for the frontend to GET stats from
-server_router.get('/stats', serverController.getStats);
+// Protected admin route
+router.get('/stats', [protect, authorizeAdmin], getServerStats);
 
-module.exports = server_router;
+// Public route
+router.get('/public-stats', getPublicStats);
+
+// Protected stats update route (using secret verification)
+router.post('/stats', verifySecretKey, updateServerStats);
+
+module.exports = router;

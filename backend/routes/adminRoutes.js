@@ -3,37 +3,46 @@ const express = require('express');
 const router = express.Router();
 
 // Import middleware
-const { protect, authorizeAdmin } = require('../middleware/auth');
+const { protect, authorizeAdmin, verifySecretKey } = require('../middleware/auth');
 
 // Import controllers
 const adminController = require('../controllers/adminController');
 const productController = require('../controllers/productController');
 const userController = require('../controllers/userController');
 
-// Apply protect and authorizeAdmin middleware to all routes in this file
-router.use(protect, authorizeAdmin);
+// Create a reusable array for the admin middleware stack for cleaner routes
+const adminOnly = [protect, authorizeAdmin];
 
-// --- Dashboard ---
-router.get('/dashboard', adminController.getAdminDashboard);
-router.get('/trends/registrations', adminController.getDailyRegistrationTrends);
-router.get('/trends/new-players', adminController.getNewPlayerTrends);
+// --- Routes for Frontend Admin Panel (Authenticated via JWT) ---
 
-// --- User Management ---
-router.get('/users', userController.getAllUsers);
-router.get('/users/:id', userController.getSingleUser);
-router.put('/users/:id', userController.updateUser);
-router.delete('/users/:id', adminController.deleteUserByAdmin);
-router.put('/users/:id/admin-status', adminController.updateUserAdminStatus);
+// Dashboard and Trends
+router.get('/dashboard', adminOnly, adminController.getAdminDashboard);
+router.get('/trends/registrations', adminOnly, adminController.getDailyRegistrationTrends);
+// This path is updated to match what the frontend is requesting.
+router.get('/trends/new-players', adminOnly, adminController.getNewPlayerTrends); 
 
-// --- Product Management ---
-router.post('/products', productController.createProduct);
-router.put('/products/:id', productController.updateProduct);
-router.delete('/products/:id', productController.deleteProduct);
+// Product Management
+router.post('/products', adminOnly, productController.createProduct);
+router.put('/products/:id', adminOnly, productController.updateProduct);
+router.delete('/products/:id', adminOnly, productController.deleteProduct);
 
-// --- Category Management ---
-router.get('/categories', adminController.getAllCategories);
-router.post('/categories', adminController.createCategory);
-router.put('/categories/:id', adminController.updateCategory);
-router.delete('/categories/:id', adminController.deleteCategory);
+// Category Management
+router.get('/categories', adminOnly, adminController.getAllCategories);
+router.post('/categories', adminOnly, adminController.createCategory);
+router.put('/categories/:id', adminOnly, adminController.updateCategory);
+router.delete('/categories/:id', adminOnly, adminController.deleteCategory);
+
+// User Management (Admin Actions)
+router.get('/users', adminOnly, userController.getAllUsers);
+router.get('/users/:id', adminOnly, userController.getSingleUser);
+router.put('/users/:id', adminOnly, userController.updateUser);
+router.delete('/users/:id', adminOnly, adminController.deleteUserByAdmin);
+router.put('/users/:id/admin-status', adminOnly, adminController.updateUserAdminStatus);
+
+
+// --- Route for Minecraft Plugin (Authenticated via Secret Key) ---
+// This route uses a different authentication method and is handled separately.
+router.post('/stats', verifySecretKey, adminController.updateServerStats);
+
 
 module.exports = router;

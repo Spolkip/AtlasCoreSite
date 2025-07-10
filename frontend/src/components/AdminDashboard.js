@@ -41,7 +41,8 @@ const AdminDashboard = ({ user }) => {
             try {
                 const dashboardPromise = axios.get('http://localhost:5000/api/v1/admin/dashboard', config);
                 const trendsPromise = axios.get('http://localhost:5000/api/v1/admin/trends/registrations', config);
-                const serverStatsPromise = axios.get('http://localhost:5000/api/v1/server/stats');
+                // FIX: Added the 'config' object to include the authentication token.
+                const serverStatsPromise = axios.get('http://localhost:5000/api/v1/server/stats', config);
                 const newPlayerTrendsPromise = axios.get('http://localhost:5000/api/v1/admin/trends/new-players', config);
 
 
@@ -69,8 +70,9 @@ const AdminDashboard = ({ user }) => {
                 }
 
                 // Server Stats
+                // FIX: The backend sends stats in the 'data' property, not 'stats'.
                 if (serverStatsResponse.data.success) {
-                    setServerStats(serverStatsResponse.data.stats);
+                    setServerStats(serverStatsResponse.data.data);
                 }
                 
                 // New Player Trends Data
