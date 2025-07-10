@@ -1,5 +1,5 @@
 // backend/controllers/serverController.js
-const { doc, getDoc } = require('firebase/firestore');
+const { doc, getDoc, setDoc } = require('firebase/firestore');
 const { FIREBASE_DB } = require('../config/firebase');
 
 /**
@@ -25,6 +25,7 @@ exports.getServerStats = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error fetching stats.' });
     }
 };
+
 /**
  * @desc    Update server stats (called by Minecraft plugin)
  * @route   POST /api/v1/server/stats
@@ -34,7 +35,6 @@ exports.updateServerStats = async (req, res) => {
     try {
         const { onlinePlayers, maxPlayers, newPlayersToday } = req.body;
         
-        // Validate required fields
         if (typeof onlinePlayers !== 'number' || 
             typeof maxPlayers !== 'number' || 
             typeof newPlayersToday !== 'number') {
@@ -44,7 +44,6 @@ exports.updateServerStats = async (req, res) => {
             });
         }
 
-        // Update Firestore
         const statsDocRef = doc(FIREBASE_DB, 'server', 'stats');
         await setDoc(statsDocRef, {
             onlinePlayers,
@@ -54,7 +53,7 @@ exports.updateServerStats = async (req, res) => {
             serverStatus: 'online'
         }, { merge: true });
 
-        res.status(200).json({ success: true });
+        res.status(200).json({ success: true, message: 'Stats updated successfully.' });
     } catch (error) {
         console.error("Error updating server stats:", error);
         res.status(500).json({ 
@@ -76,14 +75,29 @@ exports.getPublicStats = async (req, res) => {
 
         if (statsDoc.exists()) {
             const allStats = statsDoc.data();
-            // Only expose the data needed for the public page
-            const publicData = {
-                onlinePlayers: allStats.onlinePlayers,
-                serverStatus: 'online' // If the document exists, the server is considered online
-            };
-            res.status(200).json({ success: true, data: publicData });
+            const lastUpdated = allStats.lastUpdated ? new Date(allStats.lastUpdated) : new Date(0);
+            const now = new Date();
+            
+            // Your plugin updates every 60 seconds. If we haven't heard from it in 
+            // 90 seconds, we can assume it's offline.
+            const timeoutMilliseconds = 90 * 1000; 
+
+            if ((now - lastUpdated) > timeoutMilliseconds) {
+                // It's been too long since the last update, declare it offline.
+                res.status(200).json({ 
+                    success: true, 
+                    data: { onlinePlayers: 0, serverStatus: 'offline' } 
+                });
+            } else {
+                // The last update was recent, so it's online.
+                const publicData = {
+                    onlinePlayers: allStats.onlinePlayers,
+                    serverStatus: 'online'
+                };
+                res.status(200).json({ success: true, data: publicData });
+            }
         } else {
-            // If the document doesn't exist, the server is offline
+            // If the document doesn't exist at all, it's definitely offline.
             res.status(200).json({ 
                 success: true, 
                 data: { onlinePlayers: 0, serverStatus: 'offline' } 
@@ -91,7 +105,6 @@ exports.getPublicStats = async (req, res) => {
         }
     } catch (error) {
         console.error("Error fetching public server stats:", error);
-        // Don't expose detailed errors, just report the server as offline
         res.status(500).json({ 
             success: false, 
             data: { onlinePlayers: 0, serverStatus: 'error' },

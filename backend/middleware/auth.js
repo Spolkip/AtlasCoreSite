@@ -1,88 +1,71 @@
 // backend/middleware/auth.js
 
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/User'); // Import the Firestore-based User model
 
-/**
- * Middleware to protect routes by verifying a JWT.
- */
+// Protect routes by verifying the JWT token
 exports.protect = async (req, res, next) => {
-  if (!process.env.JWT_SECRET) {
-    console.error('FATAL ERROR: JWT_SECRET is not defined in .env file.');
-    return res.status(500).json({ success: false, message: 'Server configuration error.' });
-  }
-
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
-  if (!token || token === 'null' || token === 'undefined') {
-    return res.status(401).json({ success: false, message: 'Not authorized, no token provided' });
+  // Make sure token exists
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
   }
 
   try {
+    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
 
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Not authorized, user for token not found' });
+    // Attach user to the request object by fetching from DB
+    req.user = await User.findById(decoded.id);
+
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
     }
-    
-    req.user = user;
+
     next();
   } catch (error) {
-    console.error('[Auth Protect] Token verification failed:', error.message);
-    return res.status(401).json({ success: false, message: `Not authorized, token is invalid (${error.name})` });
+    console.error('Error in authentication middleware:', error);
+    res.status(401).json({ success: false, message: 'Not authorized, token failed' });
   }
 };
 
-/**
- * Middleware to grant access to admin users only.
- */
+// Grant access to admin users only
 exports.authorizeAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ success: false, message: 'Authentication error, user not found.' });
-  }
-
-  if (req.user.is_admin === 1 || req.user.is_admin === true) {
-    next();
-  } else {
+  // Check the is_admin field (1 for admin, 0 for user)
+  if (req.user.is_admin !== 1) {
     return res.status(403).json({
       success: false,
-      message: 'User does not have admin privileges',
+      message: `User is not authorized to access this route`,
     });
   }
+  next();
 };
 
 /**
- * Middleware to protect a route with a shared secret key.
- * Used for server-to-server communication, like from the Minecraft plugin.
+ * NEW MIDDLEWARE
+ * @desc    Verify a secret key for server-to-server communication
+ * @access  Private
+ *
+ * This middleware protects endpoints that are called by other services (like your
+ * Minecraft plugin) instead of by a logged-in user.
  */
 exports.verifySecretKey = (req, res, next) => {
-    // Safely access `secret` from `req.body`. If `req.body` is undefined, this will not throw.
-    const secret = req.body?.secret; 
-    const expectedSecret = process.env.SPIGOT_SECRET_KEY;
+    const { secret } = req.body;
+    const expectedSecret = process.env.STATS_SECRET;
 
     if (!expectedSecret) {
-        console.error('FATAL ERROR: SPIGOT_SECRET_KEY is not defined in .env file.');
+        console.error('CRITICAL: STATS_SECRET is not defined in your .env file.');
         return res.status(500).json({ success: false, message: 'Server configuration error.' });
     }
 
-    if (secret && secret === expectedSecret) {
-        next();
-    } else {
-        // Provide a more informative error message if the body or secret is missing.
-        if (!req.body) {
-             console.error('[Auth SecretKey] Request body is missing. Ensure client is sending a JSON body with Content-Type: application/json.');
-             return res.status(400).json({ success: false, message: 'Bad Request: Missing request body.' });
-        }
-        if (!secret) {
-             console.error('[Auth SecretKey] Secret key is missing from request body.');
-             return res.status(401).json({ success: false, message: 'Unauthorized: Missing secret key.' });
-        }
-        // This case is for when the secret is present but incorrect.
-        res.status(401).json({ success: false, message: 'Unauthorized: Invalid secret key.' });
+    if (!secret || secret !== expectedSecret) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: Invalid secret key.' });
     }
+
+    next();
 };
