@@ -2,37 +2,58 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
+// The errorHandler is now imported directly, not destructured.
+const errorHandler = require('./middleware/error');
 
-// Load environment variables from .env file
+// Load env vars
 dotenv.config();
 
-// --- Route Imports ---
-const authRoutes = require('./routes/authRoutes');
-const productRoutes = require('./routes/productRoutes');
-const orderRoutes = require('./routes/orderRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const settingsRoutes = require('./routes/settingsRoutes');
-const userRoutes = require('./routes/userRoutes');
-const serverRoutes = require('./routes/serverRoutes');
+// With Firebase, the database connection is handled when the firebase.js module
+// is imported by other files (like your controllers), so no explicit
+// connection call is needed here.
 
 const app = express();
 
-// --- Middleware ---
-app.use(cors());
+// --- Body Parser Middleware ---
+// This line is crucial. It tells Express to parse incoming JSON requests.
+// It must be placed BEFORE your routes are defined.
 app.use(express.json());
 
-// --- API Routes ---
-// All API routes are mounted here under the /api/v1 prefix.
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/products', productRoutes);
-app.use('/api/v1/orders', orderRoutes);
-app.use('/api/v1/admin', adminRoutes);
-app.use('/api/v1/settings', settingsRoutes);
-app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/server', serverRoutes);
 
-// --- Server Initialization ---
+// CORS - Allows requests from other domains (like your frontend)
+app.use(cors());
+
+// --- API Routes ---
+app.use('/api/v1/auth', require('./routes/authRoutes'));
+app.use('/api/v1/users', require('./routes/userRoutes'));
+app.use('/api/v1/products', require('./routes/productRoutes'));
+app.use('/api/v1/orders', require('./routes/orderRoutes'));
+app.use('/api/v1/settings', require('./routes/settingsRoutes'));
+app.use('/api/v1/admin', require('./routes/adminRoutes'));
+
+// --- Serve Frontend in Production ---
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+    app.get('*', (req, res) =>
+        res.sendFile(
+            path.resolve(__dirname, '../', 'frontend', 'build', 'index.html')
+        )
+    );
+} else {
+    app.get('/', (req, res) => {
+        res.send('API is running....');
+    });
+}
+
+// Error Handler Middleware (must be last)
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+
+app.listen(
+    PORT,
+    console.log(
+        `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
+    )
+);
