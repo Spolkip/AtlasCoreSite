@@ -1,72 +1,39 @@
-let serverStats = {
-    onlinePlayers: 0,
-    maxPlayers: 0,
-    serverStatus: 'offline',
-    newPlayersToday: 0
-};
-
-/**
- * Receives and updates server stats from the Minecraft plugin.
- */
-exports.updateStats = (req, res) => {
-    const { onlinePlayers, maxPlayers, serverStatus, newPlayersToday } = req.body;
-    
-    // Basic validation
-    if (onlinePlayers === undefined || maxPlayers === undefined || serverStatus === undefined) {
-        return res.status(400).json({ success: false, message: 'Invalid stats payload.' });
-    }
-
-    serverStats = { onlinePlayers, maxPlayers, serverStatus, newPlayersToday };
-    console.log('Received server stats update:', serverStats);
-    res.status(200).json({ success: true, message: 'Stats updated successfully.' });
-};
-
-/**
- * Provides the latest server stats to the frontend.
- */
-exports.getStats = (req, res) => {
-    res.status(200).json({ success: true, stats: serverStats });
-};
-
-
-// =================================================================
-// backend/controllers/authController.js
-// =================================================================
-const User = require('../models/User');
+const UserAuth = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
 const crypto = require('crypto');
-const { getFirestore, collection, query, where, getDocs } = require('firebase/firestore');
-const { FIREBASE_DB } = require('../config/firebase');
+const { mojangService } = require('../services/mojangService');
+const axios = require('axios');
 
-
+// Helper to create a consistent user object for API responses
 const toUserResponse = (user) => ({
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    isAdmin: user.is_admin === 1,
-    isVerified: user.is_verified,
-    minecraft_uuid: user.minecraft_uuid
+  id: user.id,
+  username: user.username,
+  email: user.email,
+  isAdmin: user.is_admin === 1,
+  isVerified: user.is_verified,
+  minecraft_uuid: user.minecraft_uuid
 });
 
+// @desc    Register a new user
 exports.registerUser = async (req, res) => {
   const { username, email, password } = req.body;
   try {
     if (!username || !email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide a username, email, and password.' });
     }
-    if (await User.findByEmail(email)) {
+    if (await UserAuth.findByEmail(email)) {
       return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
     }
-    if (await User.findByUsername(username)) {
+    if (await UserAuth.findByUsername(username)) {
       return res.status(400).json({ success: false, message: 'An account with this username already exists.' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    // Create a new user instance. The model's constructor handles defaults.
+    const newUser = new UserAuth({
       username,
       email,
       password: hashedPassword,
@@ -86,7 +53,7 @@ exports.registerUser = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error during registration.' });
   }
 };
-
+// @desc    Login a user
 exports.loginUser = async (req, res) => {
   const { identifier, password } = req.body;
   try {
@@ -95,8 +62,8 @@ exports.loginUser = async (req, res) => {
     }
 
     const user = identifier.includes('@')
-      ? await User.findByEmail(identifier)
-      : await User.findByUsername(identifier);
+      ? await UserAuth.findByEmail(identifier)
+      : await UserAuth.findByUsername(identifier);
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
@@ -115,9 +82,12 @@ exports.loginUser = async (req, res) => {
   }
 };
 
+// @desc    Get current logged in user profile
+// @route   GET /api/v1/auth/me
 exports.getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
+        // req.user is attached by the 'protect' middleware
+        const user = await UserAuth.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
@@ -128,67 +98,79 @@ exports.getUserProfile = async (req, res) => {
     }
 };
 
-exports.linkMinecraft = async (req, res) => {
-    const { minecraftUsername, verificationCode } = req.body;
-    const userId = req.user.id;
-
+// @desc    Send verification code to player in-game
+// @route   POST /api/v1/auth/send-verification-code
+exports.sendVerificationCode = async (req, res) => {
+    const { username } = req.body;
     try {
-        if (!minecraftUsername || !verificationCode) {
-            return res.status(400).json({ success: false, message: 'Minecraft username and verification code are required.' });
+        const spigotWebhookUrl = process.env.SPIGOT_WEBHOOK_URL;
+        const spigotSecret = process.env.SPIGOT_SECRET_KEY;
+        if (!spigotWebhookUrl || !spigotSecret) {
+            return res.status(500).json({ success: false, message: 'Spigot webhook not configured.' });
         }
 
-        const pluginUrl = process.env.PLUGIN_API_URL;
-        const pluginSecret = process.env.PLUGIN_WEBHOOK_SECRET;
-
-        if (!pluginUrl || !pluginSecret) {
-            console.error("Plugin connection details are not set in the backend .env file.");
-            return res.status(500).json({ success: false, message: 'Server configuration error.' });
-        }
-        
-        const verificationResponse = await axios.post(
-            `${pluginUrl}/verify-code`,
-            { username: minecraftUsername, code: verificationCode },
-            { headers: { 'Authorization': `Bearer ${pluginSecret}` } }
+        const response = await axios.post(`${spigotWebhookUrl}/generate-and-send-code`, 
+            { username },
+            { headers: { Authorization: `Bearer ${spigotSecret}` } }
         );
 
-        const { success, uuid } = verificationResponse.data;
-
-        if (!success || !uuid) {
-            return res.status(400).json({ success: false, message: verificationResponse.data.message || 'Verification failed.' });
+        if (response.data.success) {
+            res.status(200).json({ success: true, message: 'Verification code sent.' });
+        } else {
+            res.status(400).json({ success: false, message: response.data.message || 'Failed to send code.' });
         }
-        
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'Website user not found.' });
-        }
-
-        await user.update({ minecraft_uuid: uuid, is_verified: true });
-        
-        const updatedUser = await User.findById(userId);
-
-        res.status(200).json({ 
-            success: true, 
-            message: 'Minecraft account linked successfully!', 
-            user: toUserResponse(updatedUser) 
-        });
-
     } catch (error) {
-        if (error.response) {
-            return res.status(error.response.status).json({
-                success: false,
-                message: error.response.data.message || 'An error occurred during verification with the game server.'
-            });
-        }
-        console.error('Error in linkMinecraft:', error);
-        res.status(500).json({ success: false, message: 'An internal server error occurred.' });
+        console.error('Error sending verification code:', error);
+        res.status(500).json({ success: false, message: 'Server error sending verification code.' });
     }
 };
 
+
+// @desc    Link Minecraft account
+// @route   POST /api/v1/auth/link-minecraft
+exports.linkMinecraft = async (req, res) => {
+    const { username, verificationCode } = req.body;
+    const userId = req.user.id;
+    try {
+        if (!username || !verificationCode) {
+            return res.status(400).json({ success: false, message: 'Minecraft username and verification code are required.' });
+        }
+
+        const spigotWebhookUrl = process.env.SPIGOT_WEBHOOK_URL;
+        const spigotSecret = process.env.SPIGOT_SECRET_KEY;
+        if (!spigotWebhookUrl || !spigotSecret) {
+            return res.status(500).json({ success: false, message: 'Spigot webhook not configured.' });
+        }
+
+        const response = await axios.post(`${spigotWebhookUrl}/verify-code`, 
+            { username, code: verificationCode },
+            { headers: { Authorization: `Bearer ${spigotSecret}` } }
+        );
+
+        if (response.data.success) {
+            const user = await UserAuth.findById(userId);
+            if (!user) {
+                return res.status(404).json({ success: false, message: 'User not found.' });
+            }
+            await user.update({ minecraft_uuid: response.data.uuid, is_verified: true });
+            res.status(200).json({ success: true, message: 'Minecraft account linked successfully.', user: toUserResponse(user) });
+        } else {
+            res.status(400).json({ success: false, message: response.data.message || 'Invalid verification code.' });
+        }
+    } catch (error) {
+        console.error('Error in linkMinecraft:', error);
+        res.status(500).json({ success: false, message: 'Server error linking Minecraft account.' });
+    }
+};
+
+// @desc    Forgot password
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
     try {
-        const user = await User.findByEmail(email);
+        const user = await UserAuth.findByEmail(email);
         if (!user) {
+            // We send a success response even if the user doesn't exist
+            // to prevent email enumeration attacks.
             return res.status(200).json({ success: true, message: 'If a user with that email exists, a password reset link has been sent.' });
         }
 
@@ -201,6 +183,7 @@ exports.forgotPassword = async (req, res) => {
             reset_password_expire: resetExpire,
         });
         
+        // In a real app, you would email this token to the user.
         console.log(`Password reset token for ${email}: ${resetToken}`);
         res.status(200).json({ success: true, message: `If a user with that email exists, a password reset link has been sent.` });
 
@@ -210,6 +193,7 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
+// @desc    Reset password
 exports.resetPassword = async (req, res) => {
     const { token, password } = req.body;
     try {
@@ -227,7 +211,7 @@ exports.resetPassword = async (req, res) => {
         }
 
         const userDoc = querySnapshot.docs[0];
-        const user = new User({ id: userDoc.id, ...userDoc.data() });
+        const user = new UserAuth({ id: userDoc.id, ...userDoc.data() });
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);

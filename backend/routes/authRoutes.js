@@ -6,7 +6,8 @@ const {
   getUserProfile,
   forgotPassword,
   resetPassword,
-  linkMinecraft
+  linkMinecraft,
+  sendVerificationCode
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -24,6 +25,9 @@ router.post('/forgot-password', forgotPassword);
 
 // @route   POST /api/v1/auth/reset-password
 router.post('/reset-password', resetPassword);
+
+// @route   POST /api/v1/auth/send-verification-code
+router.post('/send-verification-code', protect, sendVerificationCode);
 
 // @route   POST /api/v1/auth/link-minecraft
 router.post('/link-minecraft', protect, linkMinecraft);

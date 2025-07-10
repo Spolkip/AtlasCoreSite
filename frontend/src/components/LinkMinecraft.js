@@ -87,6 +87,8 @@ const SuccessMessage = styled(Message)`
 
 const LinkMinecraft = () => {
   const [minecraftUsername, setMinecraftUsername] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [step, setStep] = useState(1);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -109,7 +111,7 @@ const LinkMinecraft = () => {
     return /^[a-zA-Z0-9_]{3,16}$/.test(username);
   };
 
-  const handleSubmit = async (e) => {
+  const handleUsernameSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -128,8 +130,8 @@ const LinkMinecraft = () => {
         return;
       }
 
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/auth/link-minecraft`,
+      await axios.post(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/auth/send-verification-code`,
         { username: minecraftUsername },
         { 
           headers: { 
@@ -140,10 +142,10 @@ const LinkMinecraft = () => {
         }
       );
 
-      setSuccess(response.data.message || 'Minecraft account linked successfully!');
-      setTimeout(() => navigate('/dashboard'), 2000);
+      setSuccess('A verification code has been sent to you in-game.');
+      setStep(2);
     } catch (err) {
-      let errorMessage = 'Failed to link Minecraft account';
+      let errorMessage = 'Failed to send verification code.';
       
       if (err.response) {
         if (err.response.status === 401) {
@@ -162,6 +164,46 @@ const LinkMinecraft = () => {
     }
   };
 
+  const handleVerificationSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/auth/link-minecraft`,
+        { username: minecraftUsername, verificationCode },
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        }
+      );
+
+      setSuccess(response.data.message || 'Minecraft account linked successfully!');
+      setTimeout(() => navigate('/dashboard'), 2000);
+
+    } catch (err) {
+      let errorMessage = 'Failed to link Minecraft account';
+      
+      if (err.response) {
+        if (err.response.status === 401) {
+          errorMessage = 'Session expired. Please login again.';
+          setTimeout(() => navigate('/login'), 1500);
+        } else if (err.response.data?.message) {
+          errorMessage = err.response.data.message;
+        }
+      }
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   return (
     <Container>
       <Title>Link Your Minecraft Account</Title>
@@ -169,24 +211,44 @@ const LinkMinecraft = () => {
       {error && <ErrorMessage>{error}</ErrorMessage>}
       {success && <SuccessMessage>{success}</SuccessMessage>}
       
-      <Form onSubmit={handleSubmit}>
-        <FormGroup>
-          <Label htmlFor="minecraft-username">Minecraft Username</Label>
-          <Input
-            id="minecraft-username"
-            type="text"
-            value={minecraftUsername}
-            onChange={(e) => setMinecraftUsername(e.target.value)}
-            placeholder="Enter your Minecraft username"
-            required
-            maxLength={16}
-          />
-        </FormGroup>
-        
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Linking...' : 'Link Account'}
-        </Button>
-      </Form>
+      {step === 1 ? (
+        <Form onSubmit={handleUsernameSubmit}>
+          <FormGroup>
+            <Label htmlFor="minecraft-username">Minecraft Username</Label>
+            <Input
+              id="minecraft-username"
+              type="text"
+              value={minecraftUsername}
+              onChange={(e) => setMinecraftUsername(e.target.value)}
+              placeholder="Enter your Minecraft username"
+              required
+              maxLength={16}
+            />
+          </FormGroup>
+          
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Sending Code...' : 'Get Verification Code'}
+          </Button>
+        </Form>
+      ) : (
+        <Form onSubmit={handleVerificationSubmit}>
+          <FormGroup>
+            <Label htmlFor="verification-code">Verification Code</Label>
+            <Input
+              id="verification-code"
+              type="text"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              placeholder="Enter the code from in-game"
+              required
+            />
+          </FormGroup>
+          
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Verifying...' : 'Link Account'}
+          </Button>
+        </Form>
+      )}
     </Container>
   );
 };

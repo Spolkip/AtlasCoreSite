@@ -1,47 +1,57 @@
-// backend/middleware/auth.js
-
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Import the Firestore-based User model
+const User = require('../models/User');
 
-// Protect routes by verifying the token
+// Middleware to protect routes for logged-in users
 exports.protect = async (req, res, next) => {
-  let token;
-
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
-  }
-
-  // Make sure token exists
-  if (!token) {
-    return res.status(401).json({ success: false, message: 'Not authorized to access this route' });
-  }
-
-  try {
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Attach user to the request object by fetching from DB
-    req.user = await User.findById(decoded.id);
-
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authorized, user not found' });
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            req.user = await User.findById(decoded.id);
+            if (!req.user) {
+                return res.status(401).json({ message: 'Not authorized, user not found' });
+            }
+            next();
+        } catch (error) {
+            res.status(401).json({ message: 'Not authorized, token failed' });
+        }
     }
-
-    next();
-  } catch (error) {
-    console.error('Error in authentication middleware:', error);
-    res.status(401).json({ success: false, message: 'Not authorized, token failed' });
-  }
+    if (!token) {
+        res.status(401).json({ message: 'Not authorized, no token' });
+    }
 };
 
-// Grant access to admin users only
+// Middleware to restrict access to admin users
 exports.authorizeAdmin = (req, res, next) => {
-  // Check the is_admin field (1 for admin, 0 for user)
-  if (req.user.is_admin !== 1) {
-    return res.status(403).json({
-      success: false,
-      message: `User is not authorized to access this route`,
-    });
-  }
-  next();
+    if (req.user && req.user.isAdmin) {
+        next();
+    } else {
+        res.status(403).json({ message: 'Not authorized as an admin' });
+    }
+};
+
+// New middleware to protect routes with a shared secret key
+exports.protectWithSecret = (req, res, next) => {
+    const statsSecret = process.env.STATS_SECRET_KEY;
+    if (!statsSecret) {
+        console.error('STATS_SECRET_KEY is not defined in environment variables.');
+        return res.status(500).json({ message: 'Server configuration error.' });
+    }
+
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+        return res.status(401).json({ message: 'Not authorized, no token' });
+    }
+
+    if (token !== statsSecret) {
+        return res.status(401).json({ message: 'Not authorized, token failed' });
+    }
+
+    // If token is valid, proceed
+    next();
 };
