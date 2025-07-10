@@ -1,4 +1,4 @@
-// backend/services/paymentService.js (UPDATED)
+// backend/services/paymentService.js
 const paypal = require('paypal-rest-sdk');
 require('dotenv').config();
 
@@ -79,6 +79,28 @@ const paymentService = {
                 resolve(payment);
             }
         });
+    });
+  },
+
+  // NEW: Simulated Bank Transfer Payment
+  processBankTransfer: (totalAmount, currency, description, transactionId) => {
+    return new Promise(resolve => {
+      console.log(`Simulating Bank Transfer for ${totalAmount} ${currency} (Order: ${transactionId})`);
+      // Simulate a successful payment after a small delay
+      setTimeout(() => {
+        resolve({ success: true, message: 'Bank transfer simulated successfully.' });
+      }, 1000);
+    });
+  },
+
+  // NEW: Simulated Crypto Payment
+  processCryptoPayment: (totalAmount, currency, description, transactionId) => {
+    return new Promise(resolve => {
+      console.log(`Simulating Crypto Payment for ${totalAmount} ${currency} (Order: ${transactionId})`);
+      // Simulate a successful payment after a small delay
+      setTimeout(() => {
+        resolve({ success: true, message: 'Crypto payment simulated successfully.' });
+      }, 1000);
     });
   }
 };

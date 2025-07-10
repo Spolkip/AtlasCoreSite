@@ -11,7 +11,7 @@ const AddProducts = () => {
         name: '',
         description: '',
         price: '',
-        stock: '',
+        stock: '', // Keep as empty string for input field
         category: '',
         imageUrl: '',
         in_game_commands: ['']
@@ -86,7 +86,12 @@ const AddProducts = () => {
     const handleAddProduct = async (e) => {
         e.preventDefault();
         try {
-            const { data } = await axios.post('http://localhost:5000/api/v1/admin/products', newProduct, config);
+            // FIX: Send stock as null if empty string for infinite stock
+            const productToSend = { 
+                ...newProduct, 
+                stock: newProduct.stock === '' ? null : Number(newProduct.stock) 
+            };
+            const { data } = await axios.post('http://localhost:5000/api/v1/admin/products', productToSend, config);
             if (data.success) {
                 setProducts(prev => [...prev, data.product]);
                 // Reset form
@@ -109,13 +114,19 @@ const AddProducts = () => {
     };
 
     const handleEditProduct = (product) => {
-        setEditingProduct(product);
+        // FIX: Pass stock as empty string if null for input field to display correctly
+        setEditingProduct({ ...product, stock: product.stock === null ? '' : product.stock });
         setIsEditProductModalOpen(true);
     };
 
     const handleUpdateProduct = async (updatedProduct) => {
         try {
-            await axios.put(`http://localhost:5000/api/v1/admin/products/${updatedProduct.id}`, updatedProduct, config);
+            // FIX: Send stock as null if empty string for infinite stock
+            const productToSend = { 
+                ...updatedProduct, 
+                stock: updatedProduct.stock === '' ? null : Number(updatedProduct.stock) 
+            };
+            await axios.put(`http://localhost:5000/api/v1/admin/products/${updatedProduct.id}`, productToSend, config);
             setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
             setIsEditProductModalOpen(false);
         } catch (err) {
@@ -196,7 +207,7 @@ const AddProducts = () => {
                 <form onSubmit={handleAddProduct} className="admin-form grid-form">
                     <input type="text" name="name" value={newProduct.name} onChange={handleInputChange(setNewProduct)} placeholder="Product Name" required />
                     <input type="number" step="0.01" name="price" value={newProduct.price} onChange={handleInputChange(setNewProduct)} placeholder="Price" required />
-                    <input type="number" name="stock" value={newProduct.stock} onChange={handleInputChange(setNewProduct)} placeholder="Stock (Optional)" />
+                    <input type="number" name="stock" value={newProduct.stock} onChange={handleInputChange(setNewProduct)} placeholder="Stock (Optional: leave empty for infinite)" />
                     <select name="category" value={newProduct.category} onChange={handleInputChange(setNewProduct)} required>
                         <option value="" disabled>Select Category</option>
                         {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}

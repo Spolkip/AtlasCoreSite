@@ -10,7 +10,8 @@ class Product {
     this.name = data.name;
     this.description = data.description || null;
     this.price = data.price;
-    this.stock = data.stock !== undefined ? data.stock : null;
+    // FIX: Set stock to null if it's undefined, null, or an empty string, to represent infinite.
+    this.stock = (data.stock === undefined || data.stock === null || data.stock === '') ? null : Number(data.stock);
     this.category = data.category || null;
     this.imageUrl = data.imageUrl || null;
     // UPDATED: Changed to an array to support multiple commands.
@@ -24,7 +25,8 @@ class Product {
       name: this.name,
       description: this.description,
       price: this.price,
-      stock: this.stock,
+      // FIX: Ensure stock is saved as null for infinite, or a number.
+      stock: this.stock, 
       category: this.category,
       imageUrl: this.imageUrl,
       // UPDATED: Save the array of commands.
@@ -44,6 +46,13 @@ class Product {
   async update(fieldsToUpdate) {
     if (!this.id) throw new Error("Cannot update a product without an ID.");
     const updatedData = { ...fieldsToUpdate, updatedAt: new Date() };
+    // FIX: Ensure stock is correctly handled when updating
+    if (updatedData.stock === '') { // If stock is explicitly set to empty string, treat as infinite
+        updatedData.stock = null;
+    } else if (updatedData.stock !== undefined && updatedData.stock !== null) {
+        updatedData.stock = Number(updatedData.stock);
+    }
+
     await updateDoc(doc(productsCollection, this.id), updatedData);
     Object.assign(this, updatedData);
     return this;
@@ -53,12 +62,23 @@ class Product {
 // Static Methods
 Product.findById = async function(id) {
   const productDocSnap = await getDoc(doc(productsCollection, id));
-  return productDocSnap.exists() ? new Product({ id: productDocSnap.id, ...productDocSnap.data() }) : null;
+  // FIX: Ensure stock is correctly interpreted when fetched
+  const data = productDocSnap.exists() ? productDocSnap.data() : null;
+  if (data) {
+    data.stock = (data.stock === undefined || data.stock === null) ? null : Number(data.stock);
+    return new Product({ id: productDocSnap.id, ...data });
+  }
+  return null;
 };
 
 Product.findAll = async function() {
   const querySnapshot = await getDocs(productsCollection);
-  return querySnapshot.docs.map(doc => new Product({ id: doc.id, ...doc.data() }));
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    // FIX: Ensure stock is correctly interpreted when fetched for all products
+    data.stock = (data.stock === undefined || data.stock === null) ? null : Number(data.stock);
+    return new Product({ id: doc.id, ...data });
+  });
 };
 
 Product.delete = async function(id) {

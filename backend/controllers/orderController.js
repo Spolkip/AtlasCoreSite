@@ -20,22 +20,45 @@ exports.createOrder = async (req, res, next) => {
             await newOrder.update({ paymentIntentId: payment.id });
             const approvalUrl = payment.links.find(link => link.rel === 'approval_url').href;
             res.status(201).json({ success: true, paymentUrl: approvalUrl });
-        } else if (paymentMethod === 'credit-card') {
-            for (const item of products) {
-                const product = await Product.findById(item.productId);
-                if (!product || product.stock < item.quantity) {
-                    await newOrder.update({ status: 'failed', failure_reason: `Product ${item.productId} is out of stock.` });
-                    return res.status(400).json({ message: `Product ${item.productId} is out of stock or not found` });
-                }
-                await product.update({ stock: product.stock - item.quantity });
+        } else if (paymentMethod === 'credit-card' || paymentMethod === 'bank-transfer' || paymentMethod === 'crypto') {
+            // Handle simulated payment methods
+            let simulatedPaymentResult;
+            if (paymentMethod === 'credit-card') {
+                // For credit card, we don't need to call paymentService here as it's a frontend simulation.
+                // The frontend will directly navigate to success.
+                // However, we still need to perform stock updates and delivery.
+                simulatedPaymentResult = { success: true }; // Assume success from frontend validation
+            } else if (paymentMethod === 'bank-transfer') {
+                simulatedPaymentResult = await paymentService.processBankTransfer(totalAmount, currency, 'Store Purchase', newOrder.id);
+            } else if (paymentMethod === 'crypto') {
+                simulatedPaymentResult = await paymentService.processCryptoPayment(totalAmount, currency, 'Store Purchase', newOrder.id);
             }
-            await newOrder.update({ status: 'completed' });
 
-            for (const item of products) {
-                await deliveryService.deliverProduct(userId, item.productId);
+            if (simulatedPaymentResult.success) {
+                // Perform stock checks and updates for all simulated methods
+                for (const item of products) {
+                    const product = await Product.findById(item.productId);
+                    // FIX: Check for infinite stock (null or undefined)
+                    if (!product || (product.stock !== null && product.stock !== undefined && product.stock < item.quantity)) {
+                        await newOrder.update({ status: 'failed', failure_reason: `Product ${item.productId} is out of stock.` });
+                        return res.status(400).json({ message: `Product ${item.name} is out of stock or not found` });
+                    }
+                    // Only decrease stock if it's not infinite
+                    if (product.stock !== null && product.stock !== undefined) {
+                        await product.update({ stock: product.stock - item.quantity });
+                    }
+                }
+                await newOrder.update({ status: 'completed' });
+
+                for (const item of products) {
+                    await deliveryService.deliverProduct(userId, item.productId);
+                }
+                
+                res.status(201).json({ success: true, order: newOrder });
+            } else {
+                await newOrder.update({ status: 'failed', failure_reason: simulatedPaymentResult.message || 'Simulated payment failed.' });
+                res.status(400).json({ message: simulatedPaymentResult.message || 'Simulated payment failed.' });
             }
-            
-            res.status(201).json({ success: true, order: newOrder });
         } else {
             res.status(400).json({ message: 'Invalid payment method' });
         }
@@ -101,11 +124,15 @@ exports.executePayment = async (req, res) => {
 
             for (const item of order.products) {
                 const product = await Product.findById(item.productId);
-                 if (!product || product.stock < item.quantity) {
-                    await order.update({ status: 'failed', failure_reason: `Product ${item.productId} is out of stock.` });
+                 // FIX: Check for infinite stock (null or undefined)
+                 if (!product || (product.stock !== null && product.stock !== undefined && product.stock < item.quantity)) {
+                    await order.update({ status: 'failed', failure_reason: `Product ${item.name} is out of stock.` });
                     return res.redirect(`http://localhost:3000/payment/cancel`);
                 }
-                await product.update({ stock: product.stock - item.quantity });
+                // Only decrease stock if it's not infinite
+                if (product.stock !== null && product.stock !== undefined) {
+                    await product.update({ stock: product.stock - item.quantity });
+                }
             }
 
             await order.update({ status: 'completed' });

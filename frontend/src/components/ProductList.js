@@ -31,10 +31,21 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
         setCart(prevCart => {
             const existingProduct = prevCart.find(item => item.id === product.id);
             if (existingProduct) {
+                // Check if adding more would exceed stock, unless stock is infinite (null)
+                if (product.stock !== null && existingProduct.quantity + 1 > product.stock) {
+                    // Optionally, show an alert or message to the user
+                    alert(`Cannot add more "${product.name}". Only ${product.stock} left in stock.`);
+                    return prevCart; // Don't update cart
+                }
                 return prevCart.map(item =>
                     item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
                 );
             } else {
+                // Check if adding the first item would exceed stock, unless stock is infinite (null)
+                if (product.stock !== null && 1 > product.stock) {
+                     alert(`Cannot add "${product.name}". Only ${product.stock} left in stock.`);
+                     return prevCart; // Don't update cart
+                }
                 return [...prevCart, { ...product, quantity: 1 }];
             }
         });
@@ -46,6 +57,13 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
             const existingProduct = prevCart.find(item => item.id === product.id);
             if (existingProduct) {
                 const newQuantity = existingProduct.quantity + delta;
+                
+                // Check if new quantity exceeds stock, unless stock is infinite (null)
+                if (product.stock !== null && newQuantity > product.stock) {
+                    alert(`Cannot add more "${product.name}". Only ${product.stock} left in stock.`);
+                    return prevCart; // Don't update cart
+                }
+
                 if (newQuantity <= 0) {
                     return prevCart.filter(item => item.id !== product.id);
                 }
@@ -69,7 +87,11 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
         setLoading(true);
         setError(null);
         try {
-            const productsResponse = await axios.get('http://localhost:5000/api/v1/products');
+            // FIX: Get token and define config inside fetchData to ensure it's always fresh
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
+            const productsResponse = await axios.get('http://localhost:5000/api/v1/products', config);
 
             if (productsResponse.data && productsResponse.data.success) {
                 setCategorizedProducts(productsResponse.data.products);
@@ -86,7 +108,7 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, []); // No dependencies needed for fetchData as token/config are now fetched inside
 
     useEffect(() => {
         fetchData();
@@ -196,7 +218,12 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
                             <h3 className="product-name">{product.name}</h3>
                             <p className="product-description">{product.description}</p>
                             <p className="product-price">{getCurrencySymbol(settings?.currency)}{Number(product.price).toFixed(2)}</p>
-                            <button className="mc-button purchase-button" onClick={() => addToCart(product)}>Add to Cart</button>
+                            {/* FIX: Conditionally render "Add to Cart" or "Out of Stock" */}
+                            {product.stock === null || product.stock > 0 ? (
+                                <button className="mc-button purchase-button" onClick={() => addToCart(product)}>Add to Cart</button>
+                            ) : (
+                                <button className="mc-button purchase-button" disabled style={{ backgroundColor: '#c0392b', cursor: 'not-allowed' }}>Out of Stock</button>
+                            )}
                         </div>
                     ))
                 ) : (

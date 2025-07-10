@@ -2,10 +2,20 @@
 import React, { useState, useEffect } from 'react';
 
 const EditProductModal = ({ product, categories, onClose, onSave }) => {
-    const [editedProduct, setEditedProduct] = useState({ ...product, in_game_commands: Array.isArray(product.in_game_commands) ? product.in_game_commands : [product.in_game_command || ''] });
+    // FIX: Initialize editedProduct.stock to empty string if null for input field
+    const [editedProduct, setEditedProduct] = useState({ 
+        ...product, 
+        in_game_commands: Array.isArray(product.in_game_commands) ? product.in_game_commands : [product.in_game_command || ''],
+        stock: product.stock === null ? '' : product.stock // Set to empty string for input
+    });
 
     useEffect(() => {
-        setEditedProduct({ ...product, in_game_commands: Array.isArray(product.in_game_commands) ? product.in_game_commands : [product.in_game_command || ''] });
+        // FIX: Update editedProduct.stock to empty string if null when prop changes
+        setEditedProduct({ 
+            ...product, 
+            in_game_commands: Array.isArray(product.in_game_commands) ? product.in_game_commands : [product.in_game_command || ''],
+            stock: product.stock === null ? '' : product.stock // Set to empty string for input
+        });
     }, [product]);
 
     const handleChange = (e) => {
@@ -31,7 +41,7 @@ const EditProductModal = ({ product, categories, onClose, onSave }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(editedProduct);
+        onSave(editedProduct); // Pass the raw editedProduct, parent will handle null for stock
     };
 
     return (
@@ -42,7 +52,8 @@ const EditProductModal = ({ product, categories, onClose, onSave }) => {
                 <form onSubmit={handleSubmit} className="admin-form grid-form">
                     <input type="text" name="name" value={editedProduct.name || ''} onChange={handleChange} placeholder="Product Name" required />
                     <input type="number" step="0.01" name="price" value={editedProduct.price || ''} onChange={handleChange} placeholder="Price" required />
-                    <input type="number" name="stock" value={editedProduct.stock || ''} onChange={handleChange} placeholder="Stock (Optional)" />
+                    {/* FIX: Updated placeholder for infinite stock */}
+                    <input type="number" name="stock" value={editedProduct.stock} onChange={handleChange} placeholder="Stock (Optional: leave empty for infinite)" />
                     <select name="category" value={editedProduct.category || ''} onChange={handleChange} required>
                         {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                     </select>
