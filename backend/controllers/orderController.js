@@ -44,7 +44,37 @@ exports.createOrder = async (req, res, next) => {
         res.status(500).json({ message: 'Server error creating order' });
     }
 };
+// Add these to your existing orderController.js
+exports.getMyOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({ userId: req.user.id }).sort('-createdAt');
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ message: 'Server error fetching orders' });
+    }
+};
 
+exports.cancelOrder = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const order = await Order.findOne({ _id: orderId, userId: req.user.id });
+        
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+        
+        if (order.status !== 'pending') {
+            return res.status(400).json({ message: 'Only pending orders can be cancelled' });
+        }
+        
+        await order.update({ status: 'cancelled' });
+        res.status(200).json({ message: 'Order cancelled successfully' });
+    } catch (error) {
+        console.error('Error cancelling order:', error);
+        res.status(500).json({ message: 'Server error cancelling order' });
+    }
+};
 exports.executePayment = async (req, res) => {
     const { paymentId, PayerID } = req.query;
     try {

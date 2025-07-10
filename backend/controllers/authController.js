@@ -1,7 +1,45 @@
+let serverStats = {
+    onlinePlayers: 0,
+    maxPlayers: 0,
+    serverStatus: 'offline',
+    newPlayersToday: 0
+};
+
+/**
+ * Receives and updates server stats from the Minecraft plugin.
+ */
+exports.updateStats = (req, res) => {
+    const { onlinePlayers, maxPlayers, serverStatus, newPlayersToday } = req.body;
+    
+    // Basic validation
+    if (onlinePlayers === undefined || maxPlayers === undefined || serverStatus === undefined) {
+        return res.status(400).json({ success: false, message: 'Invalid stats payload.' });
+    }
+
+    serverStats = { onlinePlayers, maxPlayers, serverStatus, newPlayersToday };
+    console.log('Received server stats update:', serverStats);
+    res.status(200).json({ success: true, message: 'Stats updated successfully.' });
+};
+
+/**
+ * Provides the latest server stats to the frontend.
+ */
+exports.getStats = (req, res) => {
+    res.status(200).json({ success: true, stats: serverStats });
+};
+
+
+// =================================================================
+// backend/controllers/authController.js
+// =================================================================
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const crypto = require('crypto');
+const { getFirestore, collection, query, where, getDocs } = require('firebase/firestore');
+const { FIREBASE_DB } = require('../config/firebase');
+
 
 const toUserResponse = (user) => ({
     id: user.id,
@@ -77,6 +115,19 @@ exports.loginUser = async (req, res) => {
   }
 };
 
+exports.getUserProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+        res.status(200).json({ success: true, user: toUserResponse(user) });
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+        res.status(500).json({ success: false, message: 'Server error fetching profile.' });
+    }
+};
+
 exports.linkMinecraft = async (req, res) => {
     const { minecraftUsername, verificationCode } = req.body;
     const userId = req.user.id;
@@ -130,5 +181,67 @@ exports.linkMinecraft = async (req, res) => {
         }
         console.error('Error in linkMinecraft:', error);
         res.status(500).json({ success: false, message: 'An internal server error occurred.' });
+    }
+};
+
+exports.forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await User.findByEmail(email);
+        if (!user) {
+            return res.status(200).json({ success: true, message: 'If a user with that email exists, a password reset link has been sent.' });
+        }
+
+        const resetToken = crypto.randomBytes(20).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const resetExpire = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+        await user.update({
+            reset_password_token: hashedToken,
+            reset_password_expire: resetExpire,
+        });
+        
+        console.log(`Password reset token for ${email}: ${resetToken}`);
+        res.status(200).json({ success: true, message: `If a user with that email exists, a password reset link has been sent.` });
+
+    } catch (error) {
+        console.error('Error in forgotPassword:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    const { token, password } = req.body;
+    try {
+        if (!token || !password) {
+            return res.status(400).json({ success: false, message: 'Please provide a token and a new password.' });
+        }
+        
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const q = query(collection(FIREBASE_DB, 'users'), where('reset_password_token', '==', hashedToken), where('reset_password_expire', '>', new Date()));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired token.' });
+        }
+
+        const userDoc = querySnapshot.docs[0];
+        const user = new User({ id: userDoc.id, ...userDoc.data() });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        await user.update({
+            password: hashedPassword,
+            reset_password_token: null,
+            reset_password_expire: null,
+        });
+
+        res.status(200).json({ success: true, message: 'Password has been reset successfully.' });
+
+    } catch (error) {
+        console.error('Error in resetPassword:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 };
