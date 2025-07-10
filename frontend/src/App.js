@@ -20,7 +20,6 @@ import ForgotPassword from './components/ForgotPassword';
 import LinkMinecraft from './components/LinkMinecraft';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
-// Removed Cart import: import Cart from './components/Cart';
 
 import './css/App.css';
 

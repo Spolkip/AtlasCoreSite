@@ -1,10 +1,9 @@
-// backend/app.js
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 
-// Load environment variables
+// Load environment variables from .env file
 dotenv.config();
 
 // --- Route Imports ---
@@ -13,7 +12,8 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
-const userRoutes = require('./routes/userRoutes'); // <-- ADD THIS LINE
+const userRoutes = require('./routes/userRoutes');
+const serverRoutes = require('./routes/serverRoutes');
 
 const app = express();
 
@@ -28,7 +28,8 @@ app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/settings', settingsRoutes);
-app.use('/api/v1/users', userRoutes); // <-- AND ADD THIS LINE
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/server', serverRoutes);
 
 // --- Server Initialization ---
 const PORT = process.env.PORT || 5000;

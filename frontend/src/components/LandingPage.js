@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../css/LandingPage.css';
 
-const LandingPage = () => {
+const LandingPage = ({ settings }) => {
   const serverIp = 'play.atlascore.net';
 
   const copyToClipboard = () => {
@@ -44,7 +44,7 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-content">
-            <h1 className="server-title">ATLAS CORE</h1>
+            <h1 className="server-title">{settings?.store_name || 'AtlasCore'}</h1>
             <p className="server-subtitle">An Epic RPG & Roleplaying Adventure</p>
             <div className="server-ip-container">
                 <span id="server-ip-to-copy" className="server-ip">{serverIp}</span>
@@ -62,9 +62,9 @@ const LandingPage = () => {
 
       {/* Intro Section */}
       <section className="intro-section fade-in-section">
-          <h2>What is Atlas Core?</h2>
+          <h2>What is {settings?.store_name || 'AtlasCore'}?</h2>
           <p>
-              Step into a world where Minecraft's familiar blocks are forged into a deep, persistent RPG experience. Atlas Core is not just a server; it's a living world shaped by its players. Forge alliances, build kingdoms, master unique abilities, and battle mythical beasts in a realm of endless possibility. Your legend is waiting to be written.
+              Step into a world where Minecraft's familiar blocks are forged into a deep, persistent RPG experience. {settings?.store_name || 'AtlasCore'} is not just a server; it's a living world shaped by its players. Forge alliances, build kingdoms, master unique abilities, and battle mythical beasts in a realm of endless possibility. Your legend is waiting to be written.
           </p>
       </section>
 
@@ -108,7 +108,7 @@ const LandingPage = () => {
       {/* CTA Section */}
       <section className="cta-section fade-in-section">
         <h2>Your Adventure Begins Now</h2>
-        <p>The world of Atlas Core awaits. Join our vibrant community on Discord and jump into the server to start writing your story today.</p>
+        <p>The world of {settings?.store_name || 'AtlasCore'} awaits. Join our vibrant community on Discord and jump into the server to start writing your story today.</p>
         <div className="cta-buttons">
           <Link to="/shop" className="mc-button primary">
             <span>Visit The Store</span>

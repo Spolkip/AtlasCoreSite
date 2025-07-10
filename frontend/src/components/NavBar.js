@@ -2,14 +2,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Navbar = ({ isAuthenticated, logout, user }) => { // Removed 'cart' from props
+const Navbar = ({ isAuthenticated, logout, user, settings }) => { // Removed 'cart' from props
 
   // Removed cartItemCount calculation as cart link is being removed
 
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/">ATLAS CORE</Link>
+        <Link to="/">{settings?.store_name || 'AtlasCore'}</Link>
       </div>
       <div className="navbar-links">
         <Link to="/">Home</Link>

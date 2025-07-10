@@ -1,3 +1,4 @@
+// backend/controllers/adminController.js
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
@@ -10,13 +11,22 @@ exports.getAdminDashboard = async (req, res) => {
   try {
     const usersSnapshot = await getDocs(collection(FIREBASE_DB, 'users'));
     const productsSnapshot = await getDocs(collection(FIREBASE_DB, 'products'));
-    const ordersSnapshot = await getDocs(collection(FIREBASE_DB, 'orders'));
+    const allOrders = await Order.findAll(); // Fetch all orders
+
+    // Calculate order status counts
+    const orderStatusCounts = allOrders.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {});
+
+
     res.status(200).json({
       success: true,
       data: {
         totalUsers: usersSnapshot.size,
         totalProducts: productsSnapshot.size,
-        totalOrders: ordersSnapshot.size,
+        totalOrders: allOrders.length,
+        orderStatusCounts: orderStatusCounts,
       },
     });
   } catch (error) {

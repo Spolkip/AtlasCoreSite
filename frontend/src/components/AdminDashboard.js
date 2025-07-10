@@ -14,6 +14,7 @@ const AdminDashboard = ({ user }) => {
         totalProducts: 0,
         totalOrders: 0,
     });
+    const [orderStatusData, setOrderStatusData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -26,12 +27,6 @@ const AdminDashboard = ({ user }) => {
         { name: 'Day 5', 'Active Users': 600, 'New Registrations': 80 },
         { name: 'Day 6', 'Active Users': 550, 'New Registrations': 75 },
         { name: 'Day 7', 'Active Users': 700, 'New Registrations': 90 },
-    ];
-
-    const orderStatusData = [
-        { name: 'Completed', value: 120 },
-        { name: 'Pending', value: 15 },
-        { name: 'Cancelled', value: 5 },
     ];
 
 
@@ -56,6 +51,10 @@ const AdminDashboard = ({ user }) => {
 
                 if (data.success) {
                     setStats(data.data);
+                    if (data.data.orderStatusCounts) {
+                        const formattedData = Object.entries(data.data.orderStatusCounts).map(([name, value]) => ({ name, value }));
+                        setOrderStatusData(formattedData);
+                    }
                 } else {
                     setError('Failed to load admin dashboard data.');
                 }
@@ -85,7 +84,7 @@ const AdminDashboard = ({ user }) => {
                     <h2>You are not authorized to view this page.</h2>
                 </div>
             </div>
-        )
+        );
     }
 
     return (
