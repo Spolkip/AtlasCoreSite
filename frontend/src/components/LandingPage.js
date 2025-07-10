@@ -1,10 +1,36 @@
 // frontend/src/components/LandingPage.js
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../css/LandingPage.css';
+import axios from 'axios';
 
 const LandingPage = ({ settings }) => {
   const serverIp = 'play.atlascore.net';
+  const [serverStats, setServerStats] = useState({
+    onlinePlayers: 0,
+    maxPlayers: 0,
+    serverStatus: 'offline'
+  });
+
+  useEffect(() => {
+    const fetchServerStats = async () => {
+      try {
+        const { data } = await axios.get('http://localhost:5000/api/v1/server/stats');
+        if (data.success) {
+          setServerStats(data.stats);
+        }
+      } catch (error) {
+        console.error("Could not fetch server stats", error);
+        setServerStats({ onlinePlayers: 0, maxPlayers: 0, serverStatus: 'offline' });
+      }
+    };
+
+    fetchServerStats();
+    const interval = setInterval(fetchServerStats, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
 
   const copyToClipboard = () => {
     const ipElement = document.getElementById('server-ip-to-copy');
@@ -54,8 +80,13 @@ const LandingPage = ({ settings }) => {
                 </button>
             </div>
              <div className="server-status">
-                <span className="online-dot"></span>
-                <p><strong>152</strong> players forging their legends right now!</p>
+                <span className={`status-dot ${serverStats.serverStatus === 'online' ? 'online-dot' : 'offline-dot'}`}></span>
+                <p>
+                  {serverStats.serverStatus === 'online'
+                    ? <><strong>{serverStats.onlinePlayers}</strong> players forging their legends right now!</>
+                    : <strong>Server is currently offline</strong>
+                  }
+                </p>
             </div>
         </div>
       </section>

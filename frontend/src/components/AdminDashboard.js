@@ -6,7 +6,7 @@ import '../css/Dashboard.css';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     BarChart, Bar
-} from 'recharts'; // Import Recharts components
+} from 'recharts';
 
 const AdminDashboard = ({ user }) => {
     const [stats, setStats] = useState({
@@ -14,24 +14,20 @@ const AdminDashboard = ({ user }) => {
         totalProducts: 0,
         totalOrders: 0,
     });
+    const [serverStats, setServerStats] = useState({
+        onlinePlayers: 0,
+        maxPlayers: 200,
+        serverStatus: 'offline',
+        newPlayersToday: 0
+    });
     const [orderStatusData, setOrderStatusData] = useState([]);
+    const [dailyActivityData, setDailyActivityData] = useState([]);
+    const [newPlayerTrendData, setNewPlayerTrendData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // Dummy data for graphs (replace with actual API calls later)
-    const dailyActivityData = [
-        { name: 'Day 1', 'Active Users': 400, 'New Registrations': 50 },
-        { name: 'Day 2', 'Active Users': 300, 'New Registrations': 30 },
-        { name: 'Day 3', 'Active Users': 500, 'New Registrations': 70 },
-        { name: 'Day 4', 'Active Users': 450, 'New Registrations': 60 },
-        { name: 'Day 5', 'Active Users': 600, 'New Registrations': 80 },
-        { name: 'Day 6', 'Active Users': 550, 'New Registrations': 75 },
-        { name: 'Day 7', 'Active Users': 700, 'New Registrations': 90 },
-    ];
-
-
     useEffect(() => {
-        const fetchAdminDashboardData = async () => {
+        const fetchAdminData = async () => {
             if (!user || !user.isAdmin) {
                 setError("You must be an admin to view this page.");
                 setLoading(false);
@@ -39,25 +35,49 @@ const AdminDashboard = ({ user }) => {
             }
 
             setLoading(true);
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
             try {
-                const token = localStorage.getItem('token');
-                const config = {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                };
+                const dashboardPromise = axios.get('http://localhost:5000/api/v1/admin/dashboard', config);
+                const trendsPromise = axios.get('http://localhost:5000/api/v1/admin/trends/registrations', config);
+                const serverStatsPromise = axios.get('http://localhost:5000/api/v1/server/stats');
+                const newPlayerTrendsPromise = axios.get('http://localhost:5000/api/v1/admin/trends/new-players', config);
 
-                const { data } = await axios.get('http://localhost:5000/api/v1/admin/dashboard', config);
 
-                if (data.success) {
-                    setStats(data.data);
-                    if (data.data.orderStatusCounts) {
-                        const formattedData = Object.entries(data.data.orderStatusCounts).map(([name, value]) => ({ name, value }));
+                const [dashboardResponse, trendsResponse, serverStatsResponse, newPlayerTrendsResponse] = await Promise.all([
+                    dashboardPromise,
+                    trendsPromise,
+                    serverStatsPromise,
+                    newPlayerTrendsPromise
+                ]);
+
+                // Dashboard Data
+                if (dashboardResponse.data.success) {
+                    setStats(dashboardResponse.data.data);
+                    if (dashboardResponse.data.data.orderStatusCounts) {
+                        const formattedData = Object.entries(dashboardResponse.data.data.orderStatusCounts).map(([name, value]) => ({ name, value }));
                         setOrderStatusData(formattedData);
                     }
                 } else {
                     setError('Failed to load admin dashboard data.');
                 }
+
+                // Trends Data
+                if (trendsResponse.data.success) {
+                    setDailyActivityData(trendsResponse.data.data);
+                }
+
+                // Server Stats
+                if (serverStatsResponse.data.success) {
+                    setServerStats(serverStatsResponse.data.stats);
+                }
+                
+                // New Player Trends Data
+                if (newPlayerTrendsResponse.data.success) {
+                    setNewPlayerTrendData(newPlayerTrendsResponse.data.data);
+                }
+
             } catch (err) {
                 setError(err.response?.data?.message || 'An error occurred while fetching admin dashboard data.');
             } finally {
@@ -65,7 +85,7 @@ const AdminDashboard = ({ user }) => {
             }
         };
 
-        fetchAdminDashboardData();
+        fetchAdminData();
     }, [user]);
 
     if (loading) {
@@ -109,22 +129,24 @@ const AdminDashboard = ({ user }) => {
                 </div>
             </div>
 
-            {/* Minecraft Server Info - Removed Server IP */}
             <div className="statistics-section">
                 <h2>Minecraft Server Info</h2>
                 <div className="stats-grid">
                     <div className="stat-card">
                         <h3>Online Players</h3>
-                        <p>150 / 200</p> {/* Placeholder */}
+                        <p>{serverStats.onlinePlayers} / {serverStats.maxPlayers}</p>
                     </div>
                     <div className="stat-card">
                         <h3>Server Status</h3>
-                        <p className="online">Online</p> {/* Placeholder */}
+                        <p className={serverStats.serverStatus === 'online' ? 'online' : 'offline'}>{serverStats.serverStatus}</p>
+                    </div>
+                    <div className="stat-card">
+                        <h3>New Players Today</h3>
+                        <p>{serverStats.newPlayersToday || 0}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Activity Trends Graph */}
             <div className="statistics-section">
                 <h2>Daily Activity Trends</h2>
                 <ResponsiveContainer width="100%" height={300}>
@@ -137,13 +159,28 @@ const AdminDashboard = ({ user }) => {
                         <YAxis stroke="#ccc" />
                         <Tooltip contentStyle={{ backgroundColor: '#3a3a3a', border: '1px solid #FFAA00' }} itemStyle={{ color: '#fff' }} />
                         <Legend wrapperStyle={{ color: '#fff', paddingTop: '10px' }} />
-                        <Line type="monotone" dataKey="Active Users" stroke="#8884d8" activeDot={{ r: 8 }} />
                         <Line type="monotone" dataKey="New Registrations" stroke="#82ca9d" />
                     </LineChart>
                 </ResponsiveContainer>
             </div>
 
-            {/* Order Status Distribution Graph */}
+            <div className="statistics-section">
+                <h2>New Player Trends</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                    <LineChart
+                        data={newPlayerTrendData}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#555" />
+                        <XAxis dataKey="name" stroke="#ccc" />
+                        <YAxis stroke="#ccc" />
+                        <Tooltip contentStyle={{ backgroundColor: '#3a3a3a', border: '1px solid #FFAA00' }} itemStyle={{ color: '#fff' }} />
+                        <Legend wrapperStyle={{ color: '#fff', paddingTop: '10px' }} />
+                        <Line type="monotone" dataKey="New Players" stroke="#8884d8" />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
+
             <div className="statistics-section">
                 <h2>Order Status Distribution</h2>
                 <ResponsiveContainer width="100%" height={300}>

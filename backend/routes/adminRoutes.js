@@ -1,3 +1,4 @@
+// backend/routes/adminRoutes.js
 const express = require('express');
 const router = express.Router();
 
@@ -14,6 +15,8 @@ router.use(protect, authorizeAdmin);
 
 // --- Dashboard ---
 router.get('/dashboard', adminController.getAdminDashboard);
+router.get('/trends/registrations', adminController.getDailyRegistrationTrends);
+router.get('/trends/new-players', adminController.getNewPlayerTrends);
 
 // --- User Management ---
 router.get('/users', userController.getAllUsers);

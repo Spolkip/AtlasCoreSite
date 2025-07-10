@@ -116,13 +116,21 @@
   gap: 10px;
 }
 
-.online-dot {
+.status-dot {
   width: 15px;
   height: 15px;
-  background-color: #2ecc71; /* Green */
   border-radius: 50%;
   border: 2px solid #fff;
+}
+
+.online-dot {
+  background-color: #2ecc71; /* Green */
   box-shadow: 0 0 10px #2ecc71;
+}
+
+.offline-dot {
+  background-color: #c0392b; /* Red */
+  box-shadow: 0 0 10px #c0392b;
 }
 
 .server-status p {

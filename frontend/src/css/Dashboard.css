@@ -80,6 +80,12 @@
   margin-top: 15px;
 }
 
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
 .stat-card {
   background-color: rgba(0, 0, 0, 0.4);
   padding: 25px;

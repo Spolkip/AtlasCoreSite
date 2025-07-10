@@ -1,9 +1,8 @@
-// backend/controllers/adminController.js
 const User = require('../models/User');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
-const { collection, getDocs } = require('firebase/firestore');
+const { collection, getDocs, query, where, orderBy, limit } = require('firebase/firestore');
 const { FIREBASE_DB } = require('../config/firebase');
 
 // @desc    Get admin dashboard overview data
@@ -34,6 +33,77 @@ exports.getAdminDashboard = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// @desc    Get daily registration trends for the last 7 days
+exports.getDailyRegistrationTrends = async (req, res) => {
+    try {
+        const usersSnapshot = await getDocs(collection(FIREBASE_DB, 'users'));
+        const trends = Array(7).fill(0).map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return { date: d.toISOString().split('T')[0], count: 0 };
+        }).reverse();
+
+        usersSnapshot.forEach(doc => {
+            const user = doc.data();
+            // Ensure created_at exists and is a timestamp
+            if (user.created_at && user.created_at.toDate) {
+                const registrationDate = user.created_at.toDate().toISOString().split('T')[0];
+                const trend = trends.find(t => t.date === registrationDate);
+                if (trend) {
+                    trend.count++;
+                }
+            }
+        });
+
+        const chartData = trends.map(t => ({
+            name: new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            'New Registrations': t.count
+        }));
+
+        res.status(200).json({ success: true, data: chartData });
+    } catch (error) {
+        console.error('Error fetching registration trends:', error);
+        res.status(500).json({ success: false, message: 'Server error fetching trends' });
+    }
+};
+
+// @desc    Get new player trends for the last 7 days
+exports.getNewPlayerTrends = async (req, res) => {
+    try {
+        // This is a simplified example. In a real-world scenario, you would
+        // likely store daily stats in a separate collection.
+        const statsCollection = collection(FIREBASE_DB, 'daily_stats');
+        const q = query(statsCollection, orderBy('date', 'desc'), limit(7));
+        const statsSnapshot = await getDocs(q);
+
+        const trends = Array(7).fill(0).map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return { date: d.toISOString().split('T')[0], count: 0 };
+        }).reverse();
+
+        statsSnapshot.forEach(doc => {
+            const stat = doc.data();
+            const statDate = stat.date.toDate().toISOString().split('T')[0];
+            const trend = trends.find(t => t.date === statDate);
+            if (trend) {
+                trend.count = stat.newPlayersToday || 0;
+            }
+        });
+
+        const chartData = trends.map(t => ({
+            name: new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            'New Players': t.count
+        }));
+
+        res.status(200).json({ success: true, data: chartData });
+    } catch (error) {
+        console.error('Error fetching new player trends:', error);
+        res.status(500).json({ success: false, message: 'Server error fetching new player trends' });
+    }
+};
+
 
 // @desc    Get all categories
 exports.getAllCategories = async (req, res) => {
