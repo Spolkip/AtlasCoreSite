@@ -1,3 +1,4 @@
+// frontend/src/components/PaymentCancel.js
 import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -9,14 +10,14 @@ const PaymentCancel = () => {
   useEffect(() => {
     const cancelOrderOnBackend = async () => {
       const params = new URLSearchParams(location.search);
-      const paymentId = params.get('paymentId');
+      const orderId = params.get('transaction_id');
       const authToken = localStorage.getItem('token');
 
-      if (paymentId && authToken) {
+      if (orderId && authToken) {
         try {
           await axios.post(
             'http://localhost:5000/api/v1/orders/cancel',
-            { paymentId },
+            { orderId },
             { headers: { Authorization: `Bearer ${authToken}` } }
           );
         } catch (err) {

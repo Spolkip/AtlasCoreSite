@@ -44,14 +44,25 @@ exports.createOrder = async (req, res, next) => {
         res.status(500).json({ message: 'Server error creating order' });
     }
 };
-// Add these to your existing orderController.js
-exports.getMyOrders = async (req, res) => {
+// Updated getMyOrders with pagination
+exports.getMyOrders = async (req, res, next) => {
     try {
-        const orders = await Order.find({ userId: req.user.id }).sort('-createdAt');
-        res.status(200).json(orders);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+        
+        const allOrders = await Order.findByUserId(req.user.id);
+        const orders = allOrders.slice(offset, offset + limit);
+        
+        res.status(200).json({
+            success: true,
+            count: allOrders.length,
+            page,
+            pages: Math.ceil(allOrders.length / limit),
+            orders
+        });
     } catch (error) {
-        console.error('Error fetching orders:', error);
-        res.status(500).json({ message: 'Server error fetching orders' });
+        // error handling
     }
 };
 

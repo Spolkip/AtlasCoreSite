@@ -50,6 +50,7 @@ Order.findById = async function(id) {
   return orderDocSnap.exists() ? new Order({ id: orderDocSnap.id, ...orderDocSnap.data() }) : null;
 };
 
+// In your Order.js model
 Order.findByUserId = async function(userId) {
   const q = query(ordersCollection, where('userId', '==', userId));
   const querySnapshot = await getDocs(q);

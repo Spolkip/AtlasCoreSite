@@ -26,15 +26,20 @@ const PaymentSuccess = () => {
 
       try {
         // Send request to the backend to finalize the payment
-        await axios.get(
+        const response = await axios.get(
           `http://localhost:5000/api/v1/orders/execute?paymentId=${paymentId}&PayerID=${PayerID}`,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
         );
-        setMessage('Payment successful! Your items have been delivered in-game.');
-        // FIX: Redirect to the correct order history page
-        setTimeout(() => navigate('/order-history'), 3000);
+
+        if (response.data.success) {
+          setMessage('Payment successful! Your items have been delivered in-game.');
+          setTimeout(() => navigate('/order-history'), 3000);
+        } else {
+          setError(response.data.message || 'An error occurred while processing your payment.');
+          setMessage('');
+        }
       } catch (err) {
         const errorMessage = err.response?.data?.message || 'An error occurred while processing your payment.';
         setError(errorMessage);
