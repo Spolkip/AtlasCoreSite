@@ -1,0 +1,143 @@
+// frontend/src/App.js
+
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import axios from 'axios';
+
+// Import Components
+import NavBar from './components/NavBar';
+import LandingPage from './components/LandingPage';
+import ProductList from './components/ProductList';
+import Login from './components/Login';
+import Register from './components/Register';
+import AddProducts from './components/AddProducts';
+import Settings from './components/Settings';
+import Checkout from './components/Checkout';
+import PaymentSuccess from './components/PaymentSuccess';
+import PaymentCancel from './components/PaymentCancel';
+import OrderHistory from './components/OrderHistory';
+import ForgotPassword from './components/ForgotPassword';
+import LinkMinecraft from './components/LinkMinecraft';
+import Dashboard from './components/Dashboard';
+import AdminDashboard from './components/AdminDashboard';
+// Removed Cart import: import Cart from './components/Cart';
+
+import './css/App.css';
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [cart, setCart] = useState([]); // Keep cart state as it's used by ProductList and Checkout
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchGlobalSettings = async () => {
+      try {
+          const { data } = await axios.get('http://localhost:5000/api/v1/settings');
+          if (data) {
+              setSettings(data);
+          }
+      } catch (error) {
+          console.error("Could not fetch global settings", error);
+      } finally {
+          setLoading(false);
+      }
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    if (token && storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      setIsAuthenticated(true);
+      setIsAdmin(parsedUser.isAdmin === 1 || parsedUser.isAdmin === true);
+    }
+    
+    fetchGlobalSettings();
+  }, []);
+
+  const handleLogin = (userData = {}) => {
+    const { user, token } = userData;
+    if (user && token) {
+      setUser(user);
+      setIsAuthenticated(true);
+      setIsAdmin(user.isAdmin === 1 || user.isAdmin === true);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    setIsAdmin(false);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCart([]);
+  };
+
+  const updateSettings = (newSettings) => {
+    setSettings(newSettings);
+  };
+
+  if (loading) {
+      return <div className="loading-container">Loading...</div>;
+  }
+
+  return (
+    <Router>
+      <div className="App">
+        {/* Removed cart prop from NavBar as it's no longer needed there */}
+        <NavBar user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={handleLogout} />
+        <main>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            
+            <Route 
+              path="/shop" 
+              element={<ProductList 
+                user={user} 
+                cart={cart} 
+                setCart={setCart} 
+                settings={settings} 
+                isAdmin={isAdmin} 
+              />} 
+            />
+            
+            <Route path="/login" element={<Login onLoginSuccess={handleLogin} />} />
+            <Route path="/register" element={<Register onLoginSuccess={handleLogin} />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Removed Cart Route */}
+            
+            {/* Protected Routes */}
+            {isAuthenticated && (
+              <>
+                <Route path="/dashboard" element={<Dashboard user={user} />} />
+                <Route path="/settings" element={<Settings user={user} onSettingsUpdate={updateSettings} />} />
+                {/* Keep cart and setCart props for Checkout as it still needs cart data */}
+                <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} />} />
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/cancel" element={<PaymentCancel />} />
+                <Route path="/order-history" element={<OrderHistory user={user} />} />
+                <Route path="/link-minecraft" element={<LinkMinecraft user={user} />} />
+              </>
+            )}
+
+            {/* Admin Routes */}
+            {isAuthenticated && isAdmin && (
+              <>
+                <Route path="/admin" element={<AddProducts />} />
+                <Route path="/admin-dashboard" element={<AdminDashboard user={user} />} />
+              </>
+            )}
+
+          </Routes>
+        </main>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
