@@ -27,9 +27,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [cart, setCart] = useState([]); // Keep cart state as it's used by ProductList and Checkout
+  const [cart, setCart] = useState([]);
   const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);;
 
   const fetchGlobalSettings = async () => {
       try {
@@ -88,7 +88,6 @@ function App() {
   return (
     <Router>
       <div className="App">
-        {/* Removed cart prop from NavBar as it's no longer needed there */}
         <NavBar user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={handleLogout} />
         <main>
           <Routes>
@@ -108,19 +107,18 @@ function App() {
             <Route path="/login" element={<Login onLoginSuccess={handleLogin} />} />
             <Route path="/register" element={<Register onLoginSuccess={handleLogin} />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            {/* Removed Cart Route */}
             
             {/* Protected Routes */}
             {isAuthenticated && (
               <>
                 <Route path="/dashboard" element={<Dashboard user={user} />} />
                 <Route path="/settings" element={<Settings user={user} onSettingsUpdate={updateSettings} />} />
-                {/* Keep cart and setCart props for Checkout as it still needs cart data */}
                 <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} />} />
                 <Route path="/payment/success" element={<PaymentSuccess />} />
                 <Route path="/payment/cancel" element={<PaymentCancel />} />
                 <Route path="/order-history" element={<OrderHistory user={user} />} />
-                <Route path="/link-minecraft" element={<LinkMinecraft user={user} />} />
+                {/* FIX: Pass onLoginSuccess to LinkMinecraft */}
+                <Route path="/link-minecraft" element={<LinkMinecraft user={user} onLoginSuccess={handleLogin} />} />
               </>
             )}
 
@@ -131,7 +129,6 @@ function App() {
                 <Route path="/admin-dashboard" element={<AdminDashboard user={user} />} />
               </>
             )}
-
           </Routes>
         </main>
       </div>

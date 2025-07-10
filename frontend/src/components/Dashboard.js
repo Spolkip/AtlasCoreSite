@@ -11,6 +11,7 @@ const Dashboard = ({ user }) => {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState(''); // Added for success messages
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -22,6 +23,9 @@ const Dashboard = ({ user }) => {
             }
 
             setLoading(true);
+            setError(''); // Clear previous errors
+            setSuccessMessage(''); // Clear previous success messages
+
             try {
                 const token = localStorage.getItem('token');
                 const config = {
@@ -33,7 +37,7 @@ const Dashboard = ({ user }) => {
                 const { data } = await axios.get('http://localhost:5000/api/v1/orders/my-orders', config);
 
                 if (data.success) {
-                    // Filter orders to include only 'completed' ones for total spent calculation
+                    // Filter orders to include only 'completed' ones for totalSpent calculation
                     const completedOrders = data.orders.filter(order => order.status === 'completed');
                     const totalSpent = completedOrders.reduce((acc, order) => acc + order.totalAmount, 0);
                     setStats({
@@ -52,6 +56,38 @@ const Dashboard = ({ user }) => {
 
         fetchDashboardData();
     }, [user]);
+
+    const handleUnlinkMinecraft = async () => {
+        setError('');
+        setSuccessMessage('');
+        if (!window.confirm('Are you sure you want to unlink your Minecraft account?')) {
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            };
+
+            const response = await axios.put('http://localhost:5000/api/v1/auth/unlink-minecraft', {}, config);
+
+            if (response.data.success) {
+                setSuccessMessage(response.data.message);
+                // Update the user data in local storage and App component state
+                const updatedUser = { ...user, minecraft_uuid: '', is_verified: false };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                window.location.reload(); // Temporary solution to force UI update
+            } else {
+                setError(response.data.message || 'Failed to unlink Minecraft account.');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'An error occurred while unlinking your Minecraft account.');
+        }
+    };
+
 
     if (loading) {
         return <div className="loading-container">Loading Dashboard...</div>;
@@ -80,6 +116,9 @@ const Dashboard = ({ user }) => {
         <div className="dashboard-container">
             <h1>Your Dashboard</h1>
 
+            {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
+            {error && <div className="auth-error-message" style={{marginBottom: '20px'}}>{error}</div>}
+
             <div className="profile-section">
                 <h2>Profile</h2>
                 <div className="profile-details">
@@ -89,7 +128,12 @@ const Dashboard = ({ user }) => {
                 </div>
                 <div className="action-buttons">
                     <Link to="/settings" className="dashboard-button">Settings</Link>
-                    {!user.minecraft_uuid && <Link to="/link-minecraft" className="dashboard-button">Link Minecraft</Link>}
+                    {/* Conditionally render Link/Unlink button */}
+                    {user.minecraft_uuid && user.isVerified ? (
+                        <button onClick={handleUnlinkMinecraft} className="dashboard-button danger">Unlink Minecraft</button>
+                    ) : (
+                        <Link to="/link-minecraft" className="dashboard-button">Link Minecraft</Link>
+                    )}
                 </div>
             </div>
 

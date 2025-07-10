@@ -1,94 +1,13 @@
+// frontend/src/components/LinkMinecraft.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import styled from 'styled-components';
+import '../css/LinkMinecraft.css'; // Import the new CSS file
 
-const Container = styled.div`
-  max-width: 500px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-`;
-
-const Title = styled.h2`
-  text-align: center;
-  color: #2c3e50;
-  margin-bottom: 1.5rem;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const Label = styled.label`
-  font-weight: 500;
-  color: #34495e;
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
-
-  &:focus {
-    border-color: #3498db;
-    outline: none;
-  }
-`;
-
-const Button = styled.button`
-  padding: 0.75rem;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #2980b9;
-  }
-
-  &:disabled {
-    background-color: #95a5a6;
-    cursor: not-allowed;
-  }
-`;
-
-const Message = styled.p`
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  text-align: center;
-`;
-
-const ErrorMessage = styled(Message)`
-  background-color: #fdecea;
-  color: #d32f2f;
-`;
-
-const SuccessMessage = styled(Message)`
-  background-color: #e8f5e9;
-  color: #2e7d32;
-`;
-
-const LinkMinecraft = () => {
+const LinkMinecraft = ({ onLoginSuccess }) => {
   const [minecraftUsername, setMinecraftUsername] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); // 1 for username input, 2 for code input
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -111,18 +30,18 @@ const LinkMinecraft = () => {
     return /^[a-zA-Z0-9_]{3,16}$/.test(username);
   };
 
-  const handleUsernameSubmit = async (e) => {
+  const handleSendCode = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    
+
     if (!validateUsername(minecraftUsername)) {
       setError('Invalid Minecraft username (3-16 characters, letters, numbers and underscores only)');
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -130,41 +49,23 @@ const LinkMinecraft = () => {
         return;
       }
 
-      await axios.post(
+      // API call to backend to request verification code from Minecraft plugin
+      const response = await axios.post(
         `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/auth/send-verification-code`,
         { username: minecraftUsername },
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 10000
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      setSuccess('A verification code has been sent to you in-game.');
-      setStep(2);
+      setSuccess(response.data.message || 'A verification code has been sent to you in-game. Please check your Minecraft chat.');
+      setStep(2); // Move to the next step to enter code
     } catch (err) {
-      let errorMessage = 'Failed to send verification code.';
-      
-      if (err.response) {
-        if (err.response.status === 401) {
-          errorMessage = 'Session expired. Please login again.';
-          setTimeout(() => navigate('/login'), 1500);
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
-        }
-      } else if (err.message.includes('timeout')) {
-        errorMessage = 'Request timed out. Please try again.';
-      }
-
+      const errorMessage = err.response?.data?.message || 'Error sending verification code.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVerificationSubmit = async (e) => {
+  const handleVerifyCode = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -172,50 +73,44 @@ const LinkMinecraft = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/auth/link-minecraft`,
-        { username: minecraftUsername, verificationCode },
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        }
-      );
-
-      setSuccess(response.data.message || 'Minecraft account linked successfully!');
-      setTimeout(() => navigate('/dashboard'), 2000);
-
-    } catch (err) {
-      let errorMessage = 'Failed to link Minecraft account';
-      
-      if (err.response) {
-        if (err.response.status === 401) {
-          errorMessage = 'Session expired. Please login again.';
-          setTimeout(() => navigate('/login'), 1500);
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
-        }
+      if (!token) {
+        navigate('/login');
+        return;
       }
+
+      // API call to backend to verify code and link Minecraft account
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/auth/verify-minecraft-link`,
+        { username: minecraftUsername, code: verificationCode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setSuccess(response.data.message || 'Minecraft account linked successfully!');
+      // Update the user context in the App component and local storage
+      if (onLoginSuccess && response.data.user) {
+        onLoginSuccess({ user: response.data.user, token: localStorage.getItem('token') }); // Pass the updated user and current token
+      }
+      setTimeout(() => navigate('/dashboard'), 2000); // Redirect to dashboard
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || 'Failed to link Minecraft account.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
-
   return (
-    <Container>
-      <Title>Link Your Minecraft Account</Title>
+    <div className="link-minecraft-container">
+      <h2 className="link-minecraft-title">{step === 1 ? 'Link Your Minecraft Account' : 'Enter Verification Code'}</h2>
       
-      {error && <ErrorMessage>{error}</ErrorMessage>}
-      {success && <SuccessMessage>{success}</SuccessMessage>}
+      {error && <p className="link-minecraft-message link-minecraft-error">{error}</p>}
+      {success && <p className="link-minecraft-message link-minecraft-success">{success}</p>}
       
       {step === 1 ? (
-        <Form onSubmit={handleUsernameSubmit}>
-          <FormGroup>
-            <Label htmlFor="minecraft-username">Minecraft Username</Label>
-            <Input
+        <form onSubmit={handleSendCode} className="link-minecraft-form">
+          <div className="link-minecraft-form-group">
+            <label htmlFor="minecraft-username" className="link-minecraft-label">Minecraft Username</label>
+            <input
               id="minecraft-username"
               type="text"
               value={minecraftUsername}
@@ -223,33 +118,33 @@ const LinkMinecraft = () => {
               placeholder="Enter your Minecraft username"
               required
               maxLength={16}
+              className="link-minecraft-input"
             />
-          </FormGroup>
-          
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Sending Code...' : 'Get Verification Code'}
-          </Button>
-        </Form>
+          </div>
+          <button type="submit" disabled={isLoading} className="link-minecraft-button">
+            {isLoading ? 'Sending Code...' : 'Send Verification Code'}
+          </button>
+        </form>
       ) : (
-        <Form onSubmit={handleVerificationSubmit}>
-          <FormGroup>
-            <Label htmlFor="verification-code">Verification Code</Label>
-            <Input
+        <form onSubmit={handleVerifyCode} className="link-minecraft-form">
+          <div className="link-minecraft-form-group">
+            <label htmlFor="verification-code" className="link-minecraft-label">Verification Code</label>
+            <input
               id="verification-code"
               type="text"
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value)}
               placeholder="Enter the code from in-game"
               required
+              className="link-minecraft-input"
             />
-          </FormGroup>
-          
-          <Button type="submit" disabled={isLoading}>
+          </div>
+          <button type="submit" disabled={isLoading} className="link-minecraft-button">
             {isLoading ? 'Verifying...' : 'Link Account'}
-          </Button>
-        </Form>
+          </button>
+        </form>
       )}
-    </Container>
+    </div>
   );
 };
 

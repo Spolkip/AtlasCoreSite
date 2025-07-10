@@ -1,9 +1,12 @@
+// backend/controllers/authController.js
 const UserAuth = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { mojangService } = require('../services/mojangService');
-const axios = require('axios');
+const axios = require('axios'); // Ensure axios is imported
+const { mojangService } = require('../services/mojangService'); // Keep this, might be used in other places or future
+const { collection, getDocs, query, where } = require('firebase/firestore'); // Import necessary Firestore functions
+const { FIREBASE_DB } = require('../config/firebase'); // Import Firebase DB instance
 
 // Helper to create a consistent user object for API responses
 const toUserResponse = (user) => ({
@@ -14,6 +17,36 @@ const toUserResponse = (user) => ({
   isVerified: user.is_verified,
   minecraft_uuid: user.minecraft_uuid
 });
+
+// Function to call the Minecraft plugin's webhook
+const callMinecraftPlugin = async (endpoint, payload) => {
+    try {
+        // Use environment variables for the plugin's URL and secret for better security and configurability
+        const pluginUrl = `http://localhost:${process.env.WEBHOOK_PORT || 4567}${endpoint}`;
+        const secret = process.env.WEBHOOK_SECRET; 
+
+        if (!secret) {
+            throw new Error('WEBHOOK_SECRET is not defined in backend .env');
+        }
+
+        const response = await axios.post(pluginUrl, payload, {
+            headers: {
+                'Authorization': `Bearer ${secret}`,
+                'Content-Type': 'application/json'
+            },
+            timeout: 10000 // 10 seconds timeout
+        });
+        return response.data;
+    } catch (error) {
+        console.error(`Error calling Minecraft plugin endpoint ${endpoint}:`, error.response?.data || error.message);
+        // Extract status and message from plugin's error response if available
+        const status = error.response?.status || 500;
+        const message = error.response?.data?.message || `Failed to communicate with Minecraft server: ${error.message}`;
+        // Re-throw an error with a custom status property to be caught by the route handler
+        throw Object.assign(new Error(message), { status });
+    }
+};
+
 
 // @desc    Register a new user
 exports.registerUser = async (req, res) => {
@@ -98,67 +131,140 @@ exports.getUserProfile = async (req, res) => {
     }
 };
 
-// @desc    Send verification code to player in-game
+// @desc    Request verification code from Minecraft server
 // @route   POST /api/v1/auth/send-verification-code
 exports.sendVerificationCode = async (req, res) => {
     const { username } = req.body;
     try {
-        const spigotWebhookUrl = process.env.SPIGOT_WEBHOOK_URL;
-        const spigotSecret = process.env.SPIGOT_SECRET_KEY;
-        if (!spigotWebhookUrl || !spigotSecret) {
-            return res.status(500).json({ success: false, message: 'Spigot webhook not configured.' });
+        if (!username) {
+            return res.status(400).json({ success: false, message: 'Minecraft username is required.' });
+        }
+        // Call Minecraft plugin to generate and send code
+        const pluginResponse = await callMinecraftPlugin('/generate-and-send-code', { username });
+
+        if (!pluginResponse.success) {
+            // The plugin might return status and message on failure
+            return res.status(pluginResponse.status || 500).json({ success: false, message: pluginResponse.message || 'Failed to send verification code in-game.' });
+        }
+        res.status(200).json({ success: true, message: 'Verification code sent to player in-game.' });
+    } catch (error) {
+        console.error('Error in sendVerificationCode:', error);
+        // Use the status from the thrown error (if it has one) or default to 500
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error requesting verification code.' });
+    }
+};
+
+// @desc    Verify code and link Minecraft account
+// @route   POST /api/v1/auth/verify-minecraft-link
+exports.verifyMinecraftLink = async (req, res) => {
+    const { username, code } = req.body;
+    const userId = req.user.id; // from 'protect' middleware
+    try {
+        if (!username || !code) {
+            return res.status(400).json({ success: false, message: 'Minecraft username and verification code are required.' });
         }
 
-        const response = await axios.post(`${spigotWebhookUrl}/generate-and-send-code`, 
-            { username },
-            { headers: { Authorization: `Bearer ${spigotSecret}` } }
+        // Call Minecraft plugin to verify code
+        const pluginResponse = await callMinecraftPlugin('/verify-code', { username, code });
+
+        if (!pluginResponse.success) {
+            return res.status(pluginResponse.status || 400).json({ success: false, message: pluginResponse.message || 'Invalid or expired verification code.' });
+        }
+
+        const minecraftUUID = pluginResponse.uuid; // Get UUID from plugin response
+
+        const user = await UserAuth.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found in web database.' });
+        }
+
+        // Update user in web database
+        await user.update({ minecraft_uuid: minecraftUUID, is_verified: true });
+        
+        // Respond with updated user data
+        res.status(200).json({ success: true, message: 'Minecraft account linked successfully.', user: toUserResponse(user) });
+
+    } catch (error) {
+        console.error('Error in verifyMinecraftLink:', error);
+        // Use the status from the thrown error (if it has one) or default to 500
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error linking Minecraft account.' });
+    }
+};
+
+// @desc    Unlink Minecraft account
+// @route   PUT /api/v1/auth/unlink-minecraft
+exports.unlinkMinecraft = async (req, res) => {
+    const userId = req.user.id; // from 'protect' middleware
+    try {
+        const user = await UserAuth.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // Clear Minecraft UUID and set is_verified to false
+        await user.update({ minecraft_uuid: '', is_verified: false });
+
+        res.status(200).json({ success: true, message: 'Minecraft account unlinked successfully.', user: toUserResponse(user) });
+    } catch (error) {
+        console.error('Error in unlinkMinecraft:', error);
+        res.status(500).json({ success: false, message: 'Server error unlinking Minecraft account.' });
+    }
+};
+
+// @desc    Get real-time server statistics from Minecraft plugin
+// @route   GET /api/v1/auth/server-stats
+exports.getServerStats = async (req, res) => {
+    try {
+        // Call Minecraft plugin to get server stats
+        // The stats endpoint in the plugin is a GET request, but it expects a secret in the body
+        // We'll simulate a POST request with the secret for consistency with how the plugin is set up.
+        // The plugin's StatsTask.java sends a POST request to /api/v1/server/stats.
+        // So, we need to make a POST request here to match.
+        const pluginResponse = await axios.post(
+            `http://localhost:${process.env.WEBHOOK_PORT || 4567}/server-stats`, // Assuming the plugin exposes this endpoint
+            { secret: process.env.WEBHOOK_SECRET }, // Send the secret in the body
+            { timeout: 5000 } // Shorter timeout for stats
         );
 
-        if (response.data.success) {
-            res.status(200).json({ success: true, message: 'Verification code sent.' });
-        } else {
-            res.status(400).json({ success: false, message: response.data.message || 'Failed to send code.' });
+        if (!pluginResponse.data.success) {
+            return res.status(pluginResponse.data.status || 500).json({ success: false, message: pluginResponse.data.message || 'Failed to retrieve server stats from plugin.' });
         }
+
+        res.status(200).json({ success: true, stats: pluginResponse.data });
     } catch (error) {
-        console.error('Error sending verification code:', error);
-        res.status(500).json({ success: false, message: 'Server error sending verification code.' });
+        console.error('Error in getServerStats:', error.message);
+        // Check if the error is due to connection refusal (plugin not running or wrong port)
+        if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+            return res.status(503).json({ success: false, message: 'Minecraft server is currently offline or unreachable.' });
+        }
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error fetching Minecraft server stats.' });
     }
 };
 
 
-// @desc    Link Minecraft account
+// @desc    Link Minecraft account (direct UUID linking - existing, kept for compatibility/admin use if needed)
 // @route   POST /api/v1/auth/link-minecraft
 exports.linkMinecraft = async (req, res) => {
-    const { username, verificationCode } = req.body;
-    const userId = req.user.id;
+    const { minecraftUUID } = req.body;
+    const userId = req.user.id; // from 'protect' middleware
     try {
-        if (!username || !verificationCode) {
-            return res.status(400).json({ success: false, message: 'Minecraft username and verification code are required.' });
+        if (!minecraftUUID) {
+            return res.status(400).json({ success: false, message: 'Minecraft UUID is required.' });
         }
+        // Optional: Verify UUID with Mojang API if you want to ensure it's a real UUID
+        // const mojangUsername = await mojangService.getUsernameFromUUID(minecraftUUID);
+        // if (!mojangUsername) {
+        //     return res.status(400).json({ success: false, message: 'Invalid Minecraft UUID provided.' });
+        // }
 
-        const spigotWebhookUrl = process.env.SPIGOT_WEBHOOK_URL;
-        const spigotSecret = process.env.SPIGOT_SECRET_KEY;
-        if (!spigotWebhookUrl || !spigotSecret) {
-            return res.status(500).json({ success: false, message: 'Spigot webhook not configured.' });
+        const user = await UserAuth.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
         }
-
-        const response = await axios.post(`${spigotWebhookUrl}/verify-code`, 
-            { username, code: verificationCode },
-            { headers: { Authorization: `Bearer ${spigotSecret}` } }
-        );
-
-        if (response.data.success) {
-            const user = await UserAuth.findById(userId);
-            if (!user) {
-                return res.status(404).json({ success: false, message: 'User not found.' });
-            }
-            await user.update({ minecraft_uuid: response.data.uuid, is_verified: true });
-            res.status(200).json({ success: true, message: 'Minecraft account linked successfully.', user: toUserResponse(user) });
-        } else {
-            res.status(400).json({ success: false, message: response.data.message || 'Invalid verification code.' });
-        }
+        await user.update({ minecraft_uuid: minecraftUUID, is_verified: true }); // Also mark as verified
+        res.status(200).json({ success: true, message: 'Minecraft account linked successfully.', user: toUserResponse(user) });
     } catch (error) {
-        console.error('Error in linkMinecraft:', error);
+        console.error('Error in linkMinecraft (direct UUID):', error);
         res.status(500).json({ success: false, message: 'Server error linking Minecraft account.' });
     }
 };
@@ -201,7 +307,7 @@ exports.resetPassword = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please provide a token and a new password.' });
         }
         
-        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+        const hashedToken = crypto.createHash('sha512').update(token).digest('hex'); // Changed to SHA512 for consistency
 
         const q = query(collection(FIREBASE_DB, 'users'), where('reset_password_token', '==', hashedToken), where('reset_password_expire', '>', new Date()));
         const querySnapshot = await getDocs(q);

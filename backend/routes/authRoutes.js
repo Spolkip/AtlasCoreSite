@@ -7,7 +7,10 @@ const {
   forgotPassword,
   resetPassword,
   linkMinecraft,
-  sendVerificationCode
+  sendVerificationCode, // ADDED: New function for requesting verification code
+  verifyMinecraftLink, // ADDED: New function for verifying code and linking
+  unlinkMinecraft, // ADDED: New function for unlinking Minecraft account
+  getServerStats // ADDED: New function for getting server stats
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -27,9 +30,23 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
 // @route   POST /api/v1/auth/send-verification-code
+// Protect this route as it requires a logged-in user to initiate linking
 router.post('/send-verification-code', protect, sendVerificationCode);
 
-// @route   POST /api/v1/auth/link-minecraft
+// @route   POST /api/v1/auth/verify-minecraft-link
+// Protect this route as it updates sensitive user information
+router.post('/verify-minecraft-link', protect, verifyMinecraftLink);
+
+// @route   PUT /api/v1/auth/unlink-minecraft
+// Protect this route as it updates sensitive user information
+router.put('/unlink-minecraft', protect, unlinkMinecraft);
+
+// @route   GET /api/v1/auth/server-stats
+router.get('/server-stats', getServerStats); // No protection needed for public stats
+
+
+// @route   POST /api/v1/auth/link-minecraft (Direct UUID link - existing, kept for now)
+// This route can be used for direct UUID linking or by admins.
 router.post('/link-minecraft', protect, linkMinecraft);
 
 module.exports = router;

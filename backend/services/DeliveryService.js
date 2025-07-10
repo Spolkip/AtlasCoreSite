@@ -7,7 +7,7 @@ const _executeCommand = async (command, user, product) => {
     if (!command || !command.trim()) return;
 
     const pluginUrl = process.env.PLUGIN_API_URL;
-    const pluginSecret = process.env.PLUGIN_WEBHOOK_SECRET;
+    const pluginSecret = process.env.WEBHOOK_SECRET;
 
     if (!pluginUrl || !pluginSecret) {
         console.error('Plugin URL or secret is not configured in the backend .env file.');

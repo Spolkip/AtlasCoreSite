@@ -78,15 +78,22 @@ const LandingPage = () => {
   useEffect(() => {
     const fetchServerStats = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/v1/server/public-stats');
-        if (data.success && data.data) {
-          setServerStats(data.data);
+        // FIX: Changed axios.post to axios.get to match the backend route definition
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/v1/auth/server-stats`
+        );
+        
+        if (response.data.success && response.data.stats) {
+          setServerStats({
+            onlinePlayers: response.data.stats.onlinePlayers,
+            serverStatus: 'online',
+          });
         } else {
-          console.error('API call successful, but no stats data received.');
+          console.error('API call successful, but no stats data received or success was false.');
           setServerStats({ onlinePlayers: '??', serverStatus: 'offline' });
         }
       } catch (error) {
-        console.error('Could not fetch server stats', error);
+        console.error('Could not fetch server stats:', error.message);
         setServerStats({ onlinePlayers: '??', serverStatus: 'offline' });
       } finally {
         // Set loading to false only after the first fetch
@@ -112,6 +119,7 @@ const LandingPage = () => {
   const copyToClipboard = () => {
     const ipElement = document.getElementById('server-ip-to-copy');
     if (ipElement) {
+      // Using document.execCommand('copy') for broader compatibility in iframes
       const tempInput = document.createElement('input');
       tempInput.value = ipElement.innerText;
       document.body.appendChild(tempInput);
