@@ -14,16 +14,28 @@ const _executeCommand = async (command, user, product) => {
         return;
     }
 
+    // Prepare placeholders for the plugin to resolve
+    // The plugin will handle {player}, {world}, {onlinePlayers}, {maxPlayers}, {newPlayersToday}
+    // The backend will handle {uuid} and {username} (from web user data)
     const processedCommand = command
-        .replace(/{uuid}/g, user.minecraft_uuid)
-        .replace(/{username}/g, user.username)
-        .replace(/{product_id}/g, product.id)
-        .replace(/{product_name}/g, product.name);
+        .replace(/{uuid}/g, user.minecraft_uuid || 'N/A') // Ensure UUID is replaced
+        .replace(/{username}/g, user.username || 'N/A'); // Ensure username is replaced
+
+    // NEW: Create a player context object to send to the plugin
+    const playerContext = {
+        playerName: user.minecraft_username || user.username, // Use Minecraft username if available, else web username
+        worldName: 'world', // Placeholder: You might need to get this dynamically if your server supports it
+        uuid: user.minecraft_uuid || 'N/A',
+        username: user.username || 'N/A' // Web username
+    };
 
     try {
         await axios_delivery.post(
             `${pluginUrl}/execute-command`,
-            { command: processedCommand },
+            { 
+                command: processedCommand,
+                playerContext: playerContext // NEW: Send player context
+            },
             { headers: { 'Authorization': `Bearer ${pluginSecret}` } }
         );
         console.log(`Successfully sent command to plugin: ${processedCommand}`);
