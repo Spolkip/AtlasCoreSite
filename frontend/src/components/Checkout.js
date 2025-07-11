@@ -5,48 +5,66 @@ import { useNavigate } from 'react-router-dom';
 import '../css/Checkout.css';
 import '../css/AuthForms.css'; // Reusing some form styles
 
-const Checkout = ({ cart, user, settings }) => {
+// --- START OF EDIT: Pass exchangeRates as a prop ---
+const Checkout = ({ cart, user, settings, exchangeRates }) => {
+// --- END OF EDIT ---
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('paypal');
     
-    // New state for credit card details
     const [cardDetails, setCardDetails] = useState({
         cardNumber: '',
-        expiryDate: '', // MM/YY
+        expiryDate: '',
         cvc: '',
     });
 
     const navigate = useNavigate();
 
-    const totalAmount = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+    // --- START OF EDIT: Currency conversion logic for display ---
+    const getCurrencySymbol = (currencyCode) => {
+        const symbols = { USD: '$', EUR: '€', GBP: '£' };
+        return symbols[currencyCode] || '$';
+    };
 
-    // Handler for credit card input changes
+    const getDisplayPrice = (basePrice, targetCurrency) => {
+        if (!exchangeRates || !targetCurrency || targetCurrency === 'USD') {
+            return basePrice;
+        }
+        const rate = exchangeRates[targetCurrency];
+        return rate ? basePrice * rate : basePrice;
+    };
+
+    const totalAmountInDisplayCurrency = cart.reduce((total, item) => {
+        const displayPrice = getDisplayPrice(item.price, settings?.currency);
+        return total + displayPrice * item.quantity;
+    }, 0);
+    // --- END OF EDIT ---
+
+
     const handleCardDetailsChange = (e) => {
         const { name, value } = e.target;
         setCardDetails(prev => ({ ...prev, [name]: value }));
     };
 
-    // Basic client-side validation for credit card details
     const validateCreditCardDetails = () => {
         const { cardNumber, expiryDate, cvc } = cardDetails;
         if (!cardNumber || !expiryDate || !cvc) {
             setError("All credit card fields are required.");
             return false;
         }
-        if (!/^\d{16}$/.test(cardNumber)) { // Simple 16-digit check
+        if (!/^\d{16}$/.test(cardNumber)) {
             setError("Card number must be 16 digits.");
             return false;
         }
-        if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(expiryDate)) { // MM/YY format
+        if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(expiryDate)) {
             setError("Expiry date must be in MM/YY format (e.g., 12/25).");
             return false;
         }
-        if (!/^\d{3,4}$/.test(cvc)) { // 3 or 4 digits
+        if (!/^\d{3,4}$/.test(cvc)) {
             setError("CVC must be 3 or 4 digits.");
             return false;
         }
-        setError(''); // Clear any previous errors
+        setError('');
         return true;
     };
 
@@ -56,10 +74,9 @@ const Checkout = ({ cart, user, settings }) => {
             return;
         }
         
-        // Perform client-side validation for credit card if selected
         if (paymentMethod === 'credit-card') {
             if (!validateCreditCardDetails()) {
-                return; // Stop if validation fails
+                return;
             }
         }
 
@@ -73,9 +90,10 @@ const Checkout = ({ cart, user, settings }) => {
                     productId: item.id,
                     quantity: item.quantity,
                     name: item.name,
-                    price: item.price
+                    price: item.price // Always send base price
                 })),
-                totalAmount: totalAmount,
+                // --- EDIT: Send the converted total and the selected currency ---
+                totalAmount: totalAmountInDisplayCurrency,
                 paymentMethod: paymentMethod,
                 currency: settings?.currency || 'USD'
             };
@@ -87,33 +105,25 @@ const Checkout = ({ cart, user, settings }) => {
             );
             
             if (paymentMethod === 'paypal' && response.data.paymentUrl) {
-                // Redirect to PayPal for actual payment flow
                 window.location.href = response.data.paymentUrl;
-            } else if (response.data.success) { // For all simulated methods
-                // For simulated credit card, directly navigate to success
+            } else if (response.data.success) {
                 navigate('/payment/success');
             } else {
-                // Fallback for unexpected success response without paymentUrl (e.g., if backend logic changes)
-                // If backend explicitly returns success: false, navigate to cancel
                 navigate('/payment/cancel'); 
             }
 
         } catch (err) {
-            // Display specific error message from backend if available
             const errorMessage = err.response?.data?.message || 'Failed to create order. Please try again.';
             setError(errorMessage);
             setLoading(false);
 
-            // FIX: If there's an error from the backend, navigate to cancel page
-            // This is crucial for simulated payments where no PayPal redirect happens
-            if (err.response) { // Only navigate if it's an actual HTTP response error
+            if (err.response) {
                 navigate(`/payment/cancel?transaction_id=${err.response.data.orderId || 'unknown'}`);
             }
         }
     };
 
     if (!user) {
-        // Redirect to login if user is not authenticated
         navigate('/login');
         return null;
     }
@@ -140,13 +150,13 @@ const Checkout = ({ cart, user, settings }) => {
                         {cart.map(item => (
                             <div key={item.id} className="cart-item-summary">
                                 <span>{item.name} x {item.quantity}</span>
-                                <span>{settings?.currencySymbol || '$'}{(item.price * item.quantity).toFixed(2)}</span>
+                                <span>{getCurrencySymbol(settings?.currency)}{getDisplayPrice(item.price * item.quantity, settings?.currency).toFixed(2)}</span>
                             </div>
                         ))}
                         <hr />
                         <div className="cart-total-summary">
                             <strong>Total:</strong>
-                            <strong>{settings?.currencySymbol || '$'}{totalAmount.toFixed(2)}</strong>
+                            <strong>{getCurrencySymbol(settings?.currency)}{totalAmountInDisplayCurrency.toFixed(2)}</strong>
                         </div>
                     </>
                 )}
@@ -166,14 +176,12 @@ const Checkout = ({ cart, user, settings }) => {
                 >
                     Credit Card (Simulation)
                 </div>
-                {/* NEW: Bank Transfer Simulation */}
                 <div
                     className={`payment-option ${paymentMethod === 'bank-transfer' ? 'selected' : ''}`}
                     onClick={() => setPaymentMethod('bank-transfer')}
                 >
                     Bank Transfer (Simulation)
                 </div>
-                {/* NEW: Crypto Payment Simulation */}
                 <div
                     className={`payment-option ${paymentMethod === 'crypto' ? 'selected' : ''}`}
                     onClick={() => setPaymentMethod('crypto')}
@@ -182,7 +190,6 @@ const Checkout = ({ cart, user, settings }) => {
                 </div>
             </div>
 
-            {/* Credit Card Input Fields (conditionally rendered) */}
             {paymentMethod === 'credit-card' && (
                 <div className="credit-card-form">
                     <div className="form-group">

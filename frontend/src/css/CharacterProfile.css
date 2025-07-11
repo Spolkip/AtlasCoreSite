@@ -25,6 +25,8 @@
   background-color: rgba(0, 0, 0, 0.3);
   border: 2px solid #555;
   cursor: grab;
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .skin-viewer-container:grabbing {
@@ -98,14 +100,19 @@
     margin-top: 1.5rem;
 }
 
-.skills-lower-section {
+.skills-lower-section,
+.account-info-section,
+.recent-activity-section {
     background-color: rgba(0, 0, 0, 0.6);
     padding: 2rem;
     border: 3px solid #000;
     box-shadow: 0 0 20px rgba(0,0,0,0.7);
 }
 
-.skills-lower-section h3, .skills-combat-panel h3 {
+.skills-lower-section h3, 
+.skills-combat-panel h3,
+.account-info-section h3,
+.recent-activity-section h3 {
     font-size: 1.8rem;
     color: #FFFF55;
     margin-top: 0;
@@ -118,23 +125,6 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* Four columns for the main skill bars */
     gap: 1rem 2rem; /* Row and column gap */
-}
-
-/* --- START OF EDIT: Added styles for the new Account Information section --- */
-.account-info-section {
-    background-color: rgba(0, 0, 0, 0.6);
-    padding: 2rem;
-    border: 3px solid #000;
-    box-shadow: 0 0 20px rgba(0,0,0,0.7);
-}
-
-.account-info-section h3 {
-    font-size: 1.8rem;
-    color: #FFFF55;
-    margin-top: 0;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #555;
 }
 
 .account-info-grid {
@@ -165,7 +155,60 @@
     color: #fff;
     word-break: break-all;
 }
-/* --- END OF EDIT --- */
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 0;
+    border-bottom: 1px dashed #444;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.activity-icon.purchase {
+    background-color: #27ae60; /* Green */
+}
+
+.activity-details {
+    flex-grow: 1;
+}
+
+.activity-description {
+    display: block;
+    font-size: 1.3rem;
+    color: #fff;
+}
+
+.activity-timestamp {
+    font-size: 1rem;
+    color: #999;
+}
+
+.activity-value {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #2ecc71; /* Green */
+}
 
 .dashboard-button.small {
     padding: 10px 20px !important;

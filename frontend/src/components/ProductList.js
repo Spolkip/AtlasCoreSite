@@ -1,55 +1,68 @@
 // frontend/src/components/ProductList.js
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'; // Import Material-UI icon
-import CloseIcon from '@mui/icons-material/Close'; // Import Close icon
-import '../css/ProductList.css'; // Contains styles for the store and now the cart sidebar
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import CloseIcon from '@mui/icons-material/Close';
+import '../css/ProductList.css';
 
-function ProductList({ isAdmin, cart, setCart, settings }) {
+function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
     const [categorizedProducts, setCategorizedProducts] = useState({});
     const [selectedCategory, setSelectedCategory] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isCartSidebarOpen, setIsCartSidebarOpen] = useState(false); // New state for sidebar
-    const navigate = useNavigate(); // Initialize navigate
+    const [isCartSidebarOpen, setIsCartSidebarOpen] = useState(false);
+    const navigate = useNavigate();
 
     const getCurrencySymbol = (currencyCode) => {
-        const symbols = {
-            USD: '$',
-            EUR: '€',
-            GBP: '£',
-        };
+        const symbols = { USD: '$', EUR: '€', GBP: '£' };
         return symbols[currencyCode] || '$';
     };
 
+    // --- START OF FIX: Ensure price is handled as a number ---
+    const getDisplayPrice = (basePrice, targetCurrency) => {
+        const numericBasePrice = Number(basePrice);
+        if (isNaN(numericBasePrice)) {
+            console.error("Invalid basePrice provided to getDisplayPrice:", basePrice);
+            return 0; 
+        }
+
+        if (!exchangeRates || !targetCurrency || targetCurrency === 'USD') {
+            return numericBasePrice;
+        }
+
+        const rate = exchangeRates[targetCurrency];
+        return rate ? numericBasePrice * rate : numericBasePrice;
+    };
+    // --- END OF FIX ---
+
     const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
-    const totalCartAmount = cart.reduce((total, item) => total + Number(item.price) * item.quantity, 0); // Ensure item.price is a number
+    const totalCartAmount = cart.reduce((total, item) => {
+        const displayPrice = getDisplayPrice(item.price, settings?.currency);
+        return total + displayPrice * item.quantity;
+    }, 0);
 
     const addToCart = (product) => {
         setCart(prevCart => {
             const existingProduct = prevCart.find(item => item.id === product.id);
             if (existingProduct) {
-                // Check if adding more would exceed stock, unless stock is infinite (null)
                 if (product.stock !== null && existingProduct.quantity + 1 > product.stock) {
-                    // Optionally, show an alert or message to the user
                     alert(`Cannot add more "${product.name}". Only ${product.stock} left in stock.`);
-                    return prevCart; // Don't update cart
+                    return prevCart;
                 }
                 return prevCart.map(item =>
                     item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
                 );
             } else {
-                // Check if adding the first item would exceed stock, unless stock is infinite (null)
                 if (product.stock !== null && 1 > product.stock) {
                      alert(`Cannot add "${product.name}". Only ${product.stock} left in stock.`);
-                     return prevCart; // Don't update cart
+                     return prevCart;
                 }
                 return [...prevCart, { ...product, quantity: 1 }];
             }
         });
-        setIsCartSidebarOpen(true); // Open sidebar when item is added
+        setIsCartSidebarOpen(true);
     };
 
     const handleQuantityChange = (product, delta) => {
@@ -58,10 +71,9 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
             if (existingProduct) {
                 const newQuantity = existingProduct.quantity + delta;
                 
-                // Check if new quantity exceeds stock, unless stock is infinite (null)
                 if (product.stock !== null && newQuantity > product.stock) {
                     alert(`Cannot add more "${product.name}". Only ${product.stock} left in stock.`);
-                    return prevCart; // Don't update cart
+                    return prevCart;
                 }
 
                 if (newQuantity <= 0) {
@@ -87,7 +99,6 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
         setLoading(true);
         setError(null);
         try {
-            // FIX: Get token and define config inside fetchData to ensure it's always fresh
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -108,7 +119,7 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
         } finally {
             setLoading(false);
         }
-    }, []); // No dependencies needed for fetchData as token/config are now fetched inside
+    }, []);
 
     useEffect(() => {
         fetchData();
@@ -134,18 +145,15 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
                 </Link>
             )}
 
-            {/* Cart Icon */}
             <div className="cart-icon-container" onClick={() => setIsCartSidebarOpen(true)}>
                 <ShoppingCartIcon className="cart-icon" />
                 {cartItemCount > 0 && <span className="cart-count-badge">{cartItemCount}</span>}
             </div>
 
-            {/* Cart Sidebar Overlay */}
             {isCartSidebarOpen && (
                 <div className="cart-sidebar-overlay" onClick={() => setIsCartSidebarOpen(false)}></div>
             )}
 
-            {/* Cart Sidebar */}
             <div className={`cart-sidebar ${isCartSidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
                     <h2>Your Cart</h2>
@@ -162,7 +170,7 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
                                 <div className="sidebar-cart-item" key={item.id}>
                                     <div className="sidebar-cart-item-info">
                                         <h3>{item.name}</h3>
-                                        <p>{getCurrencySymbol(settings?.currency)}{Number(item.price).toFixed(2)}</p> {/* Ensure price is number */}
+                                        <p>{getCurrencySymbol(settings?.currency)}{getDisplayPrice(item.price, settings?.currency).toFixed(2)}</p>
                                     </div>
                                     <div className="sidebar-cart-item-controls">
                                         <button onClick={() => handleQuantityChange(item, -1)}>-</button>
@@ -183,7 +191,7 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
                                 <span>{getCurrencySymbol(settings?.currency)}{totalCartAmount.toFixed(2)}</span>
                             </div>
                             <button className="mc-button primary checkout-btn" onClick={() => {
-                                setIsCartSidebarOpen(false); // Close sidebar before navigating
+                                setIsCartSidebarOpen(false);
                                 navigate('/checkout');
                             }}>
                                 Proceed to Checkout
@@ -213,12 +221,15 @@ function ProductList({ isAdmin, cart, setCart, settings }) {
                     categorizedProducts[selectedCategory].map(product => (
                         <div className="product-card" key={product.id}>
                             <div className="product-icon">
-                                <span>🛒</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="9" cy="21" r="1"></circle>
+                                    <circle cx="20" cy="21" r="1"></circle>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                </svg>
                             </div>
                             <h3 className="product-name">{product.name}</h3>
                             <p className="product-description">{product.description}</p>
-                            <p className="product-price">{getCurrencySymbol(settings?.currency)}{Number(product.price).toFixed(2)}</p>
-                            {/* FIX: Conditionally render "Add to Cart" or "Out of Stock" */}
+                            <p className="product-price">{getCurrencySymbol(settings?.currency)}{getDisplayPrice(product.price, settings?.currency).toFixed(2)}</p>
                             {product.stock === null || product.stock > 0 ? (
                                 <button className="mc-button purchase-button" onClick={() => addToCart(product)}>Add to Cart</button>
                             ) : (

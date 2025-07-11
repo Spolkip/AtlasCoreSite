@@ -12,6 +12,11 @@ class Order {
     this.totalAmount = data.totalAmount;
     this.status = data.status || 'pending';
     this.paymentIntentId = data.paymentIntentId || null;
+    this.currency = data.currency || 'USD';
+    // --- START OF EDIT: Added fields for payment processing ---
+    this.processedAmount = data.processedAmount || null;
+    this.processedCurrency = data.processedCurrency || null;
+    // --- END OF EDIT ---
     this.createdAt = data.createdAt || new Date();
     this.updatedAt = data.updatedAt || new Date();
   }
@@ -23,6 +28,11 @@ class Order {
       totalAmount: this.totalAmount,
       status: this.status,
       paymentIntentId: this.paymentIntentId,
+      currency: this.currency,
+      // --- START OF EDIT: Save new fields to Firestore ---
+      processedAmount: this.processedAmount,
+      processedCurrency: this.processedCurrency,
+      // --- END OF EDIT ---
       createdAt: this.createdAt,
       updatedAt: new Date(),
     };
@@ -50,7 +60,6 @@ Order.findById = async function(id) {
   return orderDocSnap.exists() ? new Order({ id: orderDocSnap.id, ...orderDocSnap.data() }) : null;
 };
 
-// In your Order.js model
 Order.findByUserId = async function(userId) {
   const q = query(ordersCollection, where('userId', '==', userId));
   const querySnapshot = await getDocs(q);

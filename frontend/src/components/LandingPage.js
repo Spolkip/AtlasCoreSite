@@ -8,7 +8,7 @@ const LandingPage = () => {
   const serverIp = 'play.atlascore.net';
 
   // State for server status and player count
-  const [serverStats, setServerStats] = useState({
+  var [serverStats, setServerStats] = useState({
     onlinePlayers: 0,
     serverStatus: 'offline',
   });

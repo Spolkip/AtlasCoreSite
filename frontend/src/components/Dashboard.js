@@ -93,6 +93,7 @@ const StatBar = ({ label, value, max, type }) => {
  */
 const Dashboard = ({ user, onUserUpdate }) => {
     const [playerStats, setPlayerStats] = useState(null);
+    const [activityFeed, setActivityFeed] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -116,32 +117,48 @@ const Dashboard = ({ user, onUserUpdate }) => {
     ];
 
     useEffect(() => {
-        if (!user || !user.minecraft_uuid) {
+        if (!user) {
             setLoading(false);
             return;
         }
-        const fetchPlayerStats = async () => {
+        const fetchDashboardData = async () => {
             setLoading(true);
             setError('');
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            
+            const promises = [
+                axios.get('http://localhost:5000/api/v1/users/activity', config)
+            ];
+
+            if (user.minecraft_uuid) {
+                promises.push(axios.post('http://localhost:5000/api/v1/player-stats', {}, config));
+            } else {
+                promises.push(Promise.resolve(null));
+            }
+
             try {
-                const token = localStorage.getItem('token');
-                const response = await axios.post(
-                    'http://localhost:5000/api/v1/player-stats',
-                    {},
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-                if (response.data.success) {
-                    setPlayerStats(response.data.stats);
-                } else {
-                    setError(response.data.message || 'Failed to fetch player stats.');
+                const [activityResponse, statsResponse] = await Promise.all(promises);
+
+                if (activityResponse && activityResponse.data.success) {
+                    setActivityFeed(activityResponse.data.activity);
+                } else if(activityResponse) {
+                    setError(prev => prev + (activityResponse.data.message || 'Failed to fetch activity. '));
                 }
+
+                if (statsResponse && statsResponse.data.success) {
+                    setPlayerStats(statsResponse.data.stats);
+                } else if (statsResponse) {
+                    setError(prev => prev + (statsResponse.data.message || 'Failed to fetch player stats. '));
+                }
+
             } catch (err) {
-                setError(err.response?.data?.message || 'An error occurred while fetching in-game stats.');
+                setError(err.response?.data?.message || 'An error occurred while fetching dashboard data.');
             } finally {
                 setLoading(false);
             }
         };
-        fetchPlayerStats();
+        fetchDashboardData();
     }, [user]);
 
     const handleUnlinkMinecraft = async () => {
@@ -184,7 +201,7 @@ const Dashboard = ({ user, onUserUpdate }) => {
             return <div className="loading-container">Loading Character Profile...</div>;
         }
 
-        if (error) {
+        if (error && !playerStats) { // Only show full error if stats fail completely
             return <div className="profile-section"><h2>Could Not Load Stats</h2><p>{error}</p></div>;
         }
 
@@ -236,7 +253,6 @@ const Dashboard = ({ user, onUserUpdate }) => {
                             ))}
                         </div>
                     </div>
-                    {/* --- START OF EDIT: Added Account Information Section --- */}
                     <div className="account-info-section">
                         <h3>Account Information</h3>
                         <div className="account-info-grid">
@@ -254,7 +270,25 @@ const Dashboard = ({ user, onUserUpdate }) => {
                             </div>
                         </div>
                     </div>
-                    {/* --- END OF EDIT --- */}
+                     <div className="recent-activity-section">
+                        <h3>Recent Activity</h3>
+                        {activityFeed.length > 0 ? (
+                            <ul className="activity-list">
+                                {activityFeed.map(item => (
+                                    <li key={item.id} className="activity-item">
+                                        <div className="activity-icon purchase">🛒</div>
+                                        <div className="activity-details">
+                                            <span className="activity-description">{item.description}</span>
+                                            <span className="activity-timestamp">{new Date(item.timestamp).toLocaleString()}</span>
+                                        </div>
+                                        <div className="activity-value">${item.value.toFixed(2)}</div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>No recent purchases to display.</p>
+                        )}
+                    </div>
                 </div>
             );
         }
