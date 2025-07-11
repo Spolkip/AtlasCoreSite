@@ -86,6 +86,19 @@
   background: linear-gradient(90deg, #2980b9, #3498db);
 }
 
+/* --- START OF EDIT: Added styles for skill bars and their grid layout --- */
+.stat-bar-foreground.skill {
+  background: linear-gradient(90deg, #f1c40f, #f39c12); /* Gold to Orange gradient */
+}
+
+.skills-bars-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns for the skill bars */
+    gap: 1rem 2rem; /* Row and column gap */
+}
+/* --- END OF EDIT --- */
+
+
 .skills-section {
   background-color: rgba(0, 0, 0, 0.6);
   padding: 2rem;
@@ -143,6 +156,13 @@
 
 .dashboard-button.danger:hover {
     background-color: #e74c3c;
+}
+
+
+@media (max-width: 900px) {
+    .skills-bars-grid {
+        grid-template-columns: 1fr; /* Single column on smaller screens */
+    }
 }
 
 

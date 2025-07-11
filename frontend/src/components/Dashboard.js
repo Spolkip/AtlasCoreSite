@@ -20,36 +20,32 @@ const SkinViewerComponent = ({ uuid }) => {
             height: 400,
         });
 
-        // --- START OF FIX: More robust async/await error handling ---
-        const skinUrl = `https://cravatar.eu/skin/${uuid}`;
-        const capeUrl = `https://cravatar.eu/cape/${uuid}`;
-        const defaultSkinUrl = "https://cravatar.eu/skin/MHF_Steve";
+        const skinUrl = `https://visage.surgeplay.com/skin/${uuid}`;
+        const capeUrl = `https://visage.surgeplay.com/cape/${uuid}`;
+        const defaultSkinUrl = "https://visage.surgeplay.com/skin/8667ba71b85a4004af54457a9734eed7";
 
         const loadResources = async () => {
             try {
-                // Try to load the player's actual skin
                 await viewer.loadSkin(skinUrl, { model: "slim" });
             } catch (e) {
-                // If it fails (e.g., 404 error), load the default skin as a fallback
                 console.warn(`Could not load custom skin for ${uuid}. Loading default skin.`);
                 try {
                     await viewer.loadSkin(defaultSkinUrl);
                 } catch (fallbackError) {
-                    // If even the fallback fails, log the error but do not crash the app.
                     console.error("Failed to load even the default fallback skin.", fallbackError);
                 }
             }
 
             try {
-                // Attempt to load the cape, but don't worry if it fails.
+                // Attempt to load the cape. The 400 error is expected for players without capes.
                 await viewer.loadCape(capeUrl);
             } catch (e) {
                 // Silently ignore cape loading errors as most players don't have one.
+                console.log(`No cape found for player ${uuid}.`);
             }
         };
 
         loadResources();
-        // --- END OF FIX ---
 
         viewer.animation = new WalkingAnimation();
         viewer.controls.enableRotate = true;
@@ -63,7 +59,6 @@ const SkinViewerComponent = ({ uuid }) => {
         window.addEventListener('resize', handleResize);
         handleResize();
 
-        // Cleanup function
         return () => {
             window.removeEventListener('resize', handleResize);
             if (viewer) {
@@ -76,7 +71,7 @@ const SkinViewerComponent = ({ uuid }) => {
 
 
 /**
- * Helper component for HP/Mana bars.
+ * Helper component for stat bars (HP, Mana, Skills).
  */
 const StatBar = ({ label, value, max, type }) => {
     const percentage = max > 0 ? (Math.min(value, max) / max) * 100 : 0;
@@ -101,6 +96,19 @@ const Dashboard = ({ user, onUserUpdate }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+
+    // --- START OF EDIT: Define AuraSkills array here for use in rendering ---
+    const auraSkills = [
+        { key: 'fighting', name: 'Combat' }, { key: 'mining', name: 'Mining' },
+        { key: 'farming', name: 'Farming' }, { key: 'foraging', name: 'Foraging' },
+        { key: 'fishing', name: 'Fishing' }, { key: 'alchemy', name: 'Alchemy' },
+        { key: 'enchanting', name: 'Enchanting' }, { key: 'excavation', name: 'Excavation' },
+        { key: 'archery', name: 'Archery' }, { key: 'defense', name: 'Defense' },
+        { key: 'endurance', name: 'Endurance' }, { key: 'agility', name: 'Agility' },
+        { key: 'sorcery', name: 'Sorcery' }, { key: 'healing', name: 'Healing' },
+        { key: 'forging', name: 'Forging' }
+    ];
+    // --- END OF EDIT ---
 
     useEffect(() => {
         if (!user || !user.minecraft_uuid) {
@@ -176,17 +184,6 @@ const Dashboard = ({ user, onUserUpdate }) => {
         }
 
         if (playerStats) {
-            const auraSkills = [
-                { key: 'fighting', name: 'Combat' }, { key: 'mining', name: 'Mining' },
-                { key: 'farming', name: 'Farming' }, { key: 'foraging', name: 'Foraging' },
-                { key: 'fishing', name: 'Fishing' }, { key: 'alchemy', name: 'Alchemy' },
-                { key: 'enchanting', name: 'Enchanting' }, { key: 'excavation', name: 'Excavation' },
-                { key: 'archery', name: 'Archery' }, { key: 'defense', name: 'Defense' },
-                { key: 'endurance', name: 'Endurance' }, { key: 'agility', name: 'Agility' },
-                { key: 'sorcery', name: 'Sorcery' }, { key: 'healing', name: 'Healing' },
-                { key: 'forging', name: 'Forging' }
-            ];
-
             return (
                 <div className="character-profile-container">
                     <div className="profile-main">
@@ -202,19 +199,19 @@ const Dashboard = ({ user, onUserUpdate }) => {
                                     <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
                                 </div>
                             </div>
-                            <StatBar label="HP" value={parseInt(playerStats.fabled_health) || 0} max={parseInt(playerStats.fabled_max_health) || 100} type="hp" />
-                            <StatBar label="Mana" value={parseInt(playerStats.fabled_mana) || 0} max={parseInt(playerStats.fabled_max_mana) || 100} type="mana" />
-                        </div>
-                    </div>
-                    <div className="skills-section">
-                        <h2>AuraSkills (Overall: {playerStats.auraskills_power || 'N/A'})</h2>
-                        <div className="skills-grid">
-                            {auraSkills.map(skill => (
-                                <div className="skill-card" key={skill.key}>
-                                    <h3>{skill.name}</h3>
-                                    <p>{playerStats[`auraskills_${skill.key}`] || 'N/A'}</p>
-                                </div>
-                            ))}
+                            {/* --- START OF EDIT: Replace HP/Mana with AuraSkills bars --- */}
+                            <div className="skills-bars-grid">
+                                {auraSkills.map(skill => (
+                                    <StatBar 
+                                        key={skill.key}
+                                        label={skill.name} 
+                                        value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
+                                        max={20} // Hardcoded max level
+                                        type="skill" 
+                                    />
+                                ))}
+                            </div>
+                            {/* --- END OF EDIT --- */}
                         </div>
                     </div>
                 </div>
