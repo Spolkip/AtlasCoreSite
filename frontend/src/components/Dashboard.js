@@ -97,18 +97,23 @@ const Dashboard = ({ user, onUserUpdate }) => {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    // --- START OF EDIT: Define AuraSkills array here for use in rendering ---
     const auraSkills = [
-        { key: 'fighting', name: 'Combat' }, { key: 'mining', name: 'Mining' },
-        { key: 'farming', name: 'Farming' }, { key: 'foraging', name: 'Foraging' },
-        { key: 'fishing', name: 'Fishing' }, { key: 'alchemy', name: 'Alchemy' },
-        { key: 'enchanting', name: 'Enchanting' }, { key: 'excavation', name: 'Excavation' },
-        { key: 'archery', name: 'Archery' }, { key: 'defense', name: 'Defense' },
-        { key: 'endurance', name: 'Endurance' }, { key: 'agility', name: 'Agility' },
-        { key: 'sorcery', name: 'Sorcery' }, { key: 'healing', name: 'Healing' },
-        { key: 'forging', name: 'Forging' }
+        { key: 'fighting', name: 'Combat', type: 'combat' }, 
+        { key: 'defense', name: 'Defense', type: 'combat' },
+        { key: 'archery', name: 'Archery', type: 'combat' },
+        { key: 'mining', name: 'Mining', type: 'utility' },
+        { key: 'farming', name: 'Farming', type: 'utility' }, 
+        { key: 'foraging', name: 'Foraging', type: 'utility' }, 
+        { key: 'fishing', name: 'Fishing', type: 'utility' }, 
+        { key: 'alchemy', name: 'Alchemy', type: 'utility' }, 
+        { key: 'enchanting', name: 'Enchanting', type: 'utility' }, 
+        { key: 'excavation', name: 'Excavation', type: 'utility' }, 
+        { key: 'endurance', name: 'Endurance', type: 'utility' }, 
+        { key: 'agility', name: 'Agility', type: 'utility' }, 
+        { key: 'sorcery', name: 'Sorcery', type: 'utility' }, 
+        { key: 'healing', name: 'Healing', type: 'utility' }, 
+        { key: 'forging', name: 'Forging', type: 'utility' }
     ];
-    // --- END OF EDIT ---
 
     useEffect(() => {
         if (!user || !user.minecraft_uuid) {
@@ -186,7 +191,7 @@ const Dashboard = ({ user, onUserUpdate }) => {
         if (playerStats) {
             return (
                 <div className="character-profile-container">
-                    <div className="profile-main">
+                    <div className="profile-upper-section">
                         <SkinViewerComponent uuid={user.minecraft_uuid} />
                         <div className="stats-container">
                             <div className="player-identity">
@@ -199,19 +204,36 @@ const Dashboard = ({ user, onUserUpdate }) => {
                                     <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
                                 </div>
                             </div>
-                            {/* --- START OF EDIT: Replace HP/Mana with AuraSkills bars --- */}
-                            <div className="skills-bars-grid">
-                                {auraSkills.map(skill => (
+                             <div className="skills-combat-panel">
+                                <h3>Combat Skills</h3>
+                                {auraSkills
+                                    .filter(skill => skill.type === 'combat')
+                                    .map(skill => (
+                                        <StatBar 
+                                            key={skill.key}
+                                            label={skill.name} 
+                                            value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
+                                            max={20}
+                                            type={skill.key === 'fighting' ? 'hp' : 'mana'} 
+                                        />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="skills-lower-section">
+                         <h3>General & Utility Skills</h3>
+                         <div className="skills-bars-grid">
+                            {auraSkills
+                                .filter(skill => skill.type === 'utility')
+                                .map(skill => (
                                     <StatBar 
                                         key={skill.key}
                                         label={skill.name} 
                                         value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
-                                        max={20} // Hardcoded max level
+                                        max={20}
                                         type="skill" 
                                     />
-                                ))}
-                            </div>
-                            {/* --- END OF EDIT --- */}
+                            ))}
                         </div>
                     </div>
                 </div>
