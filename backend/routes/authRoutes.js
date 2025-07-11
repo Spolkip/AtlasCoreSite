@@ -10,7 +10,8 @@ const {
   sendVerificationCode, // ADDED: New function for requesting verification code
   verifyMinecraftLink, // ADDED: New function for verifying code and linking
   unlinkMinecraft, // ADDED: New function for unlinking Minecraft account
-  getServerStats // ADDED: New function for getting server stats
+  getServerStats, // ADDED: New function for getting server stats
+  getPlayerStats // NEW: Import getPlayerStats
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -43,6 +44,10 @@ router.put('/unlink-minecraft', protect, unlinkMinecraft);
 
 // @route   GET /api/v1/auth/server-stats
 router.get('/server-stats', getServerStats); // No protection needed for public stats
+
+// NEW ROUTE: Get player-specific stats from Minecraft plugin
+// @route   GET /api/v1/auth/player-stats
+router.get('/player-stats', protect, getPlayerStats); // Protected as it's user-specific
 
 
 // @route   POST /api/v1/auth/link-minecraft (Direct UUID link - existing, kept for now)

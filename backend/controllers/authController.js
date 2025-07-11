@@ -241,6 +241,34 @@ exports.getServerStats = async (req, res) => {
     }
 };
 
+// NEW ENDPOINT: Get player-specific stats from Minecraft plugin
+// @route   GET /api/v1/auth/player-stats
+// @access  Private (requires user to be logged in and linked)
+exports.getPlayerStats = async (req, res) => {
+    const userId = req.user.id; // From protect middleware
+    try {
+        const user = await UserAuth.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+        if (!user.minecraft_uuid) {
+            return res.status(400).json({ success: false, message: 'Minecraft account not linked.' });
+        }
+
+        // Call Minecraft plugin to get player stats using their UUID
+        const pluginResponse = await callMinecraftPlugin('/player-stats', { uuid: user.minecraft_uuid });
+
+        if (!pluginResponse.success) {
+            return res.status(pluginResponse.status || 500).json({ success: false, message: pluginResponse.message || 'Failed to retrieve player stats from plugin.' });
+        }
+
+        res.status(200).json({ success: true, stats: pluginResponse.stats });
+    } catch (error) {
+        console.error('Error in getPlayerStats:', error.message);
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error fetching player stats.' });
+    }
+};
+
 
 // @desc    Link Minecraft account (direct UUID linking - existing, kept for compatibility/admin use if needed)
 // @route   POST /api/v1/auth/link-minecraft

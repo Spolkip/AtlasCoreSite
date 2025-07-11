@@ -4,100 +4,101 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../css/Dashboard.css';
 
+/**
+ * A dedicated component to display player stats. It receives the stats as props.
+ * @param {object} props - Contains stats, loading, and error states.
+ */
+const PlayerStats = ({ stats, loading, error }) => {
+    if (loading) return <div className="profile-section"><h2>Loading In-Game Stats...</h2></div>;
+    if (error) return <div className="profile-section"><h2>Could Not Load Stats</h2><p>{error}</p></div>;
+    if (!stats) {
+        return (
+            <div className="profile-section">
+                <h2>In-Game Stats</h2>
+                <p>Link your Minecraft account to see your Fabled and AuraSkills stats here!</p>
+            </div>
+        );
+    }
+
+    const auraSkills = [
+        { key: 'fighting', name: 'Combat' }, { key: 'mining', name: 'Mining' },
+        { key: 'farming', name: 'Farming' }, { key: 'foraging', name: 'Foraging' },
+        { key: 'fishing', name: 'Fishing' }, { key: 'alchemy', name: 'Alchemy' },
+        { key: 'enchanting', name: 'Enchanting' }, { key: 'excavation', name: 'Excavation' },
+        { key: 'archery', name: 'Archery' }, { key: 'defense', name: 'Defense' },
+        { key: 'endurance', name: 'Endurance' }, { key: 'agility', name: 'Agility' },
+        { key: 'sorcery', name: 'Sorcery' }, { key: 'healing', name: 'Healing' },
+        { key: 'forging', name: 'Forging' }
+    ];
+
+    return (
+        <>
+            <div className="profile-section">
+                <h2>Fabled Stats</h2>
+                <div className="profile-details">
+                    <p><strong>Class:</strong> {stats.fabled_player_class_mainclass || 'N/A'}</p>
+                    <p><strong>Level:</strong> {stats.fabled_default_currentlevel || 'N/A'}</p>
+                    <p><strong>Race:</strong> {stats.fabled_player_races_class || 'N/A'}</p>
+                </div>
+            </div>
+            <div className="profile-section">
+                <h2>AuraSkills Levels</h2>
+                <div className="profile-details">
+                     <p><strong>Overall Level:</strong> {stats.auraskills_power || 'N/A'}</p>
+                </div>
+                <div className="stats-grid" style={{marginTop: '20px'}}>
+                    {auraSkills.map(skill => (
+                        <div className="stat-card" key={skill.key}>
+                            <h3>{skill.name}</h3>
+                            <p>{stats[`auraskills_${skill.key}`] || 'N/A'}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </>
+    );
+};
+
+/**
+ * The main Dashboard component. It now handles fetching all necessary data.
+ */
 const Dashboard = ({ user }) => {
-    const [stats, setStats] = useState({
-        orders: 0,
-        totalSpent: 0,
-    });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState(''); // Added for success messages
+    const [playerStats, setPlayerStats] = useState(null);
+    const [loadingStats, setLoadingStats] = useState(true);
+    const [statsError, setStatsError] = useState('');
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            // FIX: Check if the user object is available before making an API call
-            if (!user) {
-                setError("You must be logged in to view the dashboard.");
-                setLoading(false);
-                return;
-            }
-
-            setLoading(true);
-            setError(''); // Clear previous errors
-            setSuccessMessage(''); // Clear previous success messages
-
-            try {
-                const token = localStorage.getItem('token');
-                const config = {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                };
-
-                const { data } = await axios.get('http://localhost:5000/api/v1/orders/my-orders', config);
-
-                if (data.success) {
-                    // Filter orders to include only 'completed' ones for totalSpent calculation
-                    const completedOrders = data.orders.filter(order => order.status === 'completed');
-                    const totalSpent = completedOrders.reduce((acc, order) => acc + order.totalAmount, 0);
-                    setStats({
-                        orders: completedOrders.length, // Count only completed orders
-                        totalSpent: totalSpent,
-                    });
-                } else {
-                    setError('Failed to load dashboard data.');
-                }
-            } catch (err) {
-                setError(err.response?.data?.message || 'An error occurred while fetching dashboard data.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDashboardData();
-    }, [user]);
-
-    const handleUnlinkMinecraft = async () => {
-        setError('');
-        setSuccessMessage('');
-        if (!window.confirm('Are you sure you want to unlink your Minecraft account?')) {
+        if (!user || !user.minecraft_uuid) {
+            setLoadingStats(false);
             return;
         }
 
-        try {
-            const token = localStorage.getItem('token');
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            };
+        const fetchPlayerStats = async () => {
+            setLoadingStats(true);
+            setStatsError('');
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.post(
+                    'http://localhost:5000/api/v1/player-stats',
+                    {},
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
 
-            const response = await axios.put('http://localhost:5000/api/v1/auth/unlink-minecraft', {}, config);
-
-            if (response.data.success) {
-                setSuccessMessage(response.data.message);
-                // Update the user data in local storage and App component state
-                const updatedUser = { ...user, minecraft_uuid: '', is_verified: false };
-                localStorage.setItem('user', JSON.stringify(updatedUser));
-                window.location.reload(); // Temporary solution to force UI update
-            } else {
-                setError(response.data.message || 'Failed to unlink Minecraft account.');
+                if (response.data.success) {
+                    setPlayerStats(response.data.stats);
+                } else {
+                    setStatsError(response.data.message || 'Failed to fetch player stats.');
+                }
+            } catch (err) {
+                setStatsError(err.response?.data?.message || 'An error occurred while fetching in-game stats.');
+            } finally {
+                setLoadingStats(false);
             }
-        } catch (err) {
-            setError(err.response?.data?.message || 'An error occurred while unlinking your Minecraft account.');
-        }
-    };
+        };
 
+        fetchPlayerStats();
+    }, [user]);
 
-    if (loading) {
-        return <div className="loading-container">Loading Dashboard...</div>;
-    }
-
-    if (error) {
-        return <div className="error-container">{error}</div>;
-    }
-
-    // FIX: Add a check for the user object before rendering the component
     if (!user) {
         return (
             <div className="dashboard-container">
@@ -109,62 +110,46 @@ const Dashboard = ({ user }) => {
                     </div>
                 </div>
             </div>
-        )
+        );
     }
 
     return (
         <div className="dashboard-container">
             <h1>Your Dashboard</h1>
-
-            {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
-            {error && <div className="auth-error-message" style={{marginBottom: '20px'}}>{error}</div>}
-
+            
             <div className="profile-section">
                 <h2>Profile</h2>
                 <div className="profile-details">
                     <p><strong>Username:</strong> {user.username}</p>
                     <p><strong>Email:</strong> {user.email}</p>
-                    <p><strong>Minecraft UUID:</strong> {user.minecraft_uuid || 'Not Linked'}</p>
+                    {/* ---- START OF FIX: Enhanced Minecraft Account display ---- */}
+                    <p>
+                        <strong>Minecraft Account:</strong> 
+                        {user.minecraft_uuid 
+                            ? ` ${playerStats?.player_name || '...'}` 
+                            : ' Not Linked'}
+                    </p>
+                    <p>
+                        <strong>Minecraft UUID:</strong>
+                        {user.minecraft_uuid 
+                            ? ` ${user.minecraft_uuid}` 
+                            : ' Not Linked'}
+                    </p>
+                    {/* ---- END OF FIX ---- */}
                 </div>
                 <div className="action-buttons">
                     <Link to="/settings" className="dashboard-button">Settings</Link>
-                    {/* Conditionally render Link/Unlink button */}
-                    {user.minecraft_uuid && user.isVerified ? (
-                        <button onClick={handleUnlinkMinecraft} className="dashboard-button danger">Unlink Minecraft</button>
-                    ) : (
+                    {!user.minecraft_uuid && (
                         <Link to="/link-minecraft" className="dashboard-button">Link Minecraft</Link>
                     )}
                 </div>
             </div>
 
-            {/* Combined Section for In-Game Level, Skill Level, Class, and Race */}
-            <div className="profile-section">
-                <h2>In-Game Stats</h2>
-                <div className="profile-details">
-                    <p><strong>Level:</strong> 50</p> {/* Placeholder */}
-                    <p><strong>Skill:</strong> Master Explorer</p> {/* Placeholder */}
-                    <p><strong>Class:</strong> Warrior</p> {/* Placeholder */}
-                    <p><strong>Race:</strong> Human</p> {/* Placeholder */}
-                </div>
-            </div>
-
-            <div className="statistics-section">
-                <h2>Your Stats</h2>
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <h3>Orders Placed</h3>
-                        <p>{stats.orders}</p>
-                    </div>
-                    <div className="stat-card">
-                        <h3>Total Spent</h3>
-                        <p>${stats.totalSpent.toFixed(2)}</p>
-                    </div>
-                </div>
-            </div>
+            <PlayerStats user={user} stats={playerStats} loading={loadingStats} error={statsError} />
+            
             {user.isAdmin && (
                  <div className="quick-actions">
                     <h2>Admin Actions</h2>
-                    {/* FIX: Corrected the link to the Admin Dashboard */}
                     <Link to="/admin-dashboard" className="dashboard-button">Admin Dashboard</Link>
                 </div>
             )}
