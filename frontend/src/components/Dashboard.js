@@ -236,6 +236,25 @@ const Dashboard = ({ user, onUserUpdate }) => {
                             ))}
                         </div>
                     </div>
+                    {/* --- START OF EDIT: Added Account Information Section --- */}
+                    <div className="account-info-section">
+                        <h3>Account Information</h3>
+                        <div className="account-info-grid">
+                            <div className="info-item">
+                                <span className="info-label">Username:</span>
+                                <span className="info-value">{user.username}</span>
+                            </div>
+                            <div className="info-item">
+                                <span className="info-label">Email:</span>
+                                <span className="info-value">{user.email}</span>
+                            </div>
+                            <div className="info-item full-width">
+                                <span className="info-label">Minecraft UUID:</span>
+                                <span className="info-value">{user.minecraft_uuid}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {/* --- END OF EDIT --- */}
                 </div>
             );
         }

@@ -6,7 +6,6 @@
   gap: 2rem;
 }
 
-/* --- START OF EDIT: Renamed .profile-main to .profile-upper-section --- */
 .profile-upper-section {
   display: flex;
   flex-direction: row;
@@ -17,7 +16,6 @@
   border: 3px solid #000;
   box-shadow: 0 0 20px rgba(0,0,0,0.7);
 }
-/* --- END OF EDIT --- */
 
 .skin-viewer-container {
   flex: 1;
@@ -93,7 +91,6 @@
   background: linear-gradient(90deg, #27ae60, #2ecc71); /* Green for other skills */
 }
 
-/* --- START OF EDIT: New styles for the updated skill layout --- */
 .skills-combat-panel {
     display: flex;
     flex-direction: column;
@@ -122,6 +119,52 @@
     grid-template-columns: repeat(4, 1fr); /* Four columns for the main skill bars */
     gap: 1rem 2rem; /* Row and column gap */
 }
+
+/* --- START OF EDIT: Added styles for the new Account Information section --- */
+.account-info-section {
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 2rem;
+    border: 3px solid #000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+}
+
+.account-info-section h3 {
+    font-size: 1.8rem;
+    color: #FFFF55;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #555;
+}
+
+.account-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.info-item {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border: 2px solid #555;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-label {
+    display: block;
+    font-size: 1.2rem;
+    color: #ccc;
+    margin-bottom: 0.5rem;
+}
+
+.info-value {
+    font-size: 1.4rem;
+    color: #fff;
+    word-break: break-all;
+}
 /* --- END OF EDIT --- */
 
 .dashboard-button.small {
@@ -137,7 +180,6 @@
     background-color: #e74c3c;
 }
 
-/* --- START OF EDIT: Responsive adjustments for the new layout --- */
 @media (max-width: 1200px) {
     .skills-bars-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -148,6 +190,9 @@
 @media (max-width: 900px) {
     .skills-bars-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+    .account-info-grid {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -164,4 +209,3 @@
         grid-template-columns: 1fr;
     }
 }
-/* --- END OF EDIT --- */
