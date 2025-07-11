@@ -20,6 +20,9 @@ import ForgotPassword from './components/ForgotPassword';
 import LinkMinecraft from './components/LinkMinecraft';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
+import Footer from './components/Footer';
+import PrivacyPolicy from './components/PrivacyPolicy'; // Import PrivacyPolicy component
+import TermsOfService from './components/TermsOfService'; // Import TermsOfService component
 
 import './css/App.css';
 
@@ -29,10 +32,9 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [cart, setCart] = useState([]);
   const [settings, setSettings] = useState(null);
-  const [exchangeRates, setExchangeRates] = useState(null); // --- EDIT: Added exchange rates state ---
+  const [exchangeRates, setExchangeRates] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // --- START OF EDIT: Fetch settings and exchange rates ---
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -74,7 +76,6 @@ function App() {
     
     fetchInitialData();
   }, []);
-  // --- END OF EDIT ---
 
   const handleLogin = (userData = {}) => {
     const { user: loggedInUser, token } = userData;
@@ -112,8 +113,9 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <NavBar user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={handleLogout} />
-        <main>
+        <NavBar user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={handleLogout} settings={settings} />
+        {/* Wrap Routes in a <main> tag with a 'content' class to ensure proper layout */}
+        <main className="content">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             
@@ -125,7 +127,7 @@ function App() {
                 setCart={setCart} 
                 settings={settings} 
                 isAdmin={isAdmin} 
-                exchangeRates={exchangeRates} // Pass rates down
+                exchangeRates={exchangeRates} 
               />} 
             />
             
@@ -151,8 +153,14 @@ function App() {
                 <Route path="/admin-dashboard" element={<AdminDashboard user={user} />} />
               </>
             )}
+
+            {/* Routes for Privacy Policy and Terms of Service */}
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+
           </Routes>
         </main>
+        <Footer storeName={settings?.store_name} />
       </div>
     </Router>
   );

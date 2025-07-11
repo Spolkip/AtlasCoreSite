@@ -192,7 +192,19 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
-
+      {/* CTA Section */}
+      <section className="cta-section fade-in-section block-element">
+        <h2>Your Adventure Begins Now</h2>
+        <p>The world of Atlas Core awaits. Join our vibrant community on Discord and jump into the server to start writing your story today.</p>
+        <div className="cta-buttons">
+          <Link to="/shop" className="mc-button primary glowing-button">
+            <span>Visit The Store</span>
+          </Link>
+          <a href="https://discord.gg/your-discord" target="_blank" rel="noopener noreferrer" className="mc-button secondary glowing-button">
+            <span>Join Our Discord</span>
+          </a>
+        </div>
+      </section>
       {/* Intro Section */}
       <section className="intro-section fade-in-section block-element">
         <h2>What is Atlas Core?</h2>
@@ -297,20 +309,6 @@ const LandingPage = () => {
                   <p>Select from a diverse roster of custom races and classes, each with its own rich history, unique strengths, and powerful abilities. Whether you're a cunning Elf rogue or a sturdy Dwarven warrior, your identity shapes your adventure.</p>
               </div>
           </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="cta-section fade-in-section block-element">
-        <h2>Your Adventure Begins Now</h2>
-        <p>The world of Atlas Core awaits. Join our vibrant community on Discord and jump into the server to start writing your story today.</p>
-        <div className="cta-buttons">
-          <Link to="/shop" className="mc-button primary glowing-button">
-            <span>Visit The Store</span>
-          </Link>
-          <a href="https://discord.gg/your-discord" target="_blank" rel="noopener noreferrer" className="mc-button secondary glowing-button">
-            <span>Join Our Discord</span>
-          </a>
-        </div>
       </section>
     </div>
   );
