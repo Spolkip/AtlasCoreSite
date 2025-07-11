@@ -29,7 +29,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [cart, setCart] = useState([]);
   const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);;
+  const [loading, setLoading] = useState(true);
 
   const fetchGlobalSettings = async () => {
       try {
@@ -48,23 +48,28 @@ function App() {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     if (token && storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      setIsAuthenticated(true);
-      setIsAdmin(parsedUser.isAdmin === 1 || parsedUser.isAdmin === true);
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+        setIsAdmin(parsedUser.isAdmin === 1 || parsedUser.isAdmin === true);
+      } catch (e) {
+        // Handle potential JSON parsing errors
+        handleLogout();
+      }
     }
     
     fetchGlobalSettings();
   }, []);
 
   const handleLogin = (userData = {}) => {
-    const { user, token } = userData;
-    if (user && token) {
-      setUser(user);
+    const { user: loggedInUser, token } = userData;
+    if (loggedInUser && token) {
+      setUser(loggedInUser);
       setIsAuthenticated(true);
-      setIsAdmin(user.isAdmin === 1 || user.isAdmin === true);
+      setIsAdmin(loggedInUser.isAdmin === 1 || loggedInUser.isAdmin === true);
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(loggedInUser));
     }
   };
 
@@ -76,6 +81,13 @@ function App() {
     localStorage.removeItem('user');
     setCart([]);
   };
+
+  // ---- START OF FIX: Function to update user state from child components ----
+  const handleUserUpdate = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+  // ---- END OF FIX ----
 
   const updateSettings = (newSettings) => {
     setSettings(newSettings);
@@ -108,22 +120,21 @@ function App() {
             <Route path="/register" element={<Register onLoginSuccess={handleLogin} />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             
-            {/* Protected Routes */}
             {isAuthenticated && (
               <>
-                <Route path="/dashboard" element={<Dashboard user={user} />} />
+                {/* ---- START OF FIX: Pass the onUserUpdate function to Dashboard ---- */}
+                <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
+                {/* ---- END OF FIX ---- */}
                 <Route path="/settings" element={<Settings user={user} onSettingsUpdate={updateSettings} />} />
                 <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} />} />
                 <Route path="/payment/success" element={<PaymentSuccess />} />
                 <Route path="/payment/cancel" element={<PaymentCancel />} />
                 <Route path="/order-history" element={<OrderHistory user={user} />} />
-                {/* FIX: Pass onLoginSuccess to LinkMinecraft */}
                 <Route path="/link-minecraft" element={<LinkMinecraft user={user} onLoginSuccess={handleLogin} />} />
               </>
             )}
 
-            {/* Admin Routes */}
-            {isAuthenticated && isAdmin && (
+            {isAdmin && (
               <>
                 <Route path="/admin" element={<AddProducts />} />
                 <Route path="/admin-dashboard" element={<AdminDashboard user={user} />} />

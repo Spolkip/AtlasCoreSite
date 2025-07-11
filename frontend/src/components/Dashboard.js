@@ -1,81 +1,115 @@
 // frontend/src/components/Dashboard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { SkinViewer, WalkingAnimation } from 'skinview3d';
 import '../css/Dashboard.css';
+import '../css/CharacterProfile.css';
 
 /**
- * A dedicated component to display player stats. It receives the stats as props.
- * @param {object} props - Contains stats, loading, and error states.
+ * Helper component for the 3D skin viewer with robust error handling.
  */
-const PlayerStats = ({ stats, loading, error }) => {
-    if (loading) return <div className="profile-section"><h2>Loading In-Game Stats...</h2></div>;
-    if (error) return <div className="profile-section"><h2>Could Not Load Stats</h2><p>{error}</p></div>;
-    if (!stats) {
-        return (
-            <div className="profile-section">
-                <h2>In-Game Stats</h2>
-                <p>Link your Minecraft account to see your Fabled and AuraSkills stats here!</p>
-            </div>
-        );
-    }
+const SkinViewerComponent = ({ uuid }) => {
+    const canvasRef = useRef(null);
+    useEffect(() => {
+        if (!uuid || !canvasRef.current) return;
 
-    const auraSkills = [
-        { key: 'fighting', name: 'Combat' }, { key: 'mining', name: 'Mining' },
-        { key: 'farming', name: 'Farming' }, { key: 'foraging', name: 'Foraging' },
-        { key: 'fishing', name: 'Fishing' }, { key: 'alchemy', name: 'Alchemy' },
-        { key: 'enchanting', name: 'Enchanting' }, { key: 'excavation', name: 'Excavation' },
-        { key: 'archery', name: 'Archery' }, { key: 'defense', name: 'Defense' },
-        { key: 'endurance', name: 'Endurance' }, { key: 'agility', name: 'Agility' },
-        { key: 'sorcery', name: 'Sorcery' }, { key: 'healing', name: 'Healing' },
-        { key: 'forging', name: 'Forging' }
-    ];
+        let viewer = new SkinViewer({
+            canvas: canvasRef.current,
+            width: 300,
+            height: 400,
+        });
 
+        // --- START OF FIX: More robust async/await error handling ---
+        const skinUrl = `https://cravatar.eu/skin/${uuid}`;
+        const capeUrl = `https://cravatar.eu/cape/${uuid}`;
+        const defaultSkinUrl = "https://cravatar.eu/skin/MHF_Steve";
+
+        const loadResources = async () => {
+            try {
+                // Try to load the player's actual skin
+                await viewer.loadSkin(skinUrl, { model: "slim" });
+            } catch (e) {
+                // If it fails (e.g., 404 error), load the default skin as a fallback
+                console.warn(`Could not load custom skin for ${uuid}. Loading default skin.`);
+                try {
+                    await viewer.loadSkin(defaultSkinUrl);
+                } catch (fallbackError) {
+                    // If even the fallback fails, log the error but do not crash the app.
+                    console.error("Failed to load even the default fallback skin.", fallbackError);
+                }
+            }
+
+            try {
+                // Attempt to load the cape, but don't worry if it fails.
+                await viewer.loadCape(capeUrl);
+            } catch (e) {
+                // Silently ignore cape loading errors as most players don't have one.
+            }
+        };
+
+        loadResources();
+        // --- END OF FIX ---
+
+        viewer.animation = new WalkingAnimation();
+        viewer.controls.enableRotate = true;
+        viewer.controls.enableZoom = false;
+
+        const handleResize = () => {
+            if (canvasRef.current && viewer) {
+                viewer.setSize(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        // Cleanup function
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (viewer) {
+                viewer.dispose();
+            }
+        };
+    }, [uuid]);
+    return <canvas ref={canvasRef} className="skin-viewer-container"></canvas>;
+};
+
+
+/**
+ * Helper component for HP/Mana bars.
+ */
+const StatBar = ({ label, value, max, type }) => {
+    const percentage = max > 0 ? (Math.min(value, max) / max) * 100 : 0;
     return (
-        <>
-            <div className="profile-section">
-                <h2>Fabled Stats</h2>
-                <div className="profile-details">
-                    <p><strong>Class:</strong> {stats.fabled_player_class_mainclass || 'N/A'}</p>
-                    <p><strong>Level:</strong> {stats.fabled_default_currentlevel || 'N/A'}</p>
-                    <p><strong>Race:</strong> {stats.fabled_player_races_class || 'N/A'}</p>
-                </div>
+        <div className="stat-bar">
+            <div className="stat-bar-label">
+                <span>{label}</span>
+                <span>{value} / {max}</span>
             </div>
-            <div className="profile-section">
-                <h2>AuraSkills Levels</h2>
-                <div className="profile-details">
-                     <p><strong>Overall Level:</strong> {stats.auraskills_power || 'N/A'}</p>
-                </div>
-                <div className="stats-grid" style={{marginTop: '20px'}}>
-                    {auraSkills.map(skill => (
-                        <div className="stat-card" key={skill.key}>
-                            <h3>{skill.name}</h3>
-                            <p>{stats[`auraskills_${skill.key}`] || 'N/A'}</p>
-                        </div>
-                    ))}
-                </div>
+            <div className="stat-bar-background">
+                <div className={`stat-bar-foreground ${type}`} style={{ width: `${percentage}%` }}></div>
             </div>
-        </>
+        </div>
     );
 };
 
 /**
- * The main Dashboard component. It now handles fetching all necessary data.
+ * Main Dashboard Component
  */
-const Dashboard = ({ user }) => {
+const Dashboard = ({ user, onUserUpdate }) => {
     const [playerStats, setPlayerStats] = useState(null);
-    const [loadingStats, setLoadingStats] = useState(true);
-    const [statsError, setStatsError] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (!user || !user.minecraft_uuid) {
-            setLoadingStats(false);
+            setLoading(false);
             return;
         }
-
         const fetchPlayerStats = async () => {
-            setLoadingStats(true);
-            setStatsError('');
+            setLoading(true);
+            setError('');
             try {
                 const token = localStorage.getItem('token');
                 const response = await axios.post(
@@ -83,72 +117,127 @@ const Dashboard = ({ user }) => {
                     {},
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
-
                 if (response.data.success) {
                     setPlayerStats(response.data.stats);
                 } else {
-                    setStatsError(response.data.message || 'Failed to fetch player stats.');
+                    setError(response.data.message || 'Failed to fetch player stats.');
                 }
             } catch (err) {
-                setStatsError(err.response?.data?.message || 'An error occurred while fetching in-game stats.');
+                setError(err.response?.data?.message || 'An error occurred while fetching in-game stats.');
             } finally {
-                setLoadingStats(false);
+                setLoading(false);
             }
         };
-
         fetchPlayerStats();
     }, [user]);
 
-    if (!user) {
-        return (
-            <div className="dashboard-container">
-                <h1>Dashboard</h1>
+    const handleUnlinkMinecraft = async () => {
+        setError('');
+        setSuccessMessage('');
+        if (!window.confirm('Are you sure you want to unlink your Minecraft account? This cannot be undone.')) {
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put('http://localhost:5000/api/v1/auth/unlink-minecraft', {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (response.data.success) {
+                setSuccessMessage(response.data.message);
+                const updatedUser = { ...user, minecraft_uuid: '', is_verified: false };
+                onUserUpdate(updatedUser);
+            } else {
+                setError(response.data.message || 'Failed to unlink account.');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'An error occurred while unlinking.');
+        }
+    };
+
+    const renderContent = () => {
+        if (!user.minecraft_uuid) {
+            return (
                 <div className="profile-section">
-                    <h2>Please log in to continue.</h2>
+                    <h2>Account Not Linked</h2>
+                    <p>Link your Minecraft account to view your character profile.</p>
                     <div className="action-buttons">
-                        <Link to="/login" className="dashboard-button">Login</Link>
+                        <Link to="/link-minecraft" className="dashboard-button">Link Minecraft</Link>
                     </div>
                 </div>
-            </div>
-        );
+            );
+        }
+
+        if (loading) {
+            return <div className="loading-container">Loading Character Profile...</div>;
+        }
+
+        if (error) {
+            return <div className="profile-section"><h2>Could Not Load Stats</h2><p>{error}</p></div>;
+        }
+
+        if (playerStats) {
+            const auraSkills = [
+                { key: 'fighting', name: 'Combat' }, { key: 'mining', name: 'Mining' },
+                { key: 'farming', name: 'Farming' }, { key: 'foraging', name: 'Foraging' },
+                { key: 'fishing', name: 'Fishing' }, { key: 'alchemy', name: 'Alchemy' },
+                { key: 'enchanting', name: 'Enchanting' }, { key: 'excavation', name: 'Excavation' },
+                { key: 'archery', name: 'Archery' }, { key: 'defense', name: 'Defense' },
+                { key: 'endurance', name: 'Endurance' }, { key: 'agility', name: 'Agility' },
+                { key: 'sorcery', name: 'Sorcery' }, { key: 'healing', name: 'Healing' },
+                { key: 'forging', name: 'Forging' }
+            ];
+
+            return (
+                <div className="character-profile-container">
+                    <div className="profile-main">
+                        <SkinViewerComponent uuid={user.minecraft_uuid} />
+                        <div className="stats-container">
+                            <div className="player-identity">
+                                <h2 className="player-name">{playerStats.player_name || 'Player'}</h2>
+                                <p className="player-class-race">
+                                    Level {playerStats.fabled_default_currentlevel || 'N/A'} {playerStats.fabled_player_races_class || ''} {playerStats.fabled_player_class_mainclass || ''}
+                                </p>
+                                <div className="action-buttons" style={{marginTop: '20px'}}>
+                                    <Link to="/settings" className="dashboard-button small">Settings</Link>
+                                    <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
+                                </div>
+                            </div>
+                            <StatBar label="HP" value={parseInt(playerStats.fabled_health) || 0} max={parseInt(playerStats.fabled_max_health) || 100} type="hp" />
+                            <StatBar label="Mana" value={parseInt(playerStats.fabled_mana) || 0} max={parseInt(playerStats.fabled_max_mana) || 100} type="mana" />
+                        </div>
+                    </div>
+                    <div className="skills-section">
+                        <h2>AuraSkills (Overall: {playerStats.auraskills_power || 'N/A'})</h2>
+                        <div className="skills-grid">
+                            {auraSkills.map(skill => (
+                                <div className="skill-card" key={skill.key}>
+                                    <h3>{skill.name}</h3>
+                                    <p>{playerStats[`auraskills_${skill.key}`] || 'N/A'}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return <div className="profile-section"><h2>Could not load character data.</h2></div>;
+    };
+
+    if (!user) {
+        return <div className="loading-container">Please log in to view your dashboard.</div>;
     }
 
     return (
         <div className="dashboard-container">
-            <h1>Your Dashboard</h1>
+            <h1>Character Profile</h1>
+            {error && <div className="auth-error-message" style={{marginBottom: '20px'}}>{error}</div>}
+            {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
             
-            <div className="profile-section">
-                <h2>Profile</h2>
-                <div className="profile-details">
-                    <p><strong>Username:</strong> {user.username}</p>
-                    <p><strong>Email:</strong> {user.email}</p>
-                    {/* ---- START OF FIX: Enhanced Minecraft Account display ---- */}
-                    <p>
-                        <strong>Minecraft Account:</strong> 
-                        {user.minecraft_uuid 
-                            ? ` ${playerStats?.player_name || '...'}` 
-                            : ' Not Linked'}
-                    </p>
-                    <p>
-                        <strong>Minecraft UUID:</strong>
-                        {user.minecraft_uuid 
-                            ? ` ${user.minecraft_uuid}` 
-                            : ' Not Linked'}
-                    </p>
-                    {/* ---- END OF FIX ---- */}
-                </div>
-                <div className="action-buttons">
-                    <Link to="/settings" className="dashboard-button">Settings</Link>
-                    {!user.minecraft_uuid && (
-                        <Link to="/link-minecraft" className="dashboard-button">Link Minecraft</Link>
-                    )}
-                </div>
-            </div>
-
-            <PlayerStats user={user} stats={playerStats} loading={loadingStats} error={statsError} />
+            {renderContent()}
             
             {user.isAdmin && (
-                 <div className="quick-actions">
+                 <div className="quick-actions" style={{marginTop: '2rem'}}>
                     <h2>Admin Actions</h2>
                     <Link to="/admin-dashboard" className="dashboard-button">Admin Dashboard</Link>
                 </div>
