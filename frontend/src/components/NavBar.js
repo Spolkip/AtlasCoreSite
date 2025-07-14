@@ -17,7 +17,6 @@ const Navbar = ({ isAuthenticated, logout, user, settings }) => {
           <>
             <Link to="/dashboard">Dashboard</Link>
             {user && <Link to={`/profile/${user.username}`}>Profile</Link>}
-            <Link to="/settings">Settings</Link>
             <button onClick={logout} className="mc-button-nav">Logout</button>
           </>
         ) : (

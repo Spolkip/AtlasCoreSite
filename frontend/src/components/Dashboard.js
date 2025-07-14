@@ -23,7 +23,6 @@ const Dashboard = ({ user }) => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
             try {
-                // FIX: Corrected the endpoint from /api/v1/users/dashboard to /api/v1/profile
                 const response = await axios.get('http://localhost:5000/api/v1/profile', config);
                 if (response.data.success) {
                     setActivityFeed(response.data.data.activityFeed);
@@ -53,7 +52,6 @@ const Dashboard = ({ user }) => {
                 <h2>Welcome, {user.username}!</h2>
                 <div className="action-buttons">
                     <Link to={`/profile/${user.username}`} className="dashboard-button">View Character Profile</Link>
-                    <Link to="/profile/search" className="dashboard-button">Search Profiles</Link>
                     <Link to="/order-history" className="dashboard-button">Order History</Link>
                     <Link to="/settings" className="dashboard-button">Account Settings</Link>
                 </div>

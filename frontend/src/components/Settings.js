@@ -11,7 +11,7 @@ const currencies = [
   // ... other currencies
 ];
 
-const Settings = ({ user, onUserUpdate, onSettingsUpdate }) => {
+const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) => {
   // State for Admin Settings
   const [adminSettings, setAdminSettings] = useState({});
   const [newAdminSettings, setNewAdminSettings] = useState({});
@@ -164,6 +164,16 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate }) => {
               </div>
               <button type="submit" className="mc-button primary">Change Password</button>
           </form>
+      </div>
+      
+      <div className="profile-section">
+          <h2>Display Settings</h2>
+          <div className="form-group">
+              <label>Theme</label>
+              <button onClick={toggleTheme} className="mc-button secondary">
+                  Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode
+              </button>
+          </div>
       </div>
 
       {user && user.isAdmin && (

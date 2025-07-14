@@ -54,7 +54,17 @@ function AppContent() {
   const [settings, setSettings] = useState(null);
   const [exchangeRates, setExchangeRates] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   const navigate = useNavigate();
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
+  };
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.body.className = `${theme}-theme`;
+  }, [theme]);
 
   const handleLogout = useCallback(() => {
     setUser(null);
@@ -162,7 +172,7 @@ function AppContent() {
               <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
               <Route path="/profile/search" element={<ProfileSearch />} />
               <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} />
-              <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} />} />
+              <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} theme={theme} toggleTheme={toggleTheme} />} />
               <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} />} />
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentCancel />} />

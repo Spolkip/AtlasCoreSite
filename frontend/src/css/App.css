@@ -132,3 +132,174 @@ h1, h2, h3 {
   height: 80vh;
   font-size: 2rem;
 }
+
+/* Import Minecraft Font */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+/* --- THEME VARIABLES --- */
+:root {
+  /* Dark Theme (Default) */
+  --color-background: #3a3a3a;
+  --color-text: #fff;
+  --color-text-muted: #ccc;
+  --color-primary: #FFAA00; /* Minecraft Gold */
+  --color-secondary: #3498db; /* Lapis Blue */
+  --color-accent: #FFFF55; /* Minecraft Yellow */
+  --color-success: #2ecc71;
+  --color-error: #c0392b;
+  --color-surface-1: rgba(0, 0, 0, 0.5);
+  --color-surface-2: rgba(0, 0, 0, 0.7);
+  --color-border: #000;
+  --color-border-subtle: #555;
+  --text-shadow: 2px 2px #000000a0;
+  --background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+}
+
+.light-theme {
+  --color-background: #f0f2f5;
+  --color-text: #333;
+  --color-text-muted: #555;
+  --color-primary: #d35400; /* A nice orange for light mode */
+  --color-secondary: #2980b9;
+  --color-accent: #f1c40f;
+  --color-success: #27ae60;
+  --color-error: #c0392b;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f9f9f9;
+  --color-border: #ccc;
+  --color-border-subtle: #ddd;
+  --text-shadow: 1px 1px #00000030;
+  --background-image: url('https://www.transparenttextures.com/patterns/subtle-stripes.png');
+}
+
+/* Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'VT323', monospace;
+  background-color: var(--color-background);
+  background-image: var(--background-image);
+  background-repeat: repeat;
+  color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+}
+
+h1, h2, h3 {
+  font-weight: normal;
+  text-shadow: var(--text-shadow);
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--color-surface-1);
+  border-bottom: 3px solid var(--color-border);
+  padding: 10px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-brand a {
+  color: var(--color-primary);
+  font-size: 2.5rem;
+  text-decoration: none;
+  letter-spacing: 2px;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+}
+
+.navbar-links a,
+.navbar-links button {
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  text-shadow: var(--text-shadow);
+}
+
+.navbar-links a:hover {
+  color: var(--color-accent);
+}
+
+.mc-button-nav {
+  font-family: 'VT323', monospace;
+  padding: 5px 15px !important;
+  font-size: 1.5rem !important;
+  background-color: var(--color-error) !important;
+  color: white !important;
+  border: 2px solid var(--color-border) !important;
+  box-shadow: 3px 3px 0 var(--color-border);
+  cursor: pointer;
+}
+.mc-button-nav:hover {
+  background-color: #e74c3c !important;
+}
+
+
+/* General Minecraft Button Style */
+.mc-button {
+  display: inline-block;
+  font-family: 'VT323', monospace;
+  padding: 15px 30px;
+  font-size: 1.5rem;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  background-color: #7f8c8d; /* Stone color */
+  border: 3px solid var(--color-border);
+  box-shadow: 4px 4px 0 var(--color-border);
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+}
+
+.mc-button:hover {
+  background-color: #95a5a6;
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 0 var(--color-border);
+}
+
+.mc-button:active {
+  transform: translateY(2px);
+  box-shadow: 2px 2px 0 var(--color-border);
+}
+
+.mc-button.primary {
+  background-color: var(--color-success);
+}
+.mc-button.primary:hover {
+  background-color: #2ecc71;
+}
+
+.mc-button.secondary {
+  background-color: var(--color-secondary);
+}
+.mc-button.secondary:hover {
+  background-color: #3498db;
+}
+
+/* Loading Container */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
+  font-size: 2rem;
+}
