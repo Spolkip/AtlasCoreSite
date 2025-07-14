@@ -202,7 +202,6 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                             </p>
                             {user && user.username === username && (
                             <div className="action-buttons" style={{marginTop: '20px'}}>
-                                <Link to="/settings" className="dashboard-button small">Settings</Link>
                                 <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
                             </div>
                             )}
