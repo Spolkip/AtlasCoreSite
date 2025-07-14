@@ -1,0 +1,216 @@
+/* LiveChat.css */
+.live-chat-container {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.chat-toggle-button {
+  background-color: #FFAA00;
+  color: white;
+  border: 2px solid #000;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.chat-toggle-button:hover {
+  transform: scale(1.1);
+  background-color: #FFC300;
+}
+
+.chat-toggle-button.open {
+  background-color: #c0392b;
+}
+
+.chat-window {
+  position: absolute;
+  bottom: 80px;
+  left: 0;
+  width: 350px;
+  max-width: 90vw;
+  height: 500px;
+  max-height: 70vh;
+  background-color: #2c2c2c;
+  border: 3px solid #000;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+  font-family: 'VT323', monospace;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-header {
+  background-color: #1a1a1a;
+  padding: 15px;
+  border-bottom: 2px solid #000;
+}
+
+.chat-header h3 {
+  margin: 0;
+  color: #FFAA00;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.chat-messages {
+  flex-grow: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message {
+  padding: 10px 15px;
+  border-radius: 10px;
+  max-width: 80%;
+  line-height: 1.4;
+  /* FIX: Ensure consistent sizing for bubbles */
+  min-height: 50px; /* Give a minimum height */
+  display: flex;
+  flex-direction: column;
+  /* FIX: Remove justify-content to allow timestamp to flow naturally */
+  /* justify-content: space-between; */ 
+  position: relative; /* Needed for absolute positioning of timestamp */
+  padding-bottom: 25px; /* Make space for timestamp at the bottom */
+}
+
+.message p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+/* New styles for message meta (sender and timestamp) */
+.message-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.message-sender {
+  font-weight: bold;
+  color: #FFFF55; /* Yellow for sender name */
+}
+
+.message-timestamp-text {
+  color: #ffffffff; /* Lighter grey for timestamp */
+  font-size: 0.8em;
+  /* FIX: Position timestamp absolutely within the bubble */
+  position: absolute;
+  bottom: 5px; /* Adjust as needed for padding */
+  right: 5px; /* Default to right, adjust for admin/user specific */
+}
+
+
+.message-content {
+  margin-top: 5px;
+}
+
+
+.predefined-questions {
+  padding: 10px 15px;
+  border-top: 2px solid #000;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.predefined-questions button {
+  background-color: #4a4a4a;
+  color: #e0e0e0;
+  border: 2px solid #000;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.predefined-questions button:hover {
+  background-color: #5a5a5a;
+}
+
+.chat-input-form {
+  display: flex;
+  padding: 15px;
+  border-top: 2px solid #000;
+  background-color: #1a1a1a;
+}
+
+.chat-input-form input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 2px solid #000;
+  border-radius: 5px;
+  background-color: #3a3a3a;
+  color: #fff;
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+}
+
+.chat-input-form input:focus {
+  outline: none;
+  border-color: #FFAA00;
+}
+
+.chat-input-form button {
+  background-color: #27ae60;
+  color: white;
+  border: 2px solid #000;
+  padding: 10px 15px;
+  margin-left: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  transition: background-color 0.2s;
+}
+
+.chat-input-form button:hover {
+  background-color: #2ecc71;
+}
+
+.chat-input-form button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+/* Specific adjustments for user/admin messages to align content and timestamp */
+.message.user .message-content,
+.message.admin .message-content {
+    width: 100%; /* Ensure content takes full width for alignment */
+}
+
+.message.user .message-timestamp-text {
+    text-align: right; /* Align timestamp to the right for user messages */
+}
+
+.message.admin .message-timestamp-text {
+    text-align: left; /* Align timestamp to the left for admin messages */
+}

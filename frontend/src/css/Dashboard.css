@@ -1,0 +1,118 @@
+/* frontend/src/css/Dashboard.css */
+.dashboard-container {
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 20px;
+  color: #fff;
+}
+
+.dashboard-container h1, .dashboard-container h2 {
+    color: #FFAA00;
+    text-shadow: 2px 2px #000000a0;
+}
+
+.dashboard-container h1 {
+    text-align: center;
+    font-size: 3rem;
+    margin-bottom: 30px;
+}
+
+.dashboard-container h2 {
+    font-size: 2.2rem;
+    border-bottom: 3px solid #555;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.profile-section, .quick-actions, .statistics-section {
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 30px;
+  border: 3px solid #000;
+  margin-bottom: 30px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.7);
+}
+
+.profile-details p {
+  margin: 15px 0;
+  font-size: 1.4rem;
+  text-shadow: 1px 1px #000;
+}
+
+.profile-details p strong {
+    color: #FFFF55; /* Minecraft Yellow */
+}
+
+.dashboard-button {
+  display: inline-block;
+  font-family: 'VT323', monospace;
+  padding: 15px 30px;
+  font-size: 1.5rem;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  background-color: #2980b9; /* Lapis Blue */
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+  margin-right: 15px;
+}
+
+.dashboard-button:hover {
+  background-color: #3498db;
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 0 #000;
+}
+
+.dashboard-button:active {
+  transform: translateY(2px);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.action-buttons {
+  margin-top: 15px;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.stat-card {
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 25px;
+  border: 3px solid #000;
+  text-align: center;
+}
+
+.stat-card h3 {
+  margin-top: 0;
+  font-size: 1.8rem;
+  color: #FFAA00;
+}
+
+.stat-card p {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 10px 0 0;
+  text-shadow: 2px 2px #000;
+}
+
+.stat-card .online {
+  color: #2ecc71; /* Green */
+}
+
+.stat-card .offline {
+  color: #c0392b; /* Red */
+}

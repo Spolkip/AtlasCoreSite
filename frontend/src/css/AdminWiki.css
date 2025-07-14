@@ -1,0 +1,391 @@
+/* frontend/src/css/AdminWiki.css */
+
+.admin-wiki-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    color: #fff;
+    font-family: 'VT323', monospace;
+}
+
+.admin-wiki-container h1 {
+    text-align: center;
+    font-size: 3rem;
+    color: #FFAA00;
+    margin-bottom: 2rem;
+    text-shadow: 2px 2px #000;
+}
+
+.admin-wiki-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+}
+
+.admin-wiki-section {
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 2rem;
+    border: 3px solid #000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-wiki-section h2, .admin-wiki-section h3 {
+    font-size: 2.2rem;
+    color: #FFFF55;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #555;
+    padding-bottom: 0.5rem;
+    text-shadow: 1px 1px #000;
+}
+
+.admin-wiki-section h3 {
+    font-size: 1.8rem;
+    margin-top: 1rem;
+}
+
+.admin-wiki-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.admin-wiki-form input,
+.admin-wiki-form select {
+    width: 100%;
+    padding: 0.75rem;
+    font-family: 'VT323', monospace;
+    font-size: 1.2rem;
+    background-color: #2a2a2a;
+    border: 2px solid #000;
+    color: #fff;
+    box-sizing: border-box;
+}
+
+.admin-wiki-form textarea {
+    grid-column: 1 / -1;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.admin-wiki-list {
+    margin-top: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.admin-wiki-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem;
+    border: 2px solid #444;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.admin-wiki-list-item span {
+    font-size: 1.3rem;
+    flex-grow: 1;
+    cursor: pointer;
+}
+.admin-wiki-list-item span:hover {
+    color: #FFAA00;
+}
+
+.admin-wiki-list-item.selected {
+    border-color: #FFAA00;
+    background-color: rgba(255, 170, 0, 0.1);
+}
+
+.admin-wiki-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    margin-left: 1rem;
+}
+
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 2px solid #000;
+}
+
+.editor-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    background-color: #2a2a2a;
+    padding: 0.5rem;
+    border-bottom: 2px solid #000;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.editor-toolbar button {
+    font-family: 'VT323', monospace;
+    background-color: #7f8c8d;
+    border: 2px solid #000;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    min-width: 30px;
+}
+
+.editor-toolbar button:hover {
+    background-color: #95a5a6;
+}
+
+.toolbar-divider {
+    border-left: 1px solid #555;
+    margin: 0 0.5rem;
+    height: 25px;
+}
+
+.wysiwyg-editor {
+    min-height: 300px;
+    padding: 1rem;
+    background-color: #1e1e1e;
+    color: #fff;
+    font-family: sans-serif; /* Use a standard font for editing */
+    font-size: 16px;
+    line-height: 1.6;
+    outline: none;
+    resize: vertical;
+    overflow-y: auto;
+}
+
+.wysiwyg-editor a {
+    color: blue;
+    text-decoration: underline;
+}
+
+.wysiwyg-editor blockquote {
+    border-left: 4px solid #FFAA00;
+    margin-left: 0;
+    padding-left: 1rem;
+    color: #ccc;
+    background-color: rgba(40, 40, 40, 0.5);
+}
+
+.editor-tabs {
+    display: flex;
+    margin-bottom: 1.5rem;
+    border-bottom: 3px solid #555;
+}
+
+.tab-button {
+    font-family: 'VT323', monospace;
+    font-size: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    background-color: #3a3a3a;
+    border: 2px solid #000;
+    border-bottom: none;
+    color: #ccc;
+    margin-right: 5px;
+}
+
+.tab-button.active {
+    background-color: rgba(0,0,0,0.6);
+    color: #FFFF55;
+    border-color: #555;
+    border-bottom-color: rgba(0,0,0,0.6);
+    transform: translateY(3px);
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    font-family: 'VT323', monospace;
+    background-color: #7f8c8d;
+    border: 2px solid #000;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #2c3e50;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.6);
+    z-index: 10;
+    border: 2px solid #000;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 5px 0;
+}
+
+/* New style for the font size dropdown menu to make it more compact */
+.dropdown-menu-font-size .dropdown-item {
+    padding: 5px 10px; /* Smaller padding */
+    font-size: 1rem; /* Smaller font size for items */
+}
+
+.dropdown-item {
+    color: #ecf0f1;
+    padding: 10px 15px;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #34495e;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background-color: #34495e;
+    color: #FFFF55;
+}
+
+.dropdown-item.disabled {
+    color: #7f8c8d;
+    cursor: not-allowed;
+}
+
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr); /* Adjusted for more colors */
+    gap: 5px;
+    padding: 10px;
+    background-color: #34495e;
+}
+
+.color-swatch {
+    width: 25px;
+    height: 25px;
+    border: 1px solid #fff;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.editor-toolbar .editor-button {
+    font-family: 'VT323', monospace;
+    background-color: #7f8c8d;
+    border: 2px solid #000;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    min-width: 30px;
+}
+
+.spoiler {
+    border: 2px solid #444;
+    background-color: rgba(0,0,0,0.2);
+    margin: 1rem 0;
+    border-radius: 5px;
+}
+
+.spoiler-title {
+    background-color: #2a2a2a;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    color: #FFFF55;
+}
+
+.spoiler-content {
+    padding: 1rem;
+    border-top: 2px solid #444;
+}
+
+@media (max-width: 900px) {
+    .admin-wiki-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Add these new styles to the end of frontend/src/css/AdminWiki.css */
+
+/* General Modal Overlay */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001; /* Ensure it's on top */
+}
+
+/* Modal Content Container */
+.admin-modal-overlay .admin-dashboard-container {
+    max-width: 600px; /* Optimal width for a simple input modal */
+    width: 90%;
+    padding: 30px 40px;
+    background-color: #1e1e1e; /* Darker background for contrast */
+    border: 4px solid #000;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), inset 0 0 15px #000; /* Thematic glow */
+    color: #fff;
+    font-family: 'VT323', monospace;
+}
+
+/* Modal Title */
+.admin-modal-overlay h2 {
+    color: #00FFFF; /* Bright cyan title */
+    text-shadow: 2px 2px #000;
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 25px;
+}
+
+/* Close Button */
+.admin-modal-overlay .close-modal-button {
+    font-size: 1.2rem;
+    width: 30px;
+    height: 30px;
+    top: 10px;
+    right: 10px;
+}
+
+/* Input Field Styling */
+.admin-modal-overlay .auth-input {
+    background-color: #111;
+    border: 3px solid #000;
+    color: #e0e0e0;
+    padding: 15px;
+    font-size: 1.4rem;
+    transition: border-color 0.2s;
+}
+
+/* Input Field Focus State - The Fix! */
+.admin-modal-overlay .auth-input:focus {
+    outline: none;
+    border-color: #00FFFF; /* Change focus border to cyan */
+    box-shadow: 0 0 10px #00FFFF;
+}
+
+/* Submit Button */
+.admin-modal-overlay .mc-button {
+    font-size: 1.5rem;
+    padding: 15px;
+    background-color: #27ae60;
+}
+
+.admin-modal-overlay .mc-button:hover {
+    background-color: #2ecc71;
+}

@@ -1,0 +1,100 @@
+/* frontend/src/css/LinkMinecraft.css */
+/* Styles for the Minecraft account linking page */
+
+.link-minecraft-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #3a3a3a;
+  background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+  border: 3px solid #000;
+  box-shadow: 0 0 20px rgba(0,0,0,0.7);
+  color: #fff;
+  border-radius: 8px;
+}
+
+.link-minecraft-title {
+  text-align: center;
+  color: #FFAA00;
+  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px #000;
+}
+
+.link-minecraft-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.link-minecraft-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.link-minecraft-label {
+  font-weight: 500;
+  color: #ccc;
+  font-size: 1.5rem;
+  text-shadow: 1px 1px #000;
+}
+
+.link-minecraft-input {
+  padding: 0.75rem;
+  border: 2px solid #000;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  font-family: 'VT323', monospace;
+  background-color: #2a2a2a;
+  color: #fff;
+}
+
+.link-minecraft-input:focus {
+  border-color: #FFAA00;
+  outline: none;
+}
+
+.link-minecraft-button {
+  font-family: 'VT323', monospace;
+  padding: 15px 30px;
+  font-size: 1.5rem;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  background-color: #2980b9; /* Lapis Blue */
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0 #000;
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+}
+
+.link-minecraft-button:hover {
+  background-color: #3498db;
+}
+
+.link-minecraft-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.link-minecraft-message {
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 1.2rem;
+  border: 2px solid #000;
+}
+
+.link-minecraft-error {
+  background-color: #c0392b;
+  color: white;
+}
+
+.link-minecraft-success {
+  background-color: #27ae60;
+  color: white;
+}

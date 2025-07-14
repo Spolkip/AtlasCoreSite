@@ -1,0 +1,79 @@
+/* frontend/src/css/OrderHistory.css */
+.order-history-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  color: #fff;
+}
+
+.order-history-container h2 {
+  text-align: center;
+  font-size: 3rem;
+  color: #FFAA00;
+  margin-bottom: 30px;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.order-header {
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 3px solid #000;
+  padding: 20px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s;
+}
+
+.order-header:hover {
+  background-color: rgba(255, 170, 0, 0.2);
+}
+
+.order-header.active {
+  background-color: rgba(46, 204, 113, 0.3);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom: none;
+}
+
+.order-header h3 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.order-status {
+  font-size: 1.5rem;
+  padding: 5px 15px;
+  border-radius: 5px;
+  text-transform: capitalize;
+}
+
+.status-completed { background-color: #27ae60; }
+.status-pending { background-color: #f39c12; }
+.status-cancelled { background-color: #c0392b; }
+
+.order-details-content {
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 3px solid #000;
+  border-top: none;
+  padding: 25px;
+  display: flex;
+  gap: 25px;
+}
+
+.order-details-content img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border: 2px solid #555;
+}
+
+.order-details-content p {
+  margin: 8px 0;
+  font-size: 1.3rem;
+}
