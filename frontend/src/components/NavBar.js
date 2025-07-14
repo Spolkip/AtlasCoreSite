@@ -16,7 +16,7 @@ const Navbar = ({ isAuthenticated, logout, user, settings }) => {
         {isAuthenticated ? (
           <>
             <Link to="/dashboard">Dashboard</Link>
-            <Link to="/profile">Profile</Link>
+            {user && <Link to={`/profile/${user.username}`}>Profile</Link>}
             <Link to="/settings">Settings</Link>
             <button onClick={logout} className="mc-button-nav">Logout</button>
           </>

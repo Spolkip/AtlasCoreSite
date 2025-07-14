@@ -52,7 +52,8 @@ const Dashboard = ({ user }) => {
             <div className="profile-section">
                 <h2>Welcome, {user.username}!</h2>
                 <div className="action-buttons">
-                    <Link to="/profile" className="dashboard-button">View Character Profile</Link>
+                    <Link to={`/profile/${user.username}`} className="dashboard-button">View Character Profile</Link>
+                    <Link to="/profile/search" className="dashboard-button">Search Profiles</Link>
                     <Link to="/order-history" className="dashboard-button">Order History</Link>
                     <Link to="/settings" className="dashboard-button">Account Settings</Link>
                 </div>

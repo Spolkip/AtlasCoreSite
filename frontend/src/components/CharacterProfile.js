@@ -1,6 +1,6 @@
 // frontend/src/components/CharacterProfile.js
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SkinViewer, WalkingAnimation } from 'skinview3d';
 import '../css/CharacterProfile.css';
@@ -93,6 +93,7 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
+    const { username } = useParams();
 
     const auraSkills = [
         { key: 'fighting', name: 'Combat', type: 'combat' }, 
@@ -113,7 +114,7 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     ];
 
     useEffect(() => {
-        if (!user) {
+        if (!username) {
             setLoading(false);
             return;
         }
@@ -123,25 +124,21 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             
-            if (user.minecraft_uuid) {
-                 try {
-                    const response = await axios.get('http://localhost:5000/api/v1/profile', config);
-                    if (response.data.success) {
-                        setProfileData(response.data.data);
-                    } else {
-                        setError(response.data.message || 'Failed to fetch character profile.');
-                    }
-                } catch (err) {
-                    setError(err.response?.data?.message || 'An error occurred while fetching your profile.');
-                } finally {
-                    setLoading(false);
+            try {
+                const response = await axios.get(`http://localhost:5000/api/v1/profile/${username}`, config);
+                if (response.data.success) {
+                    setProfileData(response.data.data);
+                } else {
+                    setError(response.data.message || 'Failed to fetch character profile.');
                 }
-            } else {
+            } catch (err) {
+                setError(err.response?.data?.message || 'An error occurred while fetching your profile.');
+            } finally {
                 setLoading(false);
             }
         };
         fetchProfileData();
-    }, [user]);
+    }, [username]);
 
     const handleUnlinkMinecraft = async () => {
         setError('');
@@ -166,7 +163,18 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
         }
     };
 
-    if (!user.minecraft_uuid) {
+    if (loading) {
+        return <div className="loading-container">Loading Character Profile...</div>;
+    }
+
+    if (error) {
+        if (error.includes('This user has set their profile to private')) {
+            return <div className="profile-section"><h2>Private Profile</h2><p>{error}</p></div>;
+        }
+        return <div className="profile-section"><h2>Could Not Load Profile</h2><p>{error}</p></div>;
+    }
+    
+    if (user && user.username === username && !user.minecraft_uuid) {
         return (
             <div className="profile-section">
                 <h2>Account Not Linked</h2>
@@ -178,14 +186,6 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
         );
     }
 
-    if (loading) {
-        return <div className="loading-container">Loading Character Profile...</div>;
-    }
-
-    if (error && !profileData) {
-        return <div className="profile-section"><h2>Could Not Load Profile</h2><p>{error}</p></div>;
-    }
-
     if (profileData && profileData.playerStats) {
         const { playerStats } = profileData;
         return (
@@ -193,17 +193,19 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                  {error && <div className="auth-error-message" style={{marginBottom: '20px'}}>{error}</div>}
                  {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
                 <div className="profile-upper-section">
-                    <SkinViewerComponent uuid={user.minecraft_uuid} />
+                    <SkinViewerComponent uuid={playerStats.uuid} />
                     <div className="stats-container">
                         <div className="player-identity">
-                            <h2 className="player-name">{playerStats.player_name || 'Player'}</h2>
+                            <h2 className="player-name">{username}</h2>
                             <p className="player-class-race">
                                 Level {playerStats.fabled_default_currentlevel || 'N/A'} {playerStats.fabled_player_races_class || ''} {playerStats.fabled_player_class_mainclass || ''}
                             </p>
+                            {user && user.username === username && (
                             <div className="action-buttons" style={{marginTop: '20px'}}>
                                 <Link to="/settings" className="dashboard-button small">Settings</Link>
                                 <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
                             </div>
+                            )}
                         </div>
                          <div className="skills-combat-panel">
                             <h3>Combat Skills</h3>

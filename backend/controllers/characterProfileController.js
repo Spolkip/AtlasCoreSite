@@ -106,13 +106,79 @@ exports.getCharacterProfile = async (req, res) => {
             statsError = e.message;
         }
 
+        const playerStats = statsResponse?.stats || {};
+        if (user.minecraft_uuid && !playerStats.uuid) {
+            playerStats.uuid = user.minecraft_uuid;
+        }
+
         res.status(200).json({
             success: true,
             data: {
-                playerStats: statsResponse?.stats || null,
+                playerStats: Object.keys(playerStats).length > 0 ? playerStats : null,
                 activityFeed: activityFeed
             },
             error: statsError 
+        });
+
+    } catch (error) {
+        console.error('Error fetching character profile data:', error);
+        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error fetching profile data.' });
+    }
+};
+
+// Fetches character profile data for a specific username
+exports.getCharacterProfileByUsername = async (req, res) => {
+    const { username } = req.params;
+
+    try {
+        const userToView = await User.findByUsername(username);
+
+        if (!userToView) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+        
+        const isOwner = req.user && req.user.id === userToView.id;
+        const isAdmin = req.user && req.user.is_admin === 1;
+
+        if (userToView.is_profile_public === false && !isOwner && !isAdmin) {
+            return res.status(403).json({ success: false, message: 'This user has set their profile to private.' });
+        }
+
+        const activityFeed = await getUserActivityFeed(userToView.id);
+
+        if (!userToView.minecraft_uuid) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    playerStats: null,
+                    activityFeed
+                }
+            });
+        }
+
+        let statsResponse = null;
+        let statsError = null;
+        try {
+            statsResponse = await callMinecraftPlugin('/player-stats', { uuid: userToView.minecraft_uuid });
+            if (!statsResponse.success) {
+                statsError = statsResponse.message || 'Failed to retrieve player stats.';
+            }
+        } catch (e) {
+            statsError = e.message;
+        }
+
+        const playerStats = statsResponse?.stats || {};
+        if (userToView.minecraft_uuid && !playerStats.uuid) {
+            playerStats.uuid = userToView.minecraft_uuid;
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                playerStats: Object.keys(playerStats).length > 0 ? playerStats : null,
+                activityFeed: activityFeed
+            },
+            error: statsError
         });
 
     } catch (error) {

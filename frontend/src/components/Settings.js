@@ -11,13 +11,16 @@ const currencies = [
   // ... other currencies
 ];
 
-const Settings = ({ user, onSettingsUpdate }) => {
+const Settings = ({ user, onUserUpdate, onSettingsUpdate }) => {
   // State for Admin Settings
   const [adminSettings, setAdminSettings] = useState({});
   const [newAdminSettings, setNewAdminSettings] = useState({});
 
   // State for User Settings
-  const [userDetails, setUserDetails] = useState({ email: user?.email || '' });
+  const [userDetails, setUserDetails] = useState({ 
+      email: user?.email || '',
+      is_profile_public: user?.is_profile_public ?? true,
+  });
   const [passwordDetails, setPasswordDetails] = useState({
     currentPassword: '',
     newPassword: '',
@@ -57,8 +60,8 @@ const Settings = ({ user, onSettingsUpdate }) => {
   };
   
   const handleUserSettingsChange = (e) => {
-      const { name, value } = e.target;
-      setUserDetails(prev => ({...prev, [name]: value}));
+      const { name, value, type, checked } = e.target;
+      setUserDetails(prev => ({...prev, [name]: type === 'checkbox' ? checked : value}));
   }
 
   const handlePasswordChange = (e) => {
@@ -85,7 +88,8 @@ const Settings = ({ user, onSettingsUpdate }) => {
     setSuccessMessage('');
     setError('');
     try {
-        await axios.put('http://localhost:5000/api/v1/auth/updatedetails', { email: userDetails.email }, config);
+        const response = await axios.put('http://localhost:5000/api/v1/auth/details', userDetails, config);
+        onUserUpdate(response.data.user); // Update app-level user state
         setSuccessMessage('Your details have been updated!');
     } catch (err) {
          setError(err.response?.data?.message || 'Failed to update details.');
@@ -120,13 +124,26 @@ const Settings = ({ user, onSettingsUpdate }) => {
       {error && <div className="auth-error-message" style={{marginBottom: '20px'}}>{error}</div>}
       {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
 
-      {/* User Settings */}
       <div className="profile-section">
           <h2>Your Profile</h2>
           <form onSubmit={handleUpdateUserSettings} className="admin-form">
               <div className="form-group">
                   <label htmlFor="email">Email Address</label>
                   <input id="email" type="email" name="email" value={userDetails.email} onChange={handleUserSettingsChange} className="auth-input" required />
+              </div>
+              <div className="form-group">
+                <label className="remember-me-label">
+                    <input 
+                        type="checkbox" 
+                        name="is_profile_public" 
+                        checked={userDetails.is_profile_public} 
+                        onChange={handleUserSettingsChange} 
+                    />
+                    Make Profile Public
+                </label>
+                <p style={{fontSize: '1rem', color: '#999', marginTop: '5px'}}>
+                    If unchecked, other players will not be able to search for or view your profile.
+                </p>
               </div>
               <button type="submit" className="mc-button primary">Update Details</button>
           </form>
@@ -149,7 +166,6 @@ const Settings = ({ user, onSettingsUpdate }) => {
           </form>
       </div>
 
-      {/* Admin Settings */}
       {user && user.isAdmin && (
         <div className="profile-section">
           <h2>Admin Settings</h2>

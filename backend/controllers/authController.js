@@ -14,7 +14,8 @@ const toUserResponse = (user) => ({
   email: user.email,
   isAdmin: user.is_admin === 1,
   isVerified: user.is_verified,
-  minecraft_uuid: user.minecraft_uuid
+  minecraft_uuid: user.minecraft_uuid,
+  is_profile_public: user.is_profile_public
 });
 
 // Function to call the Minecraft plugin's webhook
@@ -106,6 +107,35 @@ exports.loginUser = async (req, res) => {
     console.error('Error in loginUser:', error);
     res.status(500).json({ success: false, message: 'Server error during login.' });
   }
+};
+
+exports.updateUserDetails = async (req, res) => {
+    const { email, is_profile_public } = req.body;
+    try {
+        const user = await UserAuth.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const updates = {};
+        if (email && email !== user.email) {
+            updates.email = email;
+        }
+        if (typeof is_profile_public === 'boolean') {
+            updates.is_profile_public = is_profile_public;
+        }
+
+        if (Object.keys(updates).length > 0) {
+            await user.update(updates);
+        }
+        
+        const updatedUser = await UserAuth.findById(req.user.id);
+        res.status(200).json({ success: true, message: 'Details updated successfully', user: toUserResponse(updatedUser) });
+
+    } catch (error) {
+        console.error('Error updating user details:', error);
+        res.status(500).json({ success: false, message: 'Server error while updating details.' });
+    }
 };
 
 exports.getUserProfile = async (req, res) => {

@@ -1,6 +1,6 @@
 // frontend/src/App.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
@@ -20,32 +20,33 @@ import OrderHistory from './components/OrderHistory';
 import ForgotPassword from './components/ForgotPassword';
 import LinkMinecraft from './components/LinkMinecraft';
 import Dashboard from './components/Dashboard';
-import CharacterProfile from './components/CharacterProfile'; // Import the new component
+import CharacterProfile from './components/CharacterProfile';
+import ProfileSearch from './components/ProfileSearch';
 import AdminDashboard from './components/AdminDashboard';
 import Footer from './components/Footer';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import Wiki from './components/Wiki';
 import AdminWiki from './components/AdminWiki';
-import LiveChat from './components/LiveChat'; 
+import LiveChat from './components/LiveChat';
 import AdminChat from './components/AdminChat';
 
 import './css/App.css';
 
-// Client-side Firebase configuration
+// Client-side Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDVJv5KBf7DiFxLPw7-DaR0sQNGZd5zko8",
-  authDomain: "atlascoreweb.firebaseapp.com",
-  projectId: "atlascoreweb",
-  storageBucket: "atlascoreweb.appspot.com",
-  messagingSenderId: "1017567515762",
-  appId: "1:1017567515762:web:a16e81b3cf33287db3deeb",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 
-function App() {
+function AppContent() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -53,6 +54,7 @@ function App() {
   const [settings, setSettings] = useState(null);
   const [exchangeRates, setExchangeRates] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const handleLogout = useCallback(() => {
     setUser(null);
@@ -61,7 +63,8 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setCart([]);
-  }, []);
+    navigate('/'); // Redirect to homepage after logout
+  }, [navigate]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -131,60 +134,67 @@ function App() {
   }
 
   return (
+    <div className="App">
+      <NavBar user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={handleLogout} settings={settings} />
+      <main className="content">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/shop"
+            element={<ProductList
+              user={user}
+              cart={cart}
+              setCart={setCart}
+              settings={settings}
+              isAdmin={isAdmin}
+              exchangeRates={exchangeRates}
+            />}
+          />
+          <Route path="/login" element={<Login onLoginSuccess={handleLogin} />} />
+          <Route path="/register" element={<Register onLoginSuccess={handleLogin} />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/wiki" element={<Wiki user={user} />}>
+            <Route path=":type/:id" element={<Wiki user={user} />} />
+          </Route>
+
+          {isAuthenticated && (
+            <>
+              <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
+              <Route path="/profile/search" element={<ProfileSearch />} />
+              <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} />
+              <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} />} />
+              <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
+              <Route path="/order-history" element={<OrderHistory user={user} />} />
+              <Route path="/link-minecraft" element={<LinkMinecraft onLoginSuccess={handleLogin} />} />
+            </>
+          )}
+
+          {isAdmin && (
+            <>
+              <Route path="/admin" element={<AddProducts />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard user={user} />} />
+              <Route path="/admin/wiki" element={<AdminWiki />} />
+              <Route path="/admin/chat" element={<AdminChat user={user} db={db} />} />
+            </>
+          )}
+
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+
+        </Routes>
+      </main>
+      <Footer storeName={settings?.store_name} />
+      <LiveChat user={user} isAdmin={isAdmin} />
+    </div>
+  );
+}
+
+function App() {
+  return (
     <Router>
-      <div className="App">
-        <NavBar user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={handleLogout} settings={settings} />
-        <main className="content">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route 
-              path="/shop" 
-              element={<ProductList 
-                user={user} 
-                cart={cart} 
-                setCart={setCart} 
-                settings={settings} 
-                isAdmin={isAdmin} 
-                exchangeRates={exchangeRates} 
-              />} 
-            />
-            <Route path="/login" element={<Login onLoginSuccess={handleLogin} />} />
-            <Route path="/register" element={<Register onLoginSuccess={handleLogin} />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/wiki" element={<Wiki user={user} />}>
-              <Route path=":type/:id" element={<Wiki user={user} />} />
-            </Route>
-            
-            {isAuthenticated && (
-              <>
-                <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
-                <Route path="/profile" element={<CharacterProfile user={user} />} />
-                <Route path="/settings" element={<Settings user={user} onSettingsUpdate={updateSettings} />} />
-                <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} />} />
-                <Route path="/payment/success" element={<PaymentSuccess />} />
-                <Route path="/payment/cancel" element={<PaymentCancel />} />
-                <Route path="/order-history" element={<OrderHistory user={user} />} />
-                <Route path="/link-minecraft" element={<LinkMinecraft onLoginSuccess={handleLogin} />} />
-              </>
-            )}
-
-            {isAdmin && (
-              <>
-                <Route path="/admin" element={<AddProducts />} />
-                <Route path="/admin-dashboard" element={<AdminDashboard user={user} />} />
-                <Route path="/admin/wiki" element={<AdminWiki />} />
-                <Route path="/admin/chat" element={<AdminChat user={user} db={db} />} /> 
-              </>
-            )}
-
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-
-          </Routes>
-        </main>
-        <Footer storeName={settings?.store_name} />
-        <LiveChat user={user} isAdmin={isAdmin} />
-      </div>
+      <AppContent />
     </Router>
   );
 }
