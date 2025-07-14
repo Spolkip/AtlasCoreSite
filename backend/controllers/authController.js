@@ -6,6 +6,9 @@ const crypto = require('crypto');
 const axios = require('axios');
 const { collection, getDocs, query, where } = require('firebase/firestore');
 const { FIREBASE_DB } = require('../config/firebase');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper to create a consistent user object for API responses
 const toUserResponse = (user) => ({
@@ -107,6 +110,44 @@ exports.loginUser = async (req, res) => {
     console.error('Error in loginUser:', error);
     res.status(500).json({ success: false, message: 'Server error during login.' });
   }
+};
+
+exports.googleLogin = async (req, res) => {
+    const { credential } = req.body;
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { email, name } = payload;
+
+        let user = await UserAuth.findByEmail(email);
+
+        if (!user) {
+            // User does not exist, create a new one
+            const username = name.replace(/\s/g, '') + Math.random().toString(36).substring(2, 6);
+            const newUser = new UserAuth({
+                username,
+                email,
+                // No password for Google-based accounts
+            });
+            await newUser.save();
+            user = newUser;
+        }
+
+        const token = jwt.sign({ id: user.id, isAdmin: user.is_admin === 1 }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        
+        res.status(200).json({
+            success: true,
+            token,
+            user: toUserResponse(user),
+        });
+
+    } catch (error) {
+        console.error('Google Login Error:', error);
+        res.status(401).json({ success: false, message: 'Google authentication failed.' });
+    }
 };
 
 exports.updateUserDetails = async (req, res) => {

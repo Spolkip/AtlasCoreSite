@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { GoogleLogin } from '@react-oauth/google';
 import '../css/AuthForms.css';
 
 const Login = ({ onLoginSuccess }) => {
@@ -20,6 +21,23 @@ const Login = ({ onLoginSuccess }) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError('');
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    try {
+        const res = await axios.post('http://localhost:5000/api/v1/auth/google-login', {
+            credential: credentialResponse.credential
+        });
+        if (res.data.success) {
+            onLoginSuccess(res.data);
+            navigate('/dashboard');
+        }
+    } catch (err) {
+        setError('Google login failed. Please try again.');
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -111,6 +129,15 @@ const Login = ({ onLoginSuccess }) => {
             {isLoading ? <span>Logging In...</span> : <span>Log In</span>}
           </button>
         </form>
+        <div style={{'display': 'flex', 'justifyContent': 'center', 'marginTop': '20px'}}>
+            <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                    console.log('Login Failed');
+                    setError('Google login failed. Please try again.');
+                }}
+            />
+        </div>
         <div className="auth-footer-link">
           <p>Don't have an account? <Link to="/register">Register Here</Link></p>
         </div>

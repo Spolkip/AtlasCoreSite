@@ -14,6 +14,11 @@ router.post('/register', authController.registerUser);
 // @access  Public
 router.post('/login', authController.loginUser);
 
+// @route   POST /api/v1/auth/google-login
+// @desc    Login/Register a user with Google
+// @access  Public
+router.post('/google-login', authController.googleLogin);
+
 // @route   GET /api/v1/auth/me
 // @desc    Get current user's profile
 // @access  Private
