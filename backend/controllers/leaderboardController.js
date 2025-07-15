@@ -1,61 +1,102 @@
 // backend/controllers/leaderboardController.js
-const { collection, getDocs, query, orderBy, limit } = require('firebase/firestore');
+const { collection, getDocs } = require('firebase/firestore');
 const { FIREBASE_DB } = require('../config/firebase');
 
-// Helper to safely parse stats which might be stored as strings
-const parseStat = (stat) => {
-    const num = parseFloat(stat);
-    return isNaN(num) ? 0 : num;
+/**
+ * Defines the leaderboards to be generated and groups them into categories.
+ * The key is the display name of the leaderboard.
+ * The value is the exact key used in the 'stats' map of a player's profile document.
+ */
+const LEADERBOARD_CATEGORIES = {
+    "General": {
+        "Player Balance": "vault_eco_balance",
+        "Power Level": "auraskills_power",
+        "Player Kills": "statistic_player_kills",
+        "Deaths": "statistic_deaths",
+    },
+    "Combat Skills": {
+        "Fighting": "auraskills_fighting",
+        "Archery": "auraskills_archery",
+        "Defense": "auraskills_defense",
+        "Agility": "auraskills_agility",
+        "Endurance": "auraskills_endurance",
+    },
+    "Gathering Skills": {
+        "Farming": "auraskills_farming",
+        "Foraging": "auraskills_foraging",
+        "Fishing": "auraskills_fishing",
+        "Excavation": "auraskills_excavation",
+        "Mining": "auraskills_mining",
+    },
+    "Crafting & Magic": {
+        "Alchemy": "auraskills_alchemy",
+        "Enchanting": "auraskills_enchanting",
+        "Forging": "auraskills_forging",
+        "Sorcery": "auraskills_sorcery",
+        "Healing": "auraskills_healing",
+    }
 };
 
-// @desc    Get leaderboard data
-// @route   GET /api/v1/leaderboards
-// @access  Public
-exports.getLeaderboard = async (req, res) => {
-    // Note: The 'stat' query parameter should be the full path in the document, e.g., 'stats.fabled_default_currentlevel'
-    const { stat = 'stats.fabled_default_currentlevel', order = 'desc', limit: queryLimit = 10 } = req.query;
-
+/**
+ * @desc    Get all leaderboards data by processing player profiles
+ * @route   GET /api/v1/leaderboards
+ * @access  Public
+ */
+exports.getLeaderboards = async (req, res) => {
     try {
-        const playerProfilesRef = collection(FIREBASE_DB, 'player_profiles');
-        
-        // Firestore requires indexes for any orderBy clause that isn't on the document ID.
-        const q = query(playerProfilesRef, orderBy(stat, order), limit(parseInt(queryLimit)));
+        const profilesCollectionRef = collection(FIREBASE_DB, 'player_profiles');
+        const querySnapshot = await getDocs(profilesCollectionRef);
 
-        const querySnapshot = await getDocs(q);
-        
-        let leaderboard = [];
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            // Nested access to get the stat value
-            const statValue = stat.split('.').reduce((o, i) => (o ? o[i] : undefined), data);
-
-            leaderboard.push({
-                playerName: data.playerName || 'Unknown',
-                statValue: statValue !== undefined ? statValue : 'N/A'
-            });
-        });
-        
-        // Perform a secondary sort in code as Firestore's string sorting can be inconsistent for numbers
-        leaderboard.sort((a, b) => {
-            const statA = parseStat(a.statValue);
-            const statB = parseStat(b.statValue);
-            return order === 'desc' ? statB - statA : statA - statB;
-        });
-        
-        res.status(200).json({
-            success: true,
-            leaderboard
-        });
-
-    } catch (error) {
-        console.error(`Error fetching leaderboard for stat "${stat}":`, error);
-        // Check for a specific Firestore "missing index" error code
-        if (error.code === 'failed-precondition') {
-            return res.status(500).json({ 
-                success: false, 
-                message: `Server error: A required database index is missing for the stat '${stat}'. Please create the composite index in your Firestore settings.` 
+        if (querySnapshot.empty) {
+            return res.status(200).json({ 
+                success: true, 
+                message: 'No player profiles found to generate leaderboards.',
+                leaderboards: {} 
             });
         }
-        res.status(500).json({ success: false, message: 'Server error fetching leaderboard data.' });
+
+        // Map all player profiles into a more usable format
+        const allPlayers = [];
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            allPlayers.push({
+                uuid: doc.id,
+                username: data.playerName || 'Unknown',
+                stats: data.stats || {}
+            });
+        });
+
+        const categorizedLeaderboards = {};
+        
+        // Generate each leaderboard based on the configuration
+        for (const [categoryName, boards] of Object.entries(LEADERBOARD_CATEGORIES)) {
+            categorizedLeaderboards[categoryName] = {};
+            for (const [boardName, statKey] of Object.entries(boards)) {
+                const rankedPlayers = allPlayers
+                    .map(player => {
+                        // Safely parse the score, defaulting to 0 if invalid or missing
+                        const score = parseFloat(player.stats[statKey]) || 0;
+                        return {
+                            uuid: player.uuid,
+                            username: player.username,
+                            score: score
+                        };
+                    })
+                    .sort((a, b) => b.score - a.score) // Sort descending
+                    .slice(0, 25) // Take top 25 players
+                    .map((player, index) => ({
+                        ...player,
+                        rank: index + 1 // Add rank
+                    }));
+                
+                categorizedLeaderboards[categoryName][boardName] = { topPlayers: rankedPlayers };
+            }
+        }
+
+        res.status(200).json({ success: true, leaderboards: categorizedLeaderboards });
+
+    } catch (error) {
+        console.error('Error fetching and processing leaderboards:', error);
+        res.status(500).json({ success: false, message: 'Server error generating leaderboard data.' });
     }
 };

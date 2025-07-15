@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read/write to public chat data for authenticated users
+    // IMPORTANT: Replace 'YOUR_APP_ID_HERE' with your actual Firebase App ID.
+    match /artifacts/1:1017567515762:web:a16e81b3cf33287db3deeb/public/data/liveChats/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow admins to read and write all chat documents
+    // IMPORTANT: Replace 'YOUR_APP_ID_HERE' with your actual Firebase App ID.
+    match /artifacts/1:1017567515762:web:a16e81b3cf33287db3deeb/public/data/liveChats/{anyUserId} {
+      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_admin == 1;
+    }
+
+    // Existing rule for users collection (assuming 'users' is a top-level collection)
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // WARNING: These rules allow ANYONE to read, write, and delete ANY data
+    // in your Firestore database. DO NOT USE IN PRODUCTION.
+    // This is for development/testing purposes ONLY.
+    match /{document=**} {
+      allow read, write;
+    }
+  }
+}

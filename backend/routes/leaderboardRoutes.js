@@ -1,11 +1,11 @@
 // backend/routes/leaderboardRoutes.js
 const express = require('express');
-const router = express.Router();
-const { getLeaderboard } = require('../controllers/leaderboardController');
+const router =express.Router();
+const { getLeaderboards } = require('../controllers/leaderboardController');
 
 // @route   GET /api/v1/leaderboards
-// @desc    Get leaderboard data for a specific stat
+// @desc    Get all leaderboard data
 // @access  Public
-router.get('/', getLeaderboard);
+router.get('/', getLeaderboards);
 
 module.exports = router;

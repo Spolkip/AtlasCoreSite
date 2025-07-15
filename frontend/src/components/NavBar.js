@@ -1,15 +1,8 @@
 // frontend/src/components/NavBar.js
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const Navbar = ({ isAuthenticated, logout, user, settings }) => {
-  const navigate = useNavigate();
-
-  const handleLogoutClick = () => {
-    logout(); // Clears the user session
-    navigate('/'); // Redirects the user to the homepage
-  };
-
   return (
     <nav className="navbar">
       <div className="navbar-brand">
@@ -19,13 +12,14 @@ const Navbar = ({ isAuthenticated, logout, user, settings }) => {
         <Link to="/">Home</Link>
         <Link to="/shop">Store</Link>
         <Link to="/wiki">Wiki</Link>
+        <Link to="/leaderboard">Leaderboards</Link> {/* <-- ADDED LEADERBOARD LINK */}
         
         {isAuthenticated ? (
           <>
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/profile">Profile</Link>
             <Link to="/settings">Settings</Link>
-            <button onClick={handleLogoutClick} className="mc-button-nav">Logout</button>
+            <button onClick={logout} className="mc-button-nav">Logout</button>
           </>
         ) : (
           <>

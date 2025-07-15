@@ -3,99 +3,118 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../css/Leaderboard.css';
 
-// FIX: Use the full path to the stat in the Firestore document
-const leaderboardTabs = [
-    { name: 'Level', stat: 'stats.fabled_default_currentlevel' },
-    { name: 'Balance', stat: 'stats.vault_eco_balance' },
-    { name: 'Mining', stat: 'stats.auraskills_mining' },
-    { name: 'Farming', stat: 'stats.auraskills_farming' },
-    { name: 'Combat', stat: 'stats.auraskills_fighting' },
-    { name: 'Player Kills', stat: 'stats.statistic_player_kills' },
-];
+const LeaderboardTable = ({ title, players }) => {
+    if (!players || players.length === 0) {
+        return (
+            <div className="leaderboard-table-container">
+                <h3>{title}</h3>
+                <p>No data available for this leaderboard yet.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="leaderboard-table-container">
+            <h3>{title}</h3>
+            <table className="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {players.map((player) => (
+                        <tr key={player.rank}>
+                            <td className="leaderboard-rank">#{player.rank}</td>
+                            <td className="leaderboard-player">
+                                <img 
+                                    src={`https://visage.surgeplay.com/face/40/${player.uuid || '8667ba71b85a4004af54457a9734eed7'}`} 
+                                    alt={player.username}
+                                    className="leaderboard-player-skin"
+                                />
+                                <span>{player.username}</span>
+                            </td>
+                            <td className="leaderboard-score">{player.score.toLocaleString()}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
 
 const Leaderboard = () => {
-    // ... (rest of the component logic remains the same)
-    const [activeTab, setActiveTab] = useState(leaderboardTabs[0].stat);
-    const [leaderboardData, setLeaderboardData] = useState([]);
+    const [leaderboards, setLeaderboards] = useState({});
+    const [activeCategory, setActiveCategory] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        const fetchLeaderboard = async () => {
+        const fetchLeaderboards = async () => {
             setLoading(true);
-            setError('');
             try {
-                const response = await axios.get(`http://localhost:5000/api/v1/leaderboards?stat=${activeTab}&limit=10`);
-                if (response.data.success && Array.isArray(response.data.leaderboard)) {
-                    setLeaderboardData(response.data.leaderboard);
-                } else {
-                    setLeaderboardData([]);
-                    if (!response.data.success) {
-                       setError(response.data.message || 'Failed to load leaderboard data.');
+                const { data } = await axios.get('http://localhost:5000/api/v1/leaderboards');
+                if (data.success) {
+                    setLeaderboards(data.leaderboards);
+                    const firstCategory = Object.keys(data.leaderboards)[0];
+                    if (firstCategory) {
+                        setActiveCategory(firstCategory);
                     }
+                } else {
+                    setError(data.message || 'Could not load leaderboards.');
                 }
             } catch (err) {
-                setLeaderboardData([]);
-                setError(err.response?.data?.message || 'An error occurred while fetching the leaderboard.');
+                setError(err.response?.data?.message || 'An error occurred while fetching leaderboard data.');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchLeaderboard();
-    }, [activeTab]);
+        fetchLeaderboards();
+    }, []);
 
+    const renderLeaderboardsForCategory = () => {
+        const categoryData = leaderboards[activeCategory];
+        if (!categoryData) {
+            return <p>Select a category to view leaderboards.</p>;
+        }
+
+        return (
+            <div className="leaderboard-category-content">
+                {Object.entries(categoryData).map(([boardName, boardData]) => (
+                    <LeaderboardTable key={boardName} title={boardName} players={boardData.topPlayers} />
+                ))}
+            </div>
+        );
+    };
+
+    if (loading) return <div className="loading-container"><h1>Loading Leaderboards...</h1></div>;
+    if (error) return <div className="error-container"><h1>{error}</h1></div>;
 
     return (
         <div className="leaderboard-container">
             <h1>Leaderboards</h1>
-            <div className="leaderboard-tabs">
-                {leaderboardTabs.map(tab => (
-                    <button
-                        key={tab.stat}
-                        className={`tab-button ${activeTab === tab.stat ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.stat)}
-                    >
-                        {tab.name}
-                    </button>
-                ))}
-            </div>
-
-            <div className="leaderboard-content">
-                {loading ? (
-                    <p>Loading leaderboard...</p>
-                ) : error ? (
-                    <p className="auth-error-message">{error}</p>
+            <nav className="leaderboard-nav">
+                {Object.keys(leaderboards).length > 0 ? (
+                    Object.keys(leaderboards).map(categoryName => (
+                        <button 
+                            key={categoryName}
+                            className={`leaderboard-nav-button ${activeCategory === categoryName ? 'active' : ''}`}
+                            onClick={() => setActiveCategory(categoryName)}
+                        >
+                            {categoryName}
+                        </button>
+                    ))
                 ) : (
-                    <table className="leaderboard-table">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Player</th>
-                                <th>Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {leaderboardData.length > 0 ? (
-                                leaderboardData.map((player, index) => (
-                                    <tr key={index}>
-                                        <td className="rank">#{index + 1}</td>
-                                        <td className="player-name">{player.playerName}</td>
-                                        <td className="stat-value">{Number(player.statValue).toLocaleString() || '0'}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="3">No data available for this leaderboard.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                    <p>No leaderboards are currently available.</p>
                 )}
-            </div>
+            </nav>
+            {activeCategory && renderLeaderboardsForCategory()}
         </div>
     );
 };
-
 
 export default Leaderboard;

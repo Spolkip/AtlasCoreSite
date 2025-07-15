@@ -1,6 +1,7 @@
 /* frontend/src/css/Leaderboard.css */
+
 .leaderboard-container {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 2rem auto;
     padding: 2rem;
     color: #fff;
@@ -15,15 +16,15 @@
     text-shadow: 3px 3px #000;
 }
 
-.leaderboard-tabs {
+.leaderboard-nav {
     display: flex;
     justify-content: center;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
     flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 2.5rem;
 }
 
-.tab-button {
+.leaderboard-nav-button {
     font-family: 'VT323', monospace;
     font-size: 1.5rem;
     padding: 10px 25px;
@@ -33,27 +34,43 @@
     box-shadow: 4px 4px 0 #000;
     cursor: pointer;
     transition: all 0.2s ease;
-    text-shadow: 2px 2px #000;
+    text-transform: capitalize;
 }
 
-.tab-button:hover {
+.leaderboard-nav-button:hover {
     background-color: #95a5a6;
     transform: translateY(-2px);
     box-shadow: 6px 6px 0 #000;
 }
 
-.tab-button.active {
+.leaderboard-nav-button.active {
     background-color: #27ae60;
     color: #FFFF55;
     transform: translateY(2px);
     box-shadow: 2px 2px 0 #000;
 }
 
-.leaderboard-content {
+.leaderboard-category-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.leaderboard-table-container {
     background-color: rgba(0, 0, 0, 0.6);
-    padding: 2rem;
+    padding: 1.5rem;
     border: 3px solid #000;
     box-shadow: 0 0 20px rgba(0,0,0,0.7);
+}
+
+.leaderboard-table-container h3 {
+    font-size: 2rem;
+    color: #FFFF55;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border-bottom: 2px solid #555;
+    padding-bottom: 1rem;
 }
 
 .leaderboard-table {
@@ -61,37 +78,51 @@
     border-collapse: collapse;
 }
 
-.leaderboard-table th, .leaderboard-table td {
-    padding: 1rem;
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 12px;
     text-align: left;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     border-bottom: 2px solid #444;
 }
 
-.leaderboard-table th {
-    font-size: 1.6rem;
-    color: #FFFF55;
-    text-align: center;
+.leaderboard-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
-.leaderboard-table td {
-    text-align: center;
-}
-
-.leaderboard-table .rank {
-    font-size: 1.8rem;
+.leaderboard-table thead th {
+    font-size: 1.5rem;
     color: #FFAA00;
+    text-shadow: 1px 1px #000;
+}
+
+.leaderboard-table tbody tr:hover {
+    background-color: rgba(255, 170, 0, 0.1);
+}
+
+.leaderboard-rank {
+    font-size: 1.6rem;
     font-weight: bold;
-    width: 15%;
+    color: #FFAA00;
+    text-align: center;
+    width: 60px;
 }
 
-.leaderboard-table .player-name {
-    text-align: left;
-    width: 60%;
+.leaderboard-player {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
-.leaderboard-table .stat-value {
+.leaderboard-player-skin {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #000;
+    image-rendering: pixelated; /* Keeps the pixelated look */
+}
+
+.leaderboard-score {
+    text-align: right;
+    font-weight: bold;
     color: #2ecc71;
-    font-weight: bold;
-    width: 25%;
 }
