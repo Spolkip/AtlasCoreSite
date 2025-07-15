@@ -96,20 +96,20 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     const { username } = useParams();
 
     const auraSkills = [
-        { key: 'fighting', name: 'Combat', type: 'combat' }, 
+        { key: 'fighting', name: 'Combat', type: 'combat' },
         { key: 'defense', name: 'Defense', type: 'combat' },
         { key: 'archery', name: 'Archery', type: 'combat' },
         { key: 'mining', name: 'Mining', type: 'utility' },
-        { key: 'farming', name: 'Farming', type: 'utility' }, 
-        { key: 'foraging', name: 'Foraging', type: 'utility' }, 
-        { key: 'fishing', name: 'Fishing', type: 'utility' }, 
-        { key: 'alchemy', name: 'Alchemy', type: 'utility' }, 
-        { key: 'enchanting', name: 'Enchanting', type: 'utility' }, 
-        { key: 'excavation', name: 'Excavation', type: 'utility' }, 
-        { key: 'endurance', name: 'Endurance', type: 'utility' }, 
-        { key: 'agility', name: 'Agility', type: 'utility' }, 
-        { key: 'sorcery', name: 'Sorcery', type: 'utility' }, 
-        { key: 'healing', name: 'Healing', type: 'utility' }, 
+        { key: 'farming', name: 'Farming', type: 'utility' },
+        { key: 'foraging', name: 'Foraging', type: 'utility' },
+        { key: 'fishing', name: 'Fishing', type: 'utility' },
+        { key: 'alchemy', name: 'Alchemy', type: 'utility' },
+        { key: 'enchanting', name: 'Enchanting', type: 'utility' },
+        { key: 'excavation', name: 'Excavation', type: 'utility' },
+        { key: 'endurance', name: 'Endurance', type: 'utility' },
+        { key: 'agility', name: 'Agility', type: 'utility' },
+        { key: 'sorcery', name: 'Sorcery', type: 'utility' },
+        { key: 'healing', name: 'Healing', type: 'utility' },
         { key: 'forging', name: 'Forging', type: 'utility' }
     ];
 
@@ -200,6 +200,9 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                             <p className="player-class-race">
                                 Level {playerStats.fabled_default_currentlevel || 'N/A'} {playerStats.fabled_player_races_class || ''} {playerStats.fabled_player_class_mainclass || ''}
                             </p>
+                            <p className="player-balance">
+                                Balance: ${playerStats.vault_eco_balance || '0.00'}
+                            </p>
                             {user && user.username === username && (
                             <div className="action-buttons" style={{marginTop: '20px'}}>
                                 <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
@@ -211,12 +214,12 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                             {auraSkills
                                 .filter(skill => skill.type === 'combat')
                                 .map(skill => (
-                                    <StatBar 
+                                    <StatBar
                                         key={skill.key}
-                                        label={skill.name} 
-                                        value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
+                                        label={skill.name}
+                                        value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0}
                                         max={20}
-                                        type={skill.key === 'fighting' ? 'hp' : 'mana'} 
+                                        type={skill.key === 'fighting' ? 'hp' : 'mana'}
                                     />
                             ))}
                         </div>
@@ -228,12 +231,12 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                         {auraSkills
                             .filter(skill => skill.type === 'utility')
                             .map(skill => (
-                                <StatBar 
+                                <StatBar
                                     key={skill.key}
-                                    label={skill.name} 
-                                    value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
+                                    label={skill.name}
+                                    value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0}
                                     max={20}
-                                    type="skill" 
+                                    type="skill"
                                 />
                         ))}
                     </div>

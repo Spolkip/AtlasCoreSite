@@ -24,7 +24,8 @@ const callMinecraftPlugin = async (endpoint, payload) => {
                     'Authorization': `Bearer ${pluginSecret}`,
                     'Content-Type': 'application/json'
                 },
-                timeout: 10000 // 10-second timeout
+                // FIX: Increased timeout from 10 seconds to 30 seconds
+                timeout: 30000 
             }
         );
         return pluginResponse.data;
