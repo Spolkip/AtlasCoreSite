@@ -1,6 +1,7 @@
 // backend/controllers/promoCodeController.js
 const PromoCode = require('../models/PromoCode');
 const deliveryService = require('../services/DeliveryService');
+const User = require('../models/User'); // ADDED
 
 // @desc    Get all promo codes
 // @route   GET /api/v1/promocodes
@@ -58,7 +59,7 @@ exports.deletePromoCode = async (req, res) => {
 
 // @desc    Apply a discount code to a cart total
 // @route   POST /api/v1/promocodes/apply
-// @access  Public
+// @access  Private
 exports.applyPromoCode = async (req, res) => {
     const { code, totalAmount } = req.body;
     try {
@@ -72,6 +73,11 @@ exports.applyPromoCode = async (req, res) => {
         }
         if (promoCode.maxUses !== null && promoCode.uses >= promoCode.maxUses) {
             return res.status(400).json({ success: false, message: 'This code has reached its usage limit.' });
+        }
+
+        // ADDED: Check if non-admin user has already used this code
+        if (req.user.is_admin !== 1 && req.user.used_promo_codes && req.user.used_promo_codes.includes(promoCode.id)) {
+            return res.status(400).json({ success: false, message: 'You have already used this code.' });
         }
 
         let discountAmount = 0;
@@ -113,11 +119,25 @@ exports.redeemRewardCode = async (req, res) => {
         if (promoCode.maxUses !== null && promoCode.uses >= promoCode.maxUses) {
             return res.status(400).json({ success: false, message: 'This code has reached its usage limit.' });
         }
+        
+        // ADDED: Check if non-admin user has already used this code
+        if (req.user.is_admin !== 1 && req.user.used_promo_codes && req.user.used_promo_codes.includes(promoCode.id)) {
+            return res.status(400).json({ success: false, message: 'You have already used this code.' });
+        }
 
         await deliveryService.executeCommandsForUser(userId, promoCode.in_game_commands);
 
         promoCode.uses += 1;
         await promoCode.save();
+
+        // ADDED: Add code to user's used codes list if they are not an admin
+        if (req.user.is_admin !== 1) {
+            const user = await User.findById(userId);
+            if (user) {
+                const updatedCodes = [...(user.used_promo_codes || []), promoCode.id];
+                await user.update({ used_promo_codes: updatedCodes });
+            }
+        }
 
         res.status(200).json({ success: true, message: 'Code redeemed successfully! Check your in-game inventory.' });
 

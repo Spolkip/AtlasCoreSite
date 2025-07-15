@@ -3,6 +3,7 @@ const axios = require('axios');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const PromoCode = require('../models/PromoCode');
+const User = require('../models/User'); // ADDED
 const paymentService = require('../services/paymentService');
 const deliveryService = require('../services/DeliveryService');
 
@@ -37,6 +38,13 @@ const handleSuccessfulOrder = async (order) => {
             }
             appliedPromoCode.uses = (appliedPromoCode.uses || 0) + 1;
             await appliedPromoCode.save();
+            
+            // ADDED: Add promo code to user's used list
+            const user = await User.findById(order.userId);
+            if (user && user.is_admin !== 1) {
+                const updatedCodes = [...(user.used_promo_codes || []), appliedPromoCode.id];
+                await user.update({ used_promo_codes: updatedCodes });
+            }
         }
     }
 
@@ -70,6 +78,12 @@ exports.createOrder = async (req, res, next) => {
         if (promoCode) {
             const appliedPromoCode = await PromoCode.findByCode(promoCode);
             if (appliedPromoCode && appliedPromoCode.isActive) {
+                // ADDED: Check if user has already used this code before creating order
+                const user = await User.findById(userId);
+                if (user.is_admin !== 1 && user.used_promo_codes && user.used_promo_codes.includes(appliedPromoCode.id)) {
+                     return res.status(400).json({ message: 'You have already used this promo code.' });
+                }
+
                 if (appliedPromoCode.discountType === 'percentage') {
                     discountAmount = (originalTotalAmount * appliedPromoCode.discountValue) / 100;
                 } else {

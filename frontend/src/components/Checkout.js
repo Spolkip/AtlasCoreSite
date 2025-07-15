@@ -166,6 +166,12 @@ const Checkout = ({ cart, setCart, user, settings, exchangeRates }) => {
                 >
                     PayPal
                 </div>
+                <div
+                    className={`payment-option ${paymentMethod === 'debit_card' ? 'selected' : ''}`}
+                    onClick={() => setPaymentMethod('debit_card')}
+                >
+                    Debit Card (Simulation)
+                </div>
             </div>
 
             <button onClick={handlePurchase} className="mc-button primary purchase-button" disabled={loading || cart.length === 0}>

@@ -12,9 +12,11 @@ class User {
     this.email = source.email || '';
     this.password = source.password || '';
     this.minecraft_uuid = source.minecraft_uuid || '';
+    this.minecraft_username = source.minecraft_username || '';
     this.is_admin = typeof source.is_admin === 'number' ? source.is_admin : 0;
     this.is_verified = typeof source.is_verified === 'boolean' ? source.is_verified : false;
-    this.is_profile_public = typeof source.is_profile_public === 'boolean' ? source.is_profile_public : true; // Default to public
+    this.is_profile_public = typeof source.is_profile_public === 'boolean' ? source.is_profile_public : true;
+    this.used_promo_codes = source.used_promo_codes || []; // ADDED
     this.reset_password_token = source.reset_password_token || null;
     this.reset_password_expire = source.reset_password_expire || null;
     this.created_at = source.created_at || new Date();
@@ -30,7 +32,9 @@ class User {
         is_admin: this.is_admin,
         is_verified: this.is_verified,
         minecraft_uuid: this.minecraft_uuid,
+        minecraft_username: this.minecraft_username,
         is_profile_public: this.is_profile_public,
+        used_promo_codes: this.used_promo_codes, // ADDED
         reset_password_token: this.reset_password_token,
         reset_password_expire: this.reset_password_expire,
         created_at: this.created_at,

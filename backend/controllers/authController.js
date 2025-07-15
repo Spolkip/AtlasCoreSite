@@ -18,6 +18,7 @@ const toUserResponse = (user) => ({
   isAdmin: user.is_admin === 1,
   isVerified: user.is_verified,
   minecraft_uuid: user.minecraft_uuid,
+  minecraft_username: user.minecraft_username, // ADDED
   is_profile_public: user.is_profile_public
 });
 
@@ -231,9 +232,14 @@ exports.verifyMinecraftLink = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found in web database.' });
         }
 
-        await user.update({ minecraft_uuid: minecraftUUID, is_verified: true });
+        await user.update({ 
+            minecraft_uuid: minecraftUUID, 
+            minecraft_username: username, // ADDED
+            is_verified: true 
+        });
         
-        res.status(200).json({ success: true, message: 'Minecraft account linked successfully.', user: toUserResponse(user) });
+        const updatedUser = await UserAuth.findById(userId); // Re-fetch the user to get the latest data
+        res.status(200).json({ success: true, message: 'Minecraft account linked successfully.', user: toUserResponse(updatedUser) });
 
     } catch (error) {
         console.error('Error in verifyMinecraftLink:', error);
@@ -249,9 +255,14 @@ exports.unlinkMinecraft = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        await user.update({ minecraft_uuid: '', is_verified: false });
-
-        res.status(200).json({ success: true, message: 'Minecraft account unlinked successfully.', user: toUserResponse(user) });
+        await user.update({ 
+            minecraft_uuid: '', 
+            minecraft_username: '', // ADDED
+            is_verified: false 
+        });
+        
+        const updatedUser = await UserAuth.findById(userId); // Re-fetch the user to get the latest data
+        res.status(200).json({ success: true, message: 'Minecraft account unlinked successfully.', user: toUserResponse(updatedUser) });
     } catch (error) {
         console.error('Error in unlinkMinecraft:', error);
         res.status(500).json({ success: false, message: 'Server error unlinking Minecraft account.' });

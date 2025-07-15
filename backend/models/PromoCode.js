@@ -8,19 +8,21 @@ class PromoCode {
   constructor(data) {
     this.id = data.id || null;
     this.code = data.code;
-    this.discountType = data.discountType; // 'percentage' or 'fixed'
-    this.discountValue = Number(data.discountValue);
+    this.codeType = data.codeType || 'discount'; // 'discount' or 'reward'
+    this.discountType = data.discountType || null; // 'percentage' or 'fixed'
+    this.discountValue = data.discountValue ? Number(data.discountValue) : 0;
     this.isActive = typeof data.isActive === 'boolean' ? data.isActive : true;
     this.uses = data.uses || 0;
     this.maxUses = data.maxUses ? Number(data.maxUses) : null;
     this.expiryDate = data.expiryDate ? new Date(data.expiryDate) : null;
-    this.in_game_commands = data.in_game_commands || []; // Commands to run on use
+    this.in_game_commands = data.in_game_commands || [];
     this.createdAt = data.createdAt || new Date();
   }
 
   async save() {
     const data = {
       code: this.code.toUpperCase(),
+      codeType: this.codeType,
       discountType: this.discountType,
       discountValue: this.discountValue,
       isActive: this.isActive,

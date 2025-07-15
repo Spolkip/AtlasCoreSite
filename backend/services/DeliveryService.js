@@ -7,8 +7,7 @@ require('dotenv').config();
 
 /**
  * Executes a single command by sending it to the Minecraft plugin's webhook.
- * This function is now corrected to pass the raw command string and context,
- * allowing the plugin's PlaceholderAPI to handle placeholder replacement.
+ * This function now replaces placeholders on the backend before dispatching.
  *
  * @param {string} command The raw command string with placeholders (e.g., "give {player} diamond 1").
  * @param {object} user The user object from the database, containing web and Minecraft details.
@@ -31,24 +30,27 @@ const _executeCommand = async (command, user, context) => {
         console.error('CRITICAL: PLUGIN_API_URL or WEBHOOK_SECRET is not configured in the backend .env file. Cannot execute commands.');
         return;
     }
+    
+    // Use the linked Minecraft username if available, otherwise fall back to the web username.
+    const playerName = user.minecraft_username || user.username;
 
     // Create a context object with player information.
-    // This will be used by the Minecraft plugin (via PlaceholderAPI) to replace placeholders.
     const playerContext = {
-        // Use the Minecraft username if available, otherwise fall back to the web username.
-        playerName: user.minecraft_username || user.username,
+        playerName: playerName,
         uuid: user.minecraft_uuid || 'N/A',
-        // The web username is also included for any custom logic.
         username: user.username || 'N/A'
     };
 
+    // Replace placeholders robustly.
+    const processedCommand = command
+        .replace(/{player}/g, playerName)
+        .replace(/{user}/g, playerName);
+
     try {
-        // Post the raw command and the player context to the plugin's /execute-command endpoint.
-        // The plugin's WebServer.java will handle the placeholder replacement and command dispatch.
         await axios.post(
             `${pluginUrl}/execute-command`,
             {
-                command: command,
+                command: processedCommand,
                 playerContext: playerContext
             },
             {
@@ -59,7 +61,7 @@ const _executeCommand = async (command, user, context) => {
                 timeout: 10000 // 10-second timeout
             }
         );
-        console.log(`Successfully dispatched command for user ${user.username}: "${command}"`);
+        console.log(`Successfully dispatched command for user ${user.username}: "${processedCommand}"`);
     } catch (error) {
         // Log detailed error information for easier debugging.
         const errorMessage = error.response ? JSON.stringify(error.response.data) : error.message;
@@ -80,25 +82,20 @@ const deliveryService = {
      */
     deliverProduct: async (userId, productId) => {
         try {
-            // Fetch user and product details from the database.
             const user = await User.findById(userId);
             const product = await Product.findById(productId);
 
-            // Validate that both user and product exist.
             if (!user || !product) {
                 throw new Error(`Invalid user (ID: ${userId}) or product (ID: ${productId}) for delivery.`);
             }
 
-            // Check if the user has linked their Minecraft account.
             if (!user.minecraft_uuid) {
                 console.warn(`User ${user.username} (ID: ${userId}) has no linked Minecraft account. Skipping in-game delivery for product: ${product.name}.`);
                 return;
             }
 
-            // Check if the product has any commands to execute.
             if (product.in_game_commands && product.in_game_commands.length > 0) {
                 console.log(`Executing ${product.in_game_commands.length} command(s) for user ${user.username} for product: ${product.name}`);
-                // Execute each command associated with the product.
                 for (const command of product.in_game_commands) {
                     await _executeCommand(command, user, product);
                 }
@@ -107,7 +104,6 @@ const deliveryService = {
             }
         } catch (error) {
             console.error('Delivery Service Error:', error.message);
-            // Re-throw the error to be handled by the calling function in orderController.js.
             throw error;
         }
     },

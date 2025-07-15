@@ -19,9 +19,8 @@ router.route('/:id')
     .put(protect, authorizeAdmin, updatePromoCode)
     .delete(protect, authorizeAdmin, deletePromoCode);
     
-// This route is now public, allowing anyone to check a code.
-router.post('/apply', applyPromoCode); 
-// This route remains protected because a user must be logged in to receive a reward.
+// MODIFIED: This route is now protected to check user's usage history.
+router.post('/apply', protect, applyPromoCode); 
 router.post('/redeem', protect, redeemRewardCode);
 
 module.exports = router;
