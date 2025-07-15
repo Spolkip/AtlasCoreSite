@@ -204,6 +204,7 @@ const AdminDashboard = ({ user }) => {
                 <h2>Management</h2>
                 <div className="action-buttons">
                     <Link to="/admin" className="dashboard-button">Manage Products & Categories</Link>
+                    <Link to="/admin/promocodes" className="dashboard-button">Manage Promo Codes</Link>
                     <Link to="/admin/chat" className="dashboard-button">Live Chat</Link>
                 </div>
             </div>

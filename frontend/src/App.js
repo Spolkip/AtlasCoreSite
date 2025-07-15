@@ -32,6 +32,11 @@ import Wiki from './components/Wiki';
 import AdminWiki from './components/AdminWiki';
 import LiveChat from './components/LiveChat';
 import AdminChat from './components/AdminChat';
+import Vlog from './components/Vlog';
+import AdminVlog from './components/AdminVlog';
+import AdminPromoCodes from './components/AdminPromoCodes';
+import RedeemCode from './components/RedeemCode';
+
 
 import './css/App.css';
 
@@ -165,6 +170,7 @@ function AppContent() {
           <Route path="/login" element={<Login onLoginSuccess={handleLogin} />} />
           <Route path="/register" element={<Register onLoginSuccess={handleLogin} />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/vlog" element={<Vlog user={user} />} />
           <Route path="/wiki" element={<Wiki user={user} />}>
             <Route path=":type/:id" element={<Wiki user={user} />} />
           </Route>
@@ -175,11 +181,12 @@ function AppContent() {
               <Route path="/profile/search" element={<ProfileSearch />} />
               <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} />
               <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} theme={theme} toggleTheme={toggleTheme} />} />
-              <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} />} />
+              <Route path="/checkout" element={<Checkout cart={cart} setCart={setCart} user={user} settings={settings} exchangeRates={exchangeRates} />} />
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentCancel />} />
               <Route path="/order-history" element={<OrderHistory user={user} />} />
               <Route path="/link-minecraft" element={<LinkMinecraft onLoginSuccess={handleLogin} />} />
+              <Route path="/redeem" element={<RedeemCode />} />
             </>
           )}
 
@@ -189,6 +196,8 @@ function AppContent() {
               <Route path="/admin-dashboard" element={<AdminDashboard user={user} />} />
               <Route path="/admin/wiki" element={<AdminWiki />} />
               <Route path="/admin/chat" element={<AdminChat user={user} db={db} />} />
+              <Route path="/admin/vlog" element={<AdminVlog user={user} />} />
+              <Route path="/admin/promocodes" element={<AdminPromoCodes />} />
             </>
           )}
 

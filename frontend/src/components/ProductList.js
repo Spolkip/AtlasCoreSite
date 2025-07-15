@@ -19,27 +19,22 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
         const symbols = { USD: '$', EUR: '€', GBP: '£' };
         return symbols[currencyCode] || '$';
     };
-
-    // --- START OF FIX: Ensure price is handled as a number ---
-    const getDisplayPrice = (basePrice, targetCurrency) => {
-        const numericBasePrice = Number(basePrice);
-        if (isNaN(numericBasePrice)) {
-            console.error("Invalid basePrice provided to getDisplayPrice:", basePrice);
-            return 0; 
-        }
+    
+    const getDisplayPrice = (basePrice, discountPrice, targetCurrency) => {
+        let effectivePrice = (discountPrice != null && discountPrice < basePrice) ? discountPrice : basePrice;
+        const numericPrice = Number(effectivePrice);
+        if (isNaN(numericPrice)) return 0;
 
         if (!exchangeRates || !targetCurrency || targetCurrency === 'USD') {
-            return numericBasePrice;
+            return numericPrice;
         }
-
         const rate = exchangeRates[targetCurrency];
-        return rate ? numericBasePrice * rate : numericBasePrice;
+        return rate ? numericPrice * rate : numericPrice;
     };
-    // --- END OF FIX ---
 
     const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
     const totalCartAmount = cart.reduce((total, item) => {
-        const displayPrice = getDisplayPrice(item.price, settings?.currency);
+        const displayPrice = getDisplayPrice(item.price, item.discountPrice, settings?.currency);
         return total + displayPrice * item.quantity;
     }, 0);
 
@@ -134,6 +129,28 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
         return <div className="error-container">{error}</div>;
     }
 
+    const renderPrice = (product) => {
+        const hasDiscount = product.discountPrice != null && product.discountPrice < product.price;
+        const symbol = getCurrencySymbol(settings?.currency);
+        
+        const originalDisplayPrice = getDisplayPrice(product.price, null, settings?.currency);
+        const discountDisplayPrice = hasDiscount ? getDisplayPrice(product.price, product.discountPrice, settings?.currency) : null;
+
+        if (hasDiscount) {
+            return (
+                <p className="product-price">
+                    <span style={{ textDecoration: 'line-through', color: '#c0392b', marginRight: '10px' }}>
+                        {symbol}{originalDisplayPrice.toFixed(2)}
+                    </span>
+                    {symbol}{discountDisplayPrice.toFixed(2)}
+                </p>
+            );
+        } else {
+            return <p className="product-price">{symbol}{originalDisplayPrice.toFixed(2)}</p>;
+        }
+    };
+
+
     return (
         <div className="store-container">
            <h1 className="store-title">{settings?.store_name || 'Store'}</h1>
@@ -170,7 +187,7 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
                                 <div className="sidebar-cart-item" key={item.id}>
                                     <div className="sidebar-cart-item-info">
                                         <h3>{item.name}</h3>
-                                        <p>{getCurrencySymbol(settings?.currency)}{getDisplayPrice(item.price, settings?.currency).toFixed(2)}</p>
+                                        <p>{getCurrencySymbol(settings?.currency)}{getDisplayPrice(item.price, item.discountPrice, settings?.currency).toFixed(2)}</p>
                                     </div>
                                     <div className="sidebar-cart-item-controls">
                                         <button onClick={() => handleQuantityChange(item, -1)}>-</button>
@@ -229,7 +246,7 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
                             </div>
                             <h3 className="product-name">{product.name}</h3>
                             <p className="product-description">{product.description}</p>
-                            <p className="product-price">{getCurrencySymbol(settings?.currency)}{getDisplayPrice(product.price, settings?.currency).toFixed(2)}</p>
+                            {renderPrice(product)}
                             {product.stock === null || product.stock > 0 ? (
                                 <button className="mc-button purchase-button" onClick={() => addToCart(product)}>Add to Cart</button>
                             ) : (

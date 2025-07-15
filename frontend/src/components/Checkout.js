@@ -5,67 +5,63 @@ import { useNavigate } from 'react-router-dom';
 import '../css/Checkout.css';
 import '../css/AuthForms.css'; // Reusing some form styles
 
-// --- START OF EDIT: Pass exchangeRates as a prop ---
-const Checkout = ({ cart, user, settings, exchangeRates }) => {
-// --- END OF EDIT ---
+const Checkout = ({ cart, setCart, user, settings, exchangeRates }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState(''); // For promo code success
     const [paymentMethod, setPaymentMethod] = useState('paypal');
+    const [promoCode, setPromoCode] = useState('');
+    const [discount, setDiscount] = useState(null);
     
-    const [cardDetails, setCardDetails] = useState({
-        cardNumber: '',
-        expiryDate: '',
-        cvc: '',
-    });
-
     const navigate = useNavigate();
 
-    // --- START OF EDIT: Currency conversion logic for display ---
     const getCurrencySymbol = (currencyCode) => {
         const symbols = { USD: '$', EUR: '€', GBP: '£' };
         return symbols[currencyCode] || '$';
     };
 
-    const getDisplayPrice = (basePrice, targetCurrency) => {
+    const getDisplayPrice = (basePrice, discountPrice, targetCurrency) => {
+        let effectivePrice = (discountPrice != null && discountPrice < basePrice) ? discountPrice : basePrice;
+        const numericPrice = Number(effectivePrice);
+        if (isNaN(numericPrice)) return 0;
+
         if (!exchangeRates || !targetCurrency || targetCurrency === 'USD') {
-            return basePrice;
+            return numericPrice;
         }
         const rate = exchangeRates[targetCurrency];
-        return rate ? basePrice * rate : basePrice;
+        return rate ? numericPrice * rate : numericPrice;
     };
 
-    const totalAmountInDisplayCurrency = cart.reduce((total, item) => {
-        const displayPrice = getDisplayPrice(item.price, settings?.currency);
+    const originalTotal = cart.reduce((total, item) => {
+        const displayPrice = getDisplayPrice(item.price, item.discountPrice, settings?.currency);
         return total + displayPrice * item.quantity;
     }, 0);
-    // --- END OF EDIT ---
 
+    const totalAmountInDisplayCurrency = discount ? discount.newTotal : originalTotal;
 
-    const handleCardDetailsChange = (e) => {
-        const { name, value } = e.target;
-        setCardDetails(prev => ({ ...prev, [name]: value }));
-    };
-
-    const validateCreditCardDetails = () => {
-        const { cardNumber, expiryDate, cvc } = cardDetails;
-        if (!cardNumber || !expiryDate || !cvc) {
-            setError("All credit card fields are required.");
-            return false;
-        }
-        if (!/^\d{16}$/.test(cardNumber)) {
-            setError("Card number must be 16 digits.");
-            return false;
-        }
-        if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(expiryDate)) {
-            setError("Expiry date must be in MM/YY format (e.g., 12/25).");
-            return false;
-        }
-        if (!/^\d{3,4}$/.test(cvc)) {
-            setError("CVC must be 3 or 4 digits.");
-            return false;
-        }
+    const handleApplyPromoCode = async () => {
+        if (!promoCode) return;
         setError('');
-        return true;
+        setSuccess('');
+        try {
+            const { data } = await axios.post('http://localhost:5000/api/v1/promocodes/apply', {
+                code: promoCode,
+                totalAmount: originalTotal
+            });
+            if (data.success) {
+                setDiscount({
+                    amount: data.discountAmount,
+                    newTotal: data.newTotal
+                });
+                setSuccess(data.message); // Set success message
+            } else {
+                setError(data.message);
+                setDiscount(null);
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Invalid promo code.');
+            setDiscount(null);
+        }
     };
 
     const handlePurchase = async () => {
@@ -73,29 +69,21 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
             setError("Your cart is empty.");
             return;
         }
-        
-        if (paymentMethod === 'credit-card') {
-            if (!validateCreditCardDetails()) {
-                return;
-            }
-        }
 
         setLoading(true);
         setError('');
+        setSuccess('');
 
         try {
             const token = localStorage.getItem('token');
             const orderData = {
                 products: cart.map(item => ({
                     productId: item.id,
-                    quantity: item.quantity,
-                    name: item.name,
-                    price: item.price // Always send base price
+                    quantity: item.quantity
                 })),
-                // --- EDIT: Send the converted total and the selected currency ---
-                totalAmount: totalAmountInDisplayCurrency,
                 paymentMethod: paymentMethod,
-                currency: settings?.currency || 'USD'
+                currency: settings?.currency || 'USD',
+                promoCode: discount ? promoCode : null
             };
 
             const response = await axios.post(
@@ -107,6 +95,7 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
             if (paymentMethod === 'paypal' && response.data.paymentUrl) {
                 window.location.href = response.data.paymentUrl;
             } else if (response.data.success) {
+                setCart([]); // Clear cart on successful purchase
                 navigate('/payment/success');
             } else {
                 navigate('/payment/cancel'); 
@@ -116,10 +105,6 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
             const errorMessage = err.response?.data?.message || 'Failed to create order. Please try again.';
             setError(errorMessage);
             setLoading(false);
-
-            if (err.response) {
-                navigate(`/payment/cancel?transaction_id=${err.response.data.orderId || 'unknown'}`);
-            }
         }
     };
 
@@ -132,14 +117,8 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
         <div className="checkout-container">
             <h2>Checkout</h2>
 
-            {error && (
-                <div className="auth-error-message">
-                    <svg className="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <span>{error}</span>
-                </div>
-            )}
+            {error && <div className="auth-error-message"><span>{error}</span></div>}
+            {success && <div className="auth-success-message"><span>{success}</span></div>}
             
             <div className="product-info">
                 <h3>Order Summary</h3>
@@ -150,16 +129,33 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
                         {cart.map(item => (
                             <div key={item.id} className="cart-item-summary">
                                 <span>{item.name} x {item.quantity}</span>
-                                <span>{getCurrencySymbol(settings?.currency)}{getDisplayPrice(item.price * item.quantity, settings?.currency).toFixed(2)}</span>
+                                <span>{getCurrencySymbol(settings?.currency)}{(getDisplayPrice(item.price, item.discountPrice, settings?.currency) * item.quantity).toFixed(2)}</span>
                             </div>
                         ))}
                         <hr />
+                        {discount && (
+                            <div className="cart-item-summary discount">
+                                <span>Discount ({promoCode}):</span>
+                                <span>-{getCurrencySymbol(settings?.currency)}{discount.amount.toFixed(2)}</span>
+                            </div>
+                        )}
                         <div className="cart-total-summary">
                             <strong>Total:</strong>
                             <strong>{getCurrencySymbol(settings?.currency)}{totalAmountInDisplayCurrency.toFixed(2)}</strong>
                         </div>
                     </>
                 )}
+            </div>
+
+            <div className="promo-code-section">
+                <input 
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="Enter Promo Code"
+                    className="auth-input"
+                />
+                <button onClick={handleApplyPromoCode} className="mc-button">Apply</button>
             </div>
 
             <div className="payment-options">
@@ -170,74 +166,7 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
                 >
                     PayPal
                 </div>
-                <div
-                    className={`payment-option ${paymentMethod === 'credit-card' ? 'selected' : ''}`}
-                    onClick={() => setPaymentMethod('credit-card')}
-                >
-                    Credit Card (Simulation)
-                </div>
-                <div
-                    className={`payment-option ${paymentMethod === 'bank-transfer' ? 'selected' : ''}`}
-                    onClick={() => setPaymentMethod('bank-transfer')}
-                >
-                    Bank Transfer (Simulation)
-                </div>
-                <div
-                    className={`payment-option ${paymentMethod === 'crypto' ? 'selected' : ''}`}
-                    onClick={() => setPaymentMethod('crypto')}
-                >
-                    Crypto (Simulation)
-                </div>
             </div>
-
-            {paymentMethod === 'credit-card' && (
-                <div className="credit-card-form">
-                    <div className="form-group">
-                        <label htmlFor="cardNumber">Card Number</label>
-                        <input
-                            id="cardNumber"
-                            type="text"
-                            name="cardNumber"
-                            value={cardDetails.cardNumber}
-                            onChange={handleCardDetailsChange}
-                            placeholder="XXXX XXXX XXXX XXXX"
-                            className="auth-input"
-                            maxLength="16"
-                            required
-                        />
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="expiryDate">Expiry (MM/YY)</label>
-                            <input
-                                id="expiryDate"
-                                type="text"
-                                name="expiryDate"
-                                value={cardDetails.expiryDate}
-                                onChange={handleCardDetailsChange}
-                                placeholder="MM/YY"
-                                className="auth-input"
-                                maxLength="5"
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="cvc">CVC</label>
-                            <input
-                                id="cvc"
-                                type="text"
-                                name="cvc"
-                                value={cardDetails.cvc}
-                                onChange={handleCardDetailsChange}
-                                placeholder="XXX"
-                                className="auth-input"
-                                maxLength="4"
-                                required
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <button onClick={handlePurchase} className="mc-button primary purchase-button" disabled={loading || cart.length === 0}>
                 {loading ? 'Processing...' : `Proceed to Payment`}

@@ -11,6 +11,7 @@ const AddProducts = () => {
         name: '',
         description: '',
         price: '',
+        discountPrice: '',
         stock: '', // Keep as empty string for input field
         category: '',
         imageUrl: '',
@@ -89,13 +90,14 @@ const AddProducts = () => {
             // FIX: Send stock as null if empty string for infinite stock
             const productToSend = { 
                 ...newProduct, 
-                stock: newProduct.stock === '' ? null : Number(newProduct.stock) 
+                stock: newProduct.stock === '' ? null : Number(newProduct.stock),
+                discountPrice: newProduct.discountPrice === '' ? null : Number(newProduct.discountPrice)
             };
             const { data } = await axios.post('http://localhost:5000/api/v1/admin/products', productToSend, config);
             if (data.success) {
                 setProducts(prev => [...prev, data.product]);
                 // Reset form
-                setNewProduct({ name: '', description: '', price: '', stock: '', category: categories.length > 0 ? categories[0].id : '', imageUrl: '', in_game_commands: [''] });
+                setNewProduct({ name: '', description: '', price: '', discountPrice: '', stock: '', category: categories.length > 0 ? categories[0].id : '', imageUrl: '', in_game_commands: [''] });
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to add product.');
@@ -124,7 +126,8 @@ const AddProducts = () => {
             // FIX: Send stock as null if empty string for infinite stock
             const productToSend = { 
                 ...updatedProduct, 
-                stock: updatedProduct.stock === '' ? null : Number(updatedProduct.stock) 
+                stock: updatedProduct.stock === '' ? null : Number(updatedProduct.stock),
+                discountPrice: updatedProduct.discountPrice === '' ? null : Number(updatedProduct.discountPrice)
             };
             await axios.put(`http://localhost:5000/api/v1/admin/products/${updatedProduct.id}`, productToSend, config);
             setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
@@ -207,6 +210,7 @@ const AddProducts = () => {
                 <form onSubmit={handleAddProduct} className="admin-form grid-form">
                     <input type="text" name="name" value={newProduct.name} onChange={handleInputChange(setNewProduct)} placeholder="Product Name" required />
                     <input type="number" step="0.01" name="price" value={newProduct.price} onChange={handleInputChange(setNewProduct)} placeholder="Price" required />
+                    <input type="number" step="0.01" name="discountPrice" value={newProduct.discountPrice} onChange={handleInputChange(setNewProduct)} placeholder="Discount Price (Optional)" />
                     <input type="number" name="stock" value={newProduct.stock} onChange={handleInputChange(setNewProduct)} placeholder="Stock (Optional: leave empty for infinite)" />
                     <select name="category" value={newProduct.category} onChange={handleInputChange(setNewProduct)} required>
                         <option value="" disabled>Select Category</option>

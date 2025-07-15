@@ -6,7 +6,8 @@ const EditProductModal = ({ product, categories, onClose, onSave }) => {
     const [editedProduct, setEditedProduct] = useState({ 
         ...product, 
         in_game_commands: Array.isArray(product.in_game_commands) ? product.in_game_commands : [product.in_game_command || ''],
-        stock: product.stock === null ? '' : product.stock // Set to empty string for input
+        stock: product.stock === null ? '' : product.stock, // Set to empty string for input
+        discountPrice: product.discountPrice === null || product.discountPrice === undefined ? '' : product.discountPrice
     });
 
     useEffect(() => {
@@ -14,7 +15,8 @@ const EditProductModal = ({ product, categories, onClose, onSave }) => {
         setEditedProduct({ 
             ...product, 
             in_game_commands: Array.isArray(product.in_game_commands) ? product.in_game_commands : [product.in_game_command || ''],
-            stock: product.stock === null ? '' : product.stock // Set to empty string for input
+            stock: product.stock === null ? '' : product.stock, // Set to empty string for input
+            discountPrice: product.discountPrice === null || product.discountPrice === undefined ? '' : product.discountPrice
         });
     }, [product]);
 
@@ -52,6 +54,7 @@ const EditProductModal = ({ product, categories, onClose, onSave }) => {
                 <form onSubmit={handleSubmit} className="admin-form grid-form">
                     <input type="text" name="name" value={editedProduct.name || ''} onChange={handleChange} placeholder="Product Name" required />
                     <input type="number" step="0.01" name="price" value={editedProduct.price || ''} onChange={handleChange} placeholder="Price" required />
+                    <input type="number" step="0.01" name="discountPrice" value={editedProduct.discountPrice} onChange={handleChange} placeholder="Discount Price (Optional)" />
                     {/* FIX: Updated placeholder for infinite stock */}
                     <input type="number" name="stock" value={editedProduct.stock} onChange={handleChange} placeholder="Stock (Optional: leave empty for infinite)" />
                     <select name="category" value={editedProduct.category || ''} onChange={handleChange} required>

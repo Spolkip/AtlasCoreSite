@@ -10,6 +10,7 @@ class Product {
     this.name = data.name;
     this.description = data.description || null;
     this.price = data.price;
+    this.discountPrice = data.discountPrice === undefined ? null : data.discountPrice;
     // FIX: Set stock to null if it's undefined, null, or an empty string, to represent infinite.
     this.stock = (data.stock === undefined || data.stock === null || data.stock === '') ? null : Number(data.stock);
     this.category = data.category || null;
@@ -25,6 +26,7 @@ class Product {
       name: this.name,
       description: this.description,
       price: this.price,
+      discountPrice: this.discountPrice,
       // FIX: Ensure stock is saved as null for infinite, or a number.
       stock: this.stock, 
       category: this.category,
@@ -52,6 +54,13 @@ class Product {
     } else if (updatedData.stock !== undefined && updatedData.stock !== null) {
         updatedData.stock = Number(updatedData.stock);
     }
+
+    if (updatedData.discountPrice === '' || updatedData.discountPrice === undefined) {
+        updatedData.discountPrice = null;
+    } else if (updatedData.discountPrice !== null) {
+        updatedData.discountPrice = Number(updatedData.discountPrice);
+    }
+
 
     await updateDoc(doc(productsCollection, this.id), updatedData);
     Object.assign(this, updatedData);

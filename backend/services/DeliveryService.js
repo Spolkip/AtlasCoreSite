@@ -12,13 +12,13 @@ require('dotenv').config();
  *
  * @param {string} command The raw command string with placeholders (e.g., "give {player} diamond 1").
  * @param {object} user The user object from the database, containing web and Minecraft details.
- * @param {object} product The product object being delivered.
+ * @param {object} context The context of the command execution (e.g., a product or promo code).
  * @private
  */
-const _executeCommand = async (command, user, product) => {
+const _executeCommand = async (command, user, context) => {
     // Do not execute if the command is empty or just whitespace.
     if (!command || !command.trim()) {
-        console.warn(`Skipping empty command for product: ${product.name}`);
+        console.warn(`Skipping empty command for ${context.name}`);
         return;
     }
 
@@ -48,7 +48,7 @@ const _executeCommand = async (command, user, product) => {
         await axios.post(
             `${pluginUrl}/execute-command`,
             {
-                command: command, // FIX: Send the original, unprocessed command string.
+                command: command,
                 playerContext: playerContext
             },
             {
@@ -75,7 +75,7 @@ const deliveryService = {
      * Delivers a purchased product to a user by executing its associated in-game commands.
      * @param {string} userId The ID of the user receiving the product.
      * @param {string} productId The ID of the product being delivered.
-     * @returns {Promise<boolean>} A promise that resolves to true if delivery was processed.
+     * @returns {Promise<void>}
      * @throws Will throw an error if the user or product cannot be found.
      */
     deliverProduct: async (userId, productId) => {
@@ -92,7 +92,7 @@ const deliveryService = {
             // Check if the user has linked their Minecraft account.
             if (!user.minecraft_uuid) {
                 console.warn(`User ${user.username} (ID: ${userId}) has no linked Minecraft account. Skipping in-game delivery for product: ${product.name}.`);
-                return true; // Return true to not block the order process.
+                return;
             }
 
             // Check if the product has any commands to execute.
@@ -105,12 +105,33 @@ const deliveryService = {
             } else {
                 console.log(`Product ${product.name} has no in-game commands to execute.`);
             }
-
-            return true;
         } catch (error) {
             console.error('Delivery Service Error:', error.message);
             // Re-throw the error to be handled by the calling function in orderController.js.
             throw error;
+        }
+    },
+
+    /**
+     * Executes a list of commands for a specific user, typically for promo code rewards.
+     * @param {string} userId The ID of the user to execute commands for.
+     * @param {string[]} commands The array of command strings to execute.
+     * @returns {Promise<void>}
+     */
+    executeCommandsForUser: async (userId, commands) => {
+        if (!commands || commands.length === 0) return;
+        try {
+            const user = await User.findById(userId);
+            if (!user || !user.minecraft_uuid) {
+                console.warn(`User ${userId} has no linked Minecraft account. Skipping promo command execution.`);
+                return;
+            }
+            console.log(`Executing ${commands.length} promo commands for user ${user.username}`);
+            for (const command of commands) {
+                await _executeCommand(command, user, { name: 'Promo Code Reward' });
+            }
+        } catch (error) {
+            console.error('Promo Command Execution Service Error:', error.message);
         }
     }
 };

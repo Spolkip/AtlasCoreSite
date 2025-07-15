@@ -13,10 +13,10 @@ class Order {
     this.status = data.status || 'pending';
     this.paymentIntentId = data.paymentIntentId || null;
     this.currency = data.currency || 'USD';
-    // --- START OF EDIT: Added fields for payment processing ---
     this.processedAmount = data.processedAmount || null;
     this.processedCurrency = data.processedCurrency || null;
-    // --- END OF EDIT ---
+    this.promoCode = data.promoCode || null;
+    this.discountAmount = data.discountAmount || 0;
     this.createdAt = data.createdAt || new Date();
     this.updatedAt = data.updatedAt || new Date();
   }
@@ -29,10 +29,10 @@ class Order {
       status: this.status,
       paymentIntentId: this.paymentIntentId,
       currency: this.currency,
-      // --- START OF EDIT: Save new fields to Firestore ---
       processedAmount: this.processedAmount,
       processedCurrency: this.processedCurrency,
-      // --- END OF EDIT ---
+      promoCode: this.promoCode,
+      discountAmount: this.discountAmount,
       createdAt: this.createdAt,
       updatedAt: new Date(),
     };

@@ -1,0 +1,90 @@
+/* frontend/src/css/Vlog.css */
+.vlog-container {
+    position: relative; /* Required for absolute positioning of the admin button */
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    color: #fff;
+    font-family: 'VT323', monospace;
+}
+
+.vlog-main-title {
+    text-align: center;
+    font-size: 3.5rem;
+    color: #FFAA00;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px #000;
+}
+
+.vlog-subtitle {
+    text-align: center;
+    font-size: 1.4rem;
+    color: #ccc;
+    margin-bottom: 3rem;
+}
+
+.vlog-posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.vlog-post-card {
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 2.5rem;
+    border: 3px solid #000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+}
+
+.vlog-post-title {
+    font-size: 2.5rem;
+    color: #FFFF55;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.vlog-post-meta {
+    font-size: 1.1rem;
+    color: #aaa;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #555;
+    padding-bottom: 1rem;
+}
+
+.vlog-post-content {
+    font-size: 1.2rem;
+    line-height: 1.8;
+}
+
+.vlog-post-content h1,
+.vlog-post-content h2,
+.vlog-post-content h3 {
+    color: #FFAA00;
+}
+
+.vlog-post-content a {
+    color: #3498db;
+}
+
+.admin-vlog-button {
+    position: absolute;
+    top: 2.5rem;
+    right: 2.5rem;
+    font-family: 'VT323', monospace;
+    padding: 10px 20px !important;
+    font-size: 1.2rem !important;
+    color: white;
+    text-decoration: none;
+    background-color: #f0ad4e;
+    border: 2px solid #000;
+    box-shadow: 3px 3px 0 #000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.admin-vlog-button:hover {
+    background-color: #ec971f;
+    transform: translateY(-1px);
+    box-shadow: 4px 4px 0 #000;
+}

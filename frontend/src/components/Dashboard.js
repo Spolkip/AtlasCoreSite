@@ -53,6 +53,7 @@ const Dashboard = ({ user }) => {
                 <div className="action-buttons">
                     <Link to={`/profile/${user.username}`} className="dashboard-button">View Character Profile</Link>
                     <Link to="/order-history" className="dashboard-button">Order History</Link>
+                    <Link to="/redeem" className="dashboard-button">Redeem a Code</Link>
                     <Link to="/settings" className="dashboard-button">Account Settings</Link>
                 </div>
             </div>
@@ -106,6 +107,7 @@ const Dashboard = ({ user }) => {
                     <div className="action-buttons">
                         <Link to="/admin-dashboard" className="dashboard-button">Admin Dashboard</Link>
                         <Link to="/admin" className="dashboard-button">Manage Store</Link>
+                        <Link to="/admin/vlog" className="dashboard-button">Manage Vlog</Link>
                         <Link to="/admin/wiki" className="dashboard-button">Manage Wiki</Link>
                     </div>
                 </div>
