@@ -9,8 +9,7 @@ import { getFirestore } from 'firebase/firestore';
 import NavBar from './components/NavBar';
 import LandingPage from './components/LandingPage';
 import ProductList from './components/ProductList';
-import Login from './components/Login';
-import Register from './components/Register';
+import AuthPage from './components/AuthPage'; // Import the new AuthPage
 import AddProducts from './components/AddProducts';
 import Settings from './components/Settings';
 import Checkout from './components/Checkout';
@@ -32,10 +31,9 @@ import AdminChat from './components/AdminChat';
 import Leaderboard from './components/Leaderboard';
 import RedeemCode from './components/RedeemCode';
 import AdminVlog from './components/AdminVlog';
-import Vlog from './components/Vlog'; // Import Vlog component
+import Vlog from './components/Vlog';
 import ProfileSearch from './components/ProfileSearch';
 import AdminPromoCodes from './components/AdminPromoCodes';
-
 
 import './css/App.css';
 import './css/Leaderboard.css';
@@ -61,7 +59,7 @@ function App() {
   const [settings, setSettings] = useState(null);
   const [exchangeRates, setExchangeRates] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState('dark'); // State for theme
+  const [theme, setTheme] = useState('dark');
 
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
@@ -161,8 +159,10 @@ function App() {
                 exchangeRates={exchangeRates} 
               />} 
             />
-            <Route path="/login" element={<Login onLoginSuccess={handleLogin} />} />
-            <Route path="/register" element={<Register onLoginSuccess={handleLogin} />} />
+            {/* These routes now point to the new AuthPage component */}
+            <Route path="/login" element={<AuthPage onLoginSuccess={handleLogin} />} />
+            <Route path="/register" element={<AuthPage onLoginSuccess={handleLogin} />} />
+            
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/wiki" element={<Wiki user={user} />}>
               <Route path=":type/:id" element={<Wiki user={user} />} />
