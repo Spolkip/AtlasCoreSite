@@ -6,7 +6,7 @@
   color: var(--color-text);
 }
 
-.dashboard-container h1, .dashboard-container h2 {
+.dashboard-container h1, .dashboard-container h2, .dashboard-container h3 {
     color: var(--color-primary);
     text-shadow: var(--text-shadow);
 }
@@ -23,6 +23,12 @@
     padding-bottom: 10px;
     margin-bottom: 20px;
     margin-top: 0;
+}
+
+.dashboard-container h3 {
+    font-size: 1.8rem;
+    color: var(--color-accent);
+    margin-bottom: 15px;
 }
 
 /* New Grid Layout */
@@ -65,7 +71,7 @@
 /* Action Buttons Grid */
 .action-buttons-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 1.5rem;
 }
 
@@ -111,4 +117,16 @@
     border: 2px solid var(--color-border-subtle);
     padding: 1rem;
     margin-bottom: 1rem;
+}
+
+.account-info-section .info-label {
+    display: block;
+    color: #ccc;
+    margin-bottom: 0.5rem;
+}
+
+.account-info-section .info-value {
+    font-size: 1.2rem;
+    color: #fff;
+    word-break: break-all;
 }
