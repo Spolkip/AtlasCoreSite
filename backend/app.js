@@ -18,8 +18,7 @@ const serverRoutes = require('./routes/serverRoutes');
 const wikiRoutes = require('./routes/wikiRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const characterProfileRoutes = require('./routes/characterProfileRoutes');
-const vlogRoutes = require('./routes/vlogRoutes');
-const promoCodeRoutes = require('./routes/promoCodeRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes'); // Import leaderboard routes
 
 const app = express();
 
@@ -37,8 +36,7 @@ app.use('/api/v1/server', serverRoutes);
 app.use('/api/v1/wiki', wikiRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/profile', characterProfileRoutes);
-app.use('/api/v1/vlog', vlogRoutes);
-app.use('/api/v1/promocodes', promoCodeRoutes);
+app.use('/api/v1/leaderboards', leaderboardRoutes); // Mount leaderboard routes
 
 app.use(errorHandler);
 
