@@ -1,6 +1,6 @@
 // frontend/src/components/CharacterProfile.js
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { SkinViewer, WalkingAnimation } from 'skinview3d';
 import '../css/CharacterProfile.css';
@@ -86,35 +86,34 @@ const StatBar = ({ label, value, max, type }) => {
 };
 
 /**
- * Main CharacterProfile Component
+ * Main CharacterProfile Component - REWRITTEN FOR RESILIENCY
  */
 const CharacterProfile = ({ user, onUserUpdate }) => {
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const { username } = useParams();
 
     const auraSkills = [
-        { key: 'fighting', name: 'Combat', type: 'combat' },
+        { key: 'fighting', name: 'Combat', type: 'combat' }, 
         { key: 'defense', name: 'Defense', type: 'combat' },
         { key: 'archery', name: 'Archery', type: 'combat' },
         { key: 'mining', name: 'Mining', type: 'utility' },
-        { key: 'farming', name: 'Farming', type: 'utility' },
-        { key: 'foraging', name: 'Foraging', type: 'utility' },
-        { key: 'fishing', name: 'Fishing', type: 'utility' },
-        { key: 'alchemy', name: 'Alchemy', type: 'utility' },
-        { key: 'enchanting', name: 'Enchanting', type: 'utility' },
-        { key: 'excavation', name: 'Excavation', type: 'utility' },
-        { key: 'endurance', name: 'Endurance', type: 'utility' },
-        { key: 'agility', name: 'Agility', type: 'utility' },
-        { key: 'sorcery', name: 'Sorcery', type: 'utility' },
-        { key: 'healing', name: 'Healing', type: 'utility' },
+        { key: 'farming', name: 'Farming', type: 'utility' }, 
+        { key: 'foraging', name: 'Foraging', type: 'utility' }, 
+        { key: 'fishing', name: 'Fishing', type: 'utility' }, 
+        { key: 'alchemy', name: 'Alchemy', type: 'utility' }, 
+        { key: 'enchanting', name: 'Enchanting', type: 'utility' }, 
+        { key: 'excavation', name: 'Excavation', type: 'utility' }, 
+        { key: 'endurance', name: 'Endurance', type: 'utility' }, 
+        { key: 'agility', name: 'Agility', type: 'utility' }, 
+        { key: 'sorcery', name: 'Sorcery', type: 'utility' }, 
+        { key: 'healing', name: 'Healing', type: 'utility' }, 
         { key: 'forging', name: 'Forging', type: 'utility' }
     ];
 
     useEffect(() => {
-        if (!username) {
+        if (!user) {
             setLoading(false);
             return;
         }
@@ -124,21 +123,29 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             
-            try {
-                const response = await axios.get(`http://localhost:5000/api/v1/profile/${username}`, config);
-                if (response.data.success) {
-                    setProfileData(response.data.data);
-                } else {
-                    setError(response.data.message || 'Failed to fetch character profile.');
+            if (user.minecraft_uuid) {
+                 try {
+                    const response = await axios.get('http://localhost:5000/api/v1/profile', config);
+                    if (response.data.success) {
+                        setProfileData(response.data.data);
+                        // If there was an error message from the backend (e.g., plugin down), set it.
+                        if (response.data.error) {
+                            setError(`Could not load in-game stats: ${response.data.error}`);
+                        }
+                    } else {
+                        setError(response.data.message || 'Failed to fetch character profile.');
+                    }
+                } catch (err) {
+                    setError(err.response?.data?.message || 'An error occurred while fetching your profile.');
+                } finally {
+                    setLoading(false);
                 }
-            } catch (err) {
-                setError(err.response?.data?.message || 'An error occurred while fetching your profile.');
-            } finally {
+            } else {
                 setLoading(false);
             }
         };
         fetchProfileData();
-    }, [username]);
+    }, [user]);
 
     const handleUnlinkMinecraft = async () => {
         setError('');
@@ -166,86 +173,100 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     if (loading) {
         return <div className="loading-container">Loading Character Profile...</div>;
     }
-
-    if (error) {
-        if (error.includes('This user has set their profile to private')) {
-            return <div className="profile-section"><h2>Private Profile</h2><p>{error}</p></div>;
-        }
-        return <div className="profile-section"><h2>Could Not Load Profile</h2><p>{error}</p></div>;
-    }
     
-    if (user && user.username === username && !user.minecraft_uuid) {
+    // If the user hasn't linked their account yet
+    if (!user.minecraft_uuid) {
         return (
-            <div className="profile-section">
-                <h2>Account Not Linked</h2>
-                <p>Link your Minecraft account to view your character profile.</p>
-                <div className="action-buttons">
-                    <Link to="/link-minecraft" className="dashboard-button">Link Minecraft</Link>
+            <div className="dashboard-container">
+                <div className="profile-section">
+                    <h2>Account Not Linked</h2>
+                    <p>Link your Minecraft account to view your character profile.</p>
+                    <div className="action-buttons">
+                        <Link to="/link-minecraft" className="dashboard-button">Link Minecraft Account</Link>
+                    </div>
                 </div>
             </div>
         );
     }
 
-    if (profileData && profileData.playerStats) {
-        const { playerStats } = profileData;
-        return (
-            <div className="character-profile-container">
-                 {error && <div className="auth-error-message" style={{marginBottom: '20px'}}>{error}</div>}
-                 {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
-                <div className="profile-upper-section">
-                    <SkinViewerComponent uuid={playerStats.uuid} />
-                    <div className="stats-container">
-                        <div className="player-identity">
-                            <h2 className="player-name">{username}</h2>
-                            <p className="player-class-race">
-                                Level {playerStats.fabled_default_currentlevel || 'N/A'} {playerStats.fabled_player_races_class || ''} {playerStats.fabled_player_class_mainclass || ''}
-                            </p>
-                            <p className="player-balance">
-                                Balance: ${playerStats.vault_eco_balance || '0.00'}
-                            </p>
-                            {user && user.username === username && (
-                            <div className="action-buttons" style={{marginTop: '20px'}}>
-                                <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
-                            </div>
-                            )}
+    // Main component render
+    const playerStats = profileData?.playerStats;
+    const playerBalance = playerStats?.vault_eco_balance ? parseFloat(playerStats.vault_eco_balance).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A';
+
+    return (
+        <div className="character-profile-container">
+             {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
+
+            <div className="profile-upper-section">
+                <SkinViewerComponent uuid={user.minecraft_uuid} />
+                <div className="stats-container">
+                    <div className="player-identity">
+                        {/* Use user's web username as a fallback if in-game name isn't available */}
+                        <h2 className="player-name">{playerStats?.player_name || user.username}</h2>
+                        <p className="player-class-race">
+                           {playerStats ? `Level ${playerStats.fabled_default_currentlevel || 'N/A'} ${playerStats.fabled_player_races_class || ''} ${playerStats.fabled_player_class_mainclass || ''}` : 'In-game data not available.'}
+                        </p>
+                        {/* Display Player Balance */}
+                        <div className="info-item" style={{ marginTop: '1rem', backgroundColor: 'transparent', border: 'none', padding: '0'}}>
+                            <span className="info-label">Player Balance:</span>
+                            <span className="info-value" style={{color: '#2ecc71'}}>{playerBalance}</span>
                         </div>
+                        <div className="action-buttons" style={{marginTop: '20px'}}>
+                            <Link to="/settings" className="dashboard-button small">Settings</Link>
+                            <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
+                        </div>
+                    </div>
+
+                    {/* Only render stats panel if stats are available */}
+                    {playerStats ? (
                          <div className="skills-combat-panel">
                             <h3>Combat Skills</h3>
                             {auraSkills
                                 .filter(skill => skill.type === 'combat')
                                 .map(skill => (
-                                    <StatBar
+                                    <StatBar 
                                         key={skill.key}
-                                        label={skill.name}
-                                        value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0}
+                                        label={skill.name} 
+                                        value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
                                         max={20}
-                                        type={skill.key === 'fighting' ? 'hp' : 'mana'}
+                                        type={skill.key === 'fighting' ? 'hp' : 'mana'} 
                                     />
                             ))}
                         </div>
-                    </div>
+                    ) : (
+                        // Show a specific error for the combat stats section if they failed to load
+                        <div className="auth-error-message">{error || "Could not load in-game combat stats."}</div>
+                    )}
                 </div>
+            </div>
+
+            {/* Only render lower skills section if stats are available */}
+            {playerStats ? (
                 <div className="skills-lower-section">
                      <h3>General & Utility Skills</h3>
                      <div className="skills-bars-grid">
                         {auraSkills
                             .filter(skill => skill.type === 'utility')
                             .map(skill => (
-                                <StatBar
+                                <StatBar 
                                     key={skill.key}
-                                    label={skill.name}
-                                    value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0}
+                                    label={skill.name} 
+                                    value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
                                     max={20}
-                                    type="skill"
+                                    type="skill" 
                                 />
                         ))}
                     </div>
                 </div>
-            </div>
-        );
-    }
-
-    return <div className="profile-section"><h2>Could not load character data.</h2><p>{error}</p></div>;
+            ) : (
+                // If there were no player stats, you can omit this section or show a message
+                <div className="skills-lower-section">
+                    <h3>General & Utility Skills</h3>
+                    <p>In-game skill data is currently unavailable.</p>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default CharacterProfile;

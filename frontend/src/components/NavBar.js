@@ -12,7 +12,7 @@ const Navbar = ({ isAuthenticated, logout, user, settings }) => {
         <Link to="/">Home</Link>
         <Link to="/shop">Store</Link>
         <Link to="/wiki">Wiki</Link>
-        <Link to="/leaderboards">Leaderboards</Link>
+        <Link to="/leaderboards">Leaderboards</Link> {/* <-- ADD THIS LINE */}
         
         {isAuthenticated ? (
           <>

@@ -1,3 +1,4 @@
+// backend/app.js
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -18,7 +19,7 @@ const serverRoutes = require('./routes/serverRoutes');
 const wikiRoutes = require('./routes/wikiRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const characterProfileRoutes = require('./routes/characterProfileRoutes');
-const leaderboardRoutes = require('./routes/leaderboardRoutes'); // Import leaderboard routes
+const leaderboardRoutes = require('./routes/leaderboardRoutes'); // <-- ADD THIS LINE
 
 const app = express();
 
@@ -36,7 +37,7 @@ app.use('/api/v1/server', serverRoutes);
 app.use('/api/v1/wiki', wikiRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/profile', characterProfileRoutes);
-app.use('/api/v1/leaderboards', leaderboardRoutes); // Mount leaderboard routes
+app.use('/api/v1/leaderboards', leaderboardRoutes); // <-- ADD THIS LINE
 
 app.use(errorHandler);
 

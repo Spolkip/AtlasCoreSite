@@ -20,16 +20,16 @@ import OrderHistory from './components/OrderHistory';
 import ForgotPassword from './components/ForgotPassword';
 import LinkMinecraft from './components/LinkMinecraft';
 import Dashboard from './components/Dashboard';
-import CharacterProfile from './components/CharacterProfile'; // Import the new component
+import CharacterProfile from './components/CharacterProfile';
 import AdminDashboard from './components/AdminDashboard';
 import Footer from './components/Footer';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import Wiki from './components/Wiki';
 import AdminWiki from './components/AdminWiki';
-import LiveChat from './components/LiveChat'; 
+import LiveChat from './components/LiveChat';
 import AdminChat from './components/AdminChat';
-import Leaderboards from './components/Leaderboards'; // Import Leaderboards
+import Leaderboard from './components/Leaderboard'; // Corrected import name
 
 import './css/App.css';
 
@@ -89,18 +89,18 @@ function App() {
     };
 
     const loadUserFromStorage = () => {
-        const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-        if (token && storedUser) {
-          try {
-            const parsedUser = JSON.parse(storedUser);
-            setUser(parsedUser);
-            setIsAuthenticated(true);
-            setIsAdmin(parsedUser.isAdmin === 1 || parsedUser.isAdmin === true);
-          } catch (e) {
-            handleLogout();
-          }
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      if (token && storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+          setIsAdmin(parsedUser.isAdmin === 1 || parsedUser.isAdmin === true);
+        } catch (e) {
+          handleLogout();
         }
+      }
     };
 
     loadUserFromStorage();
@@ -149,7 +149,7 @@ function App() {
                 exchangeRates={exchangeRates} 
               />} 
             />
-            <Route path="/leaderboards" element={<Leaderboards />} />
+            <Route path="/leaderboards" element={<Leaderboard />} /> {/* Corrected component name */}
             <Route path="/login" element={<Login onLoginSuccess={handleLogin} />} />
             <Route path="/register" element={<Register onLoginSuccess={handleLogin} />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -160,7 +160,7 @@ function App() {
             {isAuthenticated && (
               <>
                 <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
-                <Route path="/profile" element={<CharacterProfile user={user} />} />
+                <Route path="/profile" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} />
                 <Route path="/settings" element={<Settings user={user} onSettingsUpdate={updateSettings} />} />
                 <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} />} />
                 <Route path="/payment/success" element={<PaymentSuccess />} />

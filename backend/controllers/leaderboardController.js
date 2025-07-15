@@ -1,64 +1,61 @@
 // backend/controllers/leaderboardController.js
-const { getDocs, collection, query, orderBy, limit } = require('firebase/firestore');
+const { collection, getDocs, query, orderBy, limit } = require('firebase/firestore');
 const { FIREBASE_DB } = require('../config/firebase');
 
-/**
- * @desc    Get data for all leaderboards
- * @route   GET /api/v1/leaderboards
- * @access  Public
- */
-exports.getLeaderboards = async (req, res) => {
+// Helper to safely parse stats which might be stored as strings
+const parseStat = (stat) => {
+    const num = parseFloat(stat);
+    return isNaN(num) ? 0 : num;
+};
+
+// @desc    Get leaderboard data
+// @route   GET /api/v1/leaderboards
+// @access  Public
+exports.getLeaderboard = async (req, res) => {
+    // Note: The 'stat' query parameter should be the full path in the document, e.g., 'stats.fabled_default_currentlevel'
+    const { stat = 'stats.fabled_default_currentlevel', order = 'desc', limit: queryLimit = 10 } = req.query;
+
     try {
         const playerProfilesRef = collection(FIREBASE_DB, 'player_profiles');
+        
+        // Firestore requires indexes for any orderBy clause that isn't on the document ID.
+        const q = query(playerProfilesRef, orderBy(stat, order), limit(parseInt(queryLimit)));
 
-        // Helper function to fetch and sort a leaderboard
-        const fetchLeaderboard = async (statKey) => {
-            // Firestore does not support ordering by map fields directly with a descending limit.
-            // We fetch all profiles and sort them in memory.
-            // This is acceptable for a reasonable number of players, but for very large
-            // servers, a more scalable solution (like a separate aggregated collection) would be needed.
-            const snapshot = await getDocs(playerProfilesRef);
-            
-            const players = snapshot.docs.map(doc => doc.data());
+        const querySnapshot = await getDocs(q);
+        
+        let leaderboard = [];
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            // Nested access to get the stat value
+            const statValue = stat.split('.').reduce((o, i) => (o ? o[i] : undefined), data);
 
-            return players
-                .filter(p => p.stats && p.stats[statKey]) // Ensure the player has the stat
-                .sort((a, b) => Number(b.stats[statKey]) - Number(a.stats[statKey])) // Sort descending
-                .slice(0, 10) // Get top 10
-                .map(p => ({
-                    uuid: p.uuid,
-                    playerName: p.playerName,
-                    [statKey]: p.stats[statKey]
-                }));
-        };
-
-        const [
-            balanceLeaderboard, 
-            fightingLeaderboard, 
-            miningLeaderboard,
-            killsLeaderboard,
-            deathsLeaderboard
-        ] = await Promise.all([
-            fetchLeaderboard('vault_eco_balance'),
-            fetchLeaderboard('auraskills_fighting'),
-            fetchLeaderboard('auraskills_mining'),
-            fetchLeaderboard('statistic_player_kills'),
-            fetchLeaderboard('statistic_deaths')
-        ]);
-
+            leaderboard.push({
+                playerName: data.playerName || 'Unknown',
+                statValue: statValue !== undefined ? statValue : 'N/A'
+            });
+        });
+        
+        // Perform a secondary sort in code as Firestore's string sorting can be inconsistent for numbers
+        leaderboard.sort((a, b) => {
+            const statA = parseStat(a.statValue);
+            const statB = parseStat(b.statValue);
+            return order === 'desc' ? statB - statA : statA - statB;
+        });
+        
         res.status(200).json({
             success: true,
-            data: {
-                balance: balanceLeaderboard,
-                fighting: fightingLeaderboard,
-                mining: miningLeaderboard,
-                kills: killsLeaderboard,
-                deaths: deathsLeaderboard,
-            }
+            leaderboard
         });
 
     } catch (error) {
-        console.error("Error fetching leaderboard data:", error);
-        res.status(500).json({ success: false, message: 'Server error fetching leaderboards.' });
+        console.error(`Error fetching leaderboard for stat "${stat}":`, error);
+        // Check for a specific Firestore "missing index" error code
+        if (error.code === 'failed-precondition') {
+            return res.status(500).json({ 
+                success: false, 
+                message: `Server error: A required database index is missing for the stat '${stat}'. Please create the composite index in your Firestore settings.` 
+            });
+        }
+        res.status(500).json({ success: false, message: 'Server error fetching leaderboard data.' });
     }
 };
