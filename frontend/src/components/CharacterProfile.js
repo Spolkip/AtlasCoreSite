@@ -1,6 +1,6 @@
 // frontend/src/components/CharacterProfile.js
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SkinViewer, WalkingAnimation } from 'skinview3d';
 import '../css/CharacterProfile.css';
@@ -89,6 +89,7 @@ const StatBar = ({ label, value, max, type }) => {
  * Main CharacterProfile Component - REWRITTEN FOR RESILIENCY
  */
 const CharacterProfile = ({ user, onUserUpdate }) => {
+    const { username } = useParams();
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -113,39 +114,38 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     ];
 
     useEffect(() => {
-        if (!user) {
-            setLoading(false);
-            return;
-        }
         const fetchProfileData = async () => {
             setLoading(true);
             setError('');
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             
-            if (user.minecraft_uuid) {
-                 try {
-                    const response = await axios.get('http://localhost:5000/api/v1/profile', config);
-                    if (response.data.success) {
-                        setProfileData(response.data.data);
-                        // If there was an error message from the backend (e.g., plugin down), set it.
-                        if (response.data.error) {
-                            setError(`Could not load in-game stats: ${response.data.error}`);
-                        }
-                    } else {
-                        setError(response.data.message || 'Failed to fetch character profile.');
+            const profileUsername = username || user?.username;
+            if (!profileUsername) {
+                setLoading(false);
+                setError("No user specified.");
+                return;
+            }
+            
+            try {
+                const response = await axios.get(`http://localhost:5000/api/v1/profile/${profileUsername}`, config);
+                if (response.data.success) {
+                    setProfileData(response.data.data);
+                    if (response.data.error) {
+                        setError(`Could not load in-game stats: ${response.data.error}`);
                     }
-                } catch (err) {
-                    setError(err.response?.data?.message || 'An error occurred while fetching your profile.');
-                } finally {
-                    setLoading(false);
+                } else {
+                    setError(response.data.message || 'Failed to fetch character profile.');
                 }
-            } else {
+            } catch (err) {
+                setError(err.response?.data?.message || 'An error occurred while fetching your profile.');
+            } finally {
                 setLoading(false);
             }
         };
+
         fetchProfileData();
-    }, [user]);
+    }, [user, username]);
 
     const handleUnlinkMinecraft = async () => {
         setError('');
@@ -175,15 +175,12 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     }
     
     // If the user hasn't linked their account yet
-    if (!user.minecraft_uuid) {
+    if (!profileData?.playerStats?.uuid) {
         return (
             <div className="dashboard-container">
                 <div className="profile-section">
                     <h2>Account Not Linked</h2>
-                    <p>Link your Minecraft account to view your character profile.</p>
-                    <div className="action-buttons">
-                        <Link to="/link-minecraft" className="dashboard-button">Link Minecraft Account</Link>
-                    </div>
+                    <p>This user has not linked their Minecraft account yet.</p>
                 </div>
             </div>
         );
@@ -198,11 +195,11 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
              {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
 
             <div className="profile-upper-section">
-                <SkinViewerComponent uuid={user.minecraft_uuid} />
+                <SkinViewerComponent uuid={playerStats.uuid} />
                 <div className="stats-container">
                     <div className="player-identity">
                         {/* Use user's web username as a fallback if in-game name isn't available */}
-                        <h2 className="player-name">{playerStats?.player_name || user.username}</h2>
+                        <h2 className="player-name">{playerStats?.player_name || username}</h2>
                         <p className="player-class-race">
                            {playerStats ? `Level ${playerStats.fabled_default_currentlevel || 'N/A'} ${playerStats.fabled_player_races_class || ''} ${playerStats.fabled_player_class_mainclass || ''}` : 'In-game data not available.'}
                         </p>
@@ -211,10 +208,12 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                             <span className="info-label">Player Balance:</span>
                             <span className="info-value" style={{color: '#2ecc71'}}>{playerBalance}</span>
                         </div>
-                        <div className="action-buttons" style={{marginTop: '20px'}}>
-                            <Link to="/settings" className="dashboard-button small">Settings</Link>
-                            <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
-                        </div>
+                        {user && user.username === username && (
+                            <div className="action-buttons" style={{marginTop: '20px'}}>
+                                <Link to="/settings" className="dashboard-button small">Settings</Link>
+                                <button onClick={handleUnlinkMinecraft} className="dashboard-button small danger">Unlink Account</button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Only render stats panel if stats are available */}

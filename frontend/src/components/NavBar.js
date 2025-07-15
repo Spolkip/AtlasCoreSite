@@ -12,13 +12,12 @@ const Navbar = ({ isAuthenticated, logout, user, settings }) => {
         <Link to="/">Home</Link>
         <Link to="/shop">Store</Link>
         <Link to="/wiki">Wiki</Link>
-        <Link to="/leaderboard">Leaderboards</Link> {/* <-- ADDED LEADERBOARD LINK */}
+        <Link to="/leaderboard">Leaderboards</Link>
         
         {isAuthenticated ? (
           <>
             <Link to="/dashboard">Dashboard</Link>
-            <Link to="/profile">Profile</Link>
-            <Link to="/settings">Settings</Link>
+            <Link to={`/profile/${user.username}`}>Profile</Link>
             <button onClick={logout} className="mc-button-nav">Logout</button>
           </>
         ) : (

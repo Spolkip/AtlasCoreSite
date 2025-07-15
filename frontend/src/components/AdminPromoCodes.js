@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import '../css/AddProducts.css'; // Reusing styles
+import EditCodeModal from './EditCodeModal';
 
 const AdminPromoCodes = () => {
     const [promoCodes, setPromoCodes] = useState([]);
@@ -14,6 +15,8 @@ const AdminPromoCodes = () => {
         expiryDate: '',
         in_game_commands: ['']
     });
+    const [editingCode, setEditingCode] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -82,6 +85,27 @@ const AdminPromoCodes = () => {
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to add promo code.');
+        }
+    };
+
+    const handleEditCode = (code) => {
+        setEditingCode(code);
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateCode = async (updatedCode) => {
+        setError('');
+        setSuccess('');
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        try {
+            const { data } = await axios.put(`http://localhost:5000/api/v1/promocodes/${updatedCode.id}`, updatedCode, config);
+            if (data.success) {
+                setSuccess('Code updated successfully!');
+                setIsEditModalOpen(false);
+                fetchPromoCodes(); // Refresh the list from the server
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to update promo code.');
         }
     };
 
@@ -163,12 +187,21 @@ const AdminPromoCodes = () => {
                         <div key={code.id} className="product-manage-item">
                             <span>{code.code} ({code.codeType})</span>
                             <div className="product-actions">
+                                <button onClick={() => handleEditCode(code)} className="mc-button small">Edit</button>
                                 <button onClick={() => handleDeletePromoCode(code.id)} className="mc-button small danger">Delete</button>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
+
+            {isEditModalOpen && (
+                <EditCodeModal
+                    code={editingCode}
+                    onClose={() => setIsEditModalOpen(false)}
+                    onSave={handleUpdateCode}
+                />
+            )}
         </div>
     );
 };

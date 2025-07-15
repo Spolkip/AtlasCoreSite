@@ -1,3 +1,4 @@
+// backend/app.js
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -18,7 +19,8 @@ const serverRoutes = require('./routes/serverRoutes');
 const wikiRoutes = require('./routes/wikiRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const characterProfileRoutes = require('./routes/characterProfileRoutes');
-const leaderboardRoutes = require('./routes/leaderboardRoutes'); // <-- IMPORT NEW ROUTE
+const leaderboardRoutes = require('./routes/leaderboardRoutes'); 
+const promoCodeRoutes = require('./routes/promoCodeRoutes');
 
 const app = express();
 
@@ -36,7 +38,8 @@ app.use('/api/v1/server', serverRoutes);
 app.use('/api/v1/wiki', wikiRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/profile', characterProfileRoutes);
-app.use('/api/v1/leaderboards', leaderboardRoutes); // <-- ADD NEW ROUTE
+app.use('/api/v1/leaderboards', leaderboardRoutes);
+app.use('/api/v1/promocodes', promoCodeRoutes);
 
 app.use(errorHandler);
 

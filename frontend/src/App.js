@@ -27,12 +27,17 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import Wiki from './components/Wiki';
 import AdminWiki from './components/AdminWiki';
-import LiveChat from './components/LiveChat'; 
+import LiveChat from './components/LiveChat';
 import AdminChat from './components/AdminChat';
-import Leaderboard from './components/Leaderboard'; // <-- IMPORT NEW COMPONENT
+import Leaderboard from './components/Leaderboard';
+import RedeemCode from './components/RedeemCode';
+import AdminVlog from './components/AdminVlog';
+import ProfileSearch from './components/ProfileSearch';
+import AdminPromoCodes from './components/AdminPromoCodes';
+
 
 import './css/App.css';
-import './css/Leaderboard.css'; // <-- IMPORT NEW CSS
+import './css/Leaderboard.css';
 
 // Client-side Firebase configuration
 const firebaseConfig = {
@@ -156,25 +161,29 @@ function App() {
             <Route path="/wiki" element={<Wiki user={user} />}>
               <Route path=":type/:id" element={<Wiki user={user} />} />
             </Route>
-            <Route path="/leaderboard" element={<Leaderboard />} /> {/* <-- ADDED LEADERBOARD ROUTE */}
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/redeem" element={<RedeemCode />} />
             
             {isAuthenticated && (
               <>
                 <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
-                <Route path="/profile" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} />
+                <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} />
                 <Route path="/settings" element={<Settings user={user} onSettingsUpdate={updateSettings} />} />
-                <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} />} />
+                <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} onUpdateCart={setCart} />} />
                 <Route path="/payment/success" element={<PaymentSuccess />} />
                 <Route path="/payment/cancel" element={<PaymentCancel />} />
                 <Route path="/order-history" element={<OrderHistory user={user} />} />
                 <Route path="/link-minecraft" element={<LinkMinecraft onLoginSuccess={handleLogin} />} />
+                <Route path="/search-profiles" element={<ProfileSearch />} />
               </>
             )}
 
             {isAdmin && (
               <>
                 <Route path="/admin" element={<AddProducts />} />
+                <Route path="/admin/promocodes" element={<AdminPromoCodes />} />
                 <Route path="/admin-dashboard" element={<AdminDashboard user={user} />} />
+                <Route path="/admin/vlog" element={<AdminVlog user={user} />} />
                 <Route path="/admin/wiki" element={<AdminWiki />} />
                 <Route path="/admin/chat" element={<AdminChat user={user} db={db} />} /> 
               </>

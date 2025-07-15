@@ -1,14 +1,16 @@
 // frontend/src/components/Checkout.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../css/Checkout.css';
 import '../css/AuthForms.css'; // Reusing some form styles
 
-const Checkout = ({ cart, user, settings, exchangeRates }) => {
+const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('paypal');
+    const [promoCode, setPromoCode] = useState('');
+    const [discount, setDiscount] = useState(null);
     
     const [cardDetails, setCardDetails] = useState({
         cardNumber: '',
@@ -38,37 +40,49 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
         return rate ? numericBasePrice * rate : numericBasePrice;
     };
 
-    const totalAmountInDisplayCurrency = cart.reduce((total, item) => {
+    const initialTotal = cart.reduce((total, item) => {
         const displayPrice = getDisplayPrice(item.price, settings?.currency);
         return total + displayPrice * item.quantity;
     }, 0);
+    
+    const totalAmountInDisplayCurrency = discount ? discount.newTotal : initialTotal;
 
     const handleCardDetailsChange = (e) => {
         const { name, value } = e.target;
         setCardDetails(prev => ({ ...prev, [name]: value }));
     };
 
-    const validateCreditCardDetails = () => {
-        const { cardNumber, expiryDate, cvc } = cardDetails;
-        if (!cardNumber || !expiryDate || !cvc) {
-            setError("All credit card fields are required.");
-            return false;
+    const handleApplyPromoCode = async (e) => {
+        e.preventDefault();
+        if (!promoCode) {
+            setError("Please enter a promo code.");
+            return;
         }
-        if (!/^\d{16}$/.test(cardNumber)) {
-            setError("Card number must be 16 digits.");
-            return false;
-        }
-        if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(expiryDate)) {
-            setError("Expiry date must be in MM/YY format (e.g., 12/25).");
-            return false;
-        }
-        if (!/^\d{3,4}$/.test(cvc)) {
-            setError("CVC must be 3 or 4 digits.");
-            return false;
-        }
+        setLoading(true);
         setError('');
-        return true;
+        try {
+            const token = localStorage.getItem('token');
+            const { data } = await axios.post(
+                'http://localhost:5000/api/v1/promocodes/apply', 
+                { code: promoCode, totalAmount: initialTotal }, 
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (data.success) {
+                setDiscount({
+                    amount: data.discountAmount,
+                    newTotal: data.newTotal,
+                    code: promoCode
+                });
+            } else {
+                setError(data.message);
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to apply promo code.');
+        } finally {
+            setLoading(false);
+        }
     };
+
 
     const handlePurchase = async () => {
         if (cart.length === 0) {
@@ -76,7 +90,8 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
             return;
         }
         
-        if (paymentMethod === 'credit-card' && !validateCreditCardDetails()) {
+        if (paymentMethod === 'credit-card') {
+            setError("Credit card payments are not yet supported.");
             return;
         }
 
@@ -93,12 +108,13 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
             })),
             totalAmount: totalAmountInDisplayCurrency,
             paymentMethod: paymentMethod,
-            currency: settings?.currency || 'USD'
+            currency: settings?.currency || 'USD',
+            promoCode: discount ? discount.code : null,
+            discountAmount: discount ? discount.amount : 0
         };
 
         try {
             if (paymentMethod === 'paypal') {
-                // For PayPal, we must wait for the response to get the redirect URL
                 const response = await axios.post(
                     'http://localhost:5000/api/v1/orders',
                     orderData,
@@ -111,26 +127,16 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
                     throw new Error('PayPal approval URL not received from server.');
                 }
             } else {
-                // *** FIX: For simulated payments, we "fire and forget" ***
-                // We send the request but don't wait for the full backend process.
-                // We navigate to the success page immediately, assuming the backend will handle it.
-                // This prevents the frontend from timing out and showing an error.
                 axios.post(
                     'http://localhost:5000/api/v1/orders',
                     orderData,
                     { headers: { Authorization: `Bearer ${token}` } }
                 ).catch(err => {
-                    // We can log this error for debugging, but we won't show it to the user
-                    // because the backend process likely succeeded anyway.
                     console.error("Simulated payment background request error:", err);
                 });
-
-                // Navigate immediately to the success page.
                 navigate('/payment/success');
             }
         } catch (err) {
-            // This catch block will now primarily handle errors from the PayPal flow
-            // or pre-request validation issues.
             const errorMessage = err.response?.data?.message || 'Failed to create order. Please try again.';
             setError(errorMessage);
             setLoading(false);
@@ -148,9 +154,6 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
 
             {error && (
                 <div className="auth-error-message">
-                    <svg className="error-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
                     <span>{error}</span>
                 </div>
             )}
@@ -168,6 +171,12 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
                             </div>
                         ))}
                         <hr />
+                        {discount && (
+                             <div className="cart-total-summary discount">
+                                <strong>Discount ({discount.code}):</strong>
+                                <strong>- {getCurrencySymbol(settings?.currency)}{discount.amount.toFixed(2)}</strong>
+                            </div>
+                        )}
                         <div className="cart-total-summary">
                             <strong>Total:</strong>
                             <strong>{getCurrencySymbol(settings?.currency)}{totalAmountInDisplayCurrency.toFixed(2)}</strong>
@@ -175,6 +184,19 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
                     </>
                 )}
             </div>
+            <div className="promo-code-section">
+                <form onSubmit={handleApplyPromoCode} className="promo-code-form">
+                    <input 
+                        type="text" 
+                        value={promoCode} 
+                        onChange={(e) => setPromoCode(e.target.value)} 
+                        placeholder="Enter discount code"
+                        className="promo-code-input"
+                    />
+                    <button type="submit" className="mc-button apply-promo-btn">Apply</button>
+                </form>
+            </div>
+
 
             <div className="payment-options">
                 <h3>Select Payment Method</h3>
@@ -203,55 +225,6 @@ const Checkout = ({ cart, user, settings, exchangeRates }) => {
                     Crypto (Simulation)
                 </div>
             </div>
-
-            {paymentMethod === 'credit-card' && (
-                <div className="credit-card-form">
-                    <div className="form-group">
-                        <label htmlFor="cardNumber">Card Number</label>
-                        <input
-                            id="cardNumber"
-                            type="text"
-                            name="cardNumber"
-                            value={cardDetails.cardNumber}
-                            onChange={handleCardDetailsChange}
-                            placeholder="XXXX XXXX XXXX XXXX"
-                            className="auth-input"
-                            maxLength="16"
-                            required
-                        />
-                    </div>
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="expiryDate">Expiry (MM/YY)</label>
-                            <input
-                                id="expiryDate"
-                                type="text"
-                                name="expiryDate"
-                                value={cardDetails.expiryDate}
-                                onChange={handleCardDetailsChange}
-                                placeholder="MM/YY"
-                                className="auth-input"
-                                maxLength="5"
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="cvc">CVC</label>
-                            <input
-                                id="cvc"
-                                type="text"
-                                name="cvc"
-                                value={cardDetails.cvc}
-                                onChange={handleCardDetailsChange}
-                                placeholder="XXX"
-                                className="auth-input"
-                                maxLength="4"
-                                required
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <button onClick={handlePurchase} className="mc-button primary purchase-button" disabled={loading || cart.length === 0}>
                 {loading ? 'Processing...' : `Proceed to Payment`}
