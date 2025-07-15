@@ -1,5 +1,4 @@
 // frontend/src/components/Login.js
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -59,7 +58,6 @@ const Login = ({ onLoginSuccess }) => {
       });
 
       if (response.data.success) {
-        // FIX: Pass the entire response.data object to onLoginSuccess
         onLoginSuccess(response.data);
         navigate('/dashboard'); // Redirect after successful login
       }

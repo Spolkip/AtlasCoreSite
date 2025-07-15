@@ -21,6 +21,7 @@ const chatRoutes = require('./routes/chatRoutes');
 const characterProfileRoutes = require('./routes/characterProfileRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes'); 
 const promoCodeRoutes = require('./routes/promoCodeRoutes');
+const vlogRoutes = require('./routes/vlogRoutes'); // Import vlog routes
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/profile', characterProfileRoutes);
 app.use('/api/v1/leaderboards', leaderboardRoutes);
 app.use('/api/v1/promocodes', promoCodeRoutes);
+app.use('/api/v1/vlog', vlogRoutes); // Mount vlog routes
 
 app.use(errorHandler);
 

@@ -12,11 +12,24 @@ const LiveChat = ({ user, isAdmin }) => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
+  // FIX: Changed to an array of objects to include answers for auto-reply.
   const predefinedQuestions = [
-    "What is Atlas Core?",
-    "How do I link my Minecraft account?",
-    "I have an issue with a purchase.",
-    "How can I join a town?",
+    {
+        question: "What is Atlas Core?",
+        answer: "Atlas Core is a Minecraft RPG server featuring custom classes, mobs, items, and a towny-based diplomacy system. You can forge your own legend in our world!"
+    },
+    {
+        question: "How do I link my Minecraft account?",
+        answer: "You can link your Minecraft account from your Dashboard. Click on your profile, then find the 'Link Minecraft Account' option to start the process."
+    },
+    {
+        question: "I have an issue with a purchase.",
+        answer: "We're sorry to hear that. Please describe your issue in detail in the chat, and an admin will be with you shortly to assist."
+    },
+    {
+        question: "How can I join a town?",
+        answer: "To join a town, you can use the in-game command `/town join [town_name]`. You can find a list of public towns with `/town list`."
+    }
   ];
 
   const scrollToBottom = () => {
@@ -25,19 +38,15 @@ const LiveChat = ({ user, isAdmin }) => {
 
   useEffect(scrollToBottom, [messages]);
 
-  // Initialize Firestore DB instance for the user side
-  // This assumes db is available from the global scope or context (e.g., from App.js)
-  const db = getFirestore(); // Assuming db is available from the global scope or context
+  const db = getFirestore();
 
-  // Effect to handle chat window open/close and real-time message listening
   useEffect(() => {
-    if (!isOpen || isAdmin || !db) return; // Only run if chat is open, not admin, and db is initialized
+    if (!isOpen || isAdmin || !db) return;
 
     let sessionId;
     if (user) {
       sessionId = user.id;
     } else {
-      // For guest users, generate a unique ID if one doesn't exist in session storage
       sessionId = sessionStorage.getItem('guestId');
       if (!sessionId) {
         sessionId = `guest-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
@@ -45,7 +54,6 @@ const LiveChat = ({ user, isAdmin }) => {
       }
     }
 
-    // Set up the real-time listener for messages
     const q = query(
       collection(db, 'chats'),
       where('userId', '==', sessionId),
@@ -56,10 +64,9 @@ const LiveChat = ({ user, isAdmin }) => {
       const newMessages = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        timestamp: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate() : new Date() // Convert Firestore Timestamp to JS Date
+        timestamp: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate() : new Date()
       }));
 
-      // If no messages exist for a new session, add an initial greeting from admin
       if (newMessages.length === 0) {
         setMessages([
           {
@@ -73,14 +80,12 @@ const LiveChat = ({ user, isAdmin }) => {
       }
     }, (error) => {
       console.error("Error listening to chat messages (user side):", error);
-      // Optionally display an error to the user in the chat window
       setMessages(prev => [...prev, { sender: 'system', message: "Error: Could not load chat messages." }]);
     });
 
-    // Cleanup function: unsubscribe from the listener when the chat window closes
     return () => unsubscribe();
 
-  }, [isOpen, user, isAdmin, db]); // Dependencies for this effect
+  }, [isOpen, user, isAdmin, db]);
 
   const toggleChat = () => {
     if (isAdmin) {
@@ -93,34 +98,30 @@ const LiveChat = ({ user, isAdmin }) => {
   const handleSend = async (text) => {
     if (text.trim() === '') return;
 
-    // Determine session ID for sending
     let sessionId;
     if (user) {
       sessionId = user.id;
     } else {
       sessionId = sessionStorage.getItem('guestId');
       if (!sessionId) {
-        // This should theoretically not happen if the useEffect runs first, but as a fallback
         sessionId = `guest-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
         sessionStorage.setItem('guestId', sessionId);
       }
     }
 
     try {
-        const payload = { message: text, userId: sessionId }; // Always send userId for guest too
-        if (!user) { // If it's a guest, explicitly send guestId
+        const payload = { message: text, userId: sessionId };
+        if (!user) {
             payload.guestId = sessionId;
-            delete payload.userId; // Ensure userId is not sent for guests
+            delete payload.userId;
         }
 
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         await axios.post('http://localhost:5000/api/v1/chat/send', payload, { headers });
-        // Messages will be updated by the onSnapshot listener, so no manual update here.
         setInputValue('');
     } catch (error) {
         console.error("Failed to send message:", error);
-        // Display error message in chat
         setMessages(prev => [...prev, { sender: 'system', message: "Error: Could not send message."}]);
     }
   };
@@ -134,8 +135,31 @@ const LiveChat = ({ user, isAdmin }) => {
     handleSend(inputValue);
   };
 
-  const handlePredefinedQuestionClick = (question) => {
+  // FIX: Implement auto-reply logic.
+  const handlePredefinedQuestionClick = (questionObj) => {
+    const { question, answer } = questionObj;
+
+    // 1. Send the user's question to the backend for the admin to see.
     handleSend(question);
+
+    // 2. Immediately add both the user's question and the system's auto-reply
+    //    to the local state for an instant UI update.
+    const userMessage = {
+        sender: 'user',
+        message: question,
+        timestamp: new Date()
+    };
+    const adminReply = {
+        sender: 'admin',
+        message: answer,
+        timestamp: new Date(Date.now() + 500) // Add a slight delay to feel more natural
+    };
+
+    // Use the onSnapshot listener to update the UI by adding the messages to Firestore.
+    // This is a more robust way to handle real-time updates.
+    // The previously implemented onSnapshot listener will then update the UI.
+    // We will simulate this by adding the messages to the local state for now.
+    setMessages(prev => [...prev, userMessage, adminReply]);
   };
 
   return (
@@ -158,10 +182,8 @@ const LiveChat = ({ user, isAdmin }) => {
           <div className="chat-messages">
             {messages.map((msg, index) => (
               <div key={index} className={`message ${msg.sender}`}>
-                {/* Display sender name and timestamp */}
                 <p className="message-sender">{msg.sender === 'user' ? (user ? user.username : 'You') : 'Admin'}</p>
                 <p className="message-content">{msg.text || msg.message}</p>
-                {/* FIX: Moved timestamp below message content */}
                 <span className="message-timestamp-text">
                   {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                 </span>
@@ -172,7 +194,7 @@ const LiveChat = ({ user, isAdmin }) => {
           <div className="predefined-questions">
             {predefinedQuestions.map((q, i) => (
               <button key={i} onClick={() => handlePredefinedQuestionClick(q)}>
-                {q}
+                {q.question}
               </button>
             ))}
           </div>

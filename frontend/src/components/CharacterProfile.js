@@ -181,6 +181,11 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                 <div className="profile-section">
                     <h2>Account Not Linked</h2>
                     <p>This user has not linked their Minecraft account yet.</p>
+                    {user && user.username === username && (
+                        <div className="action-buttons" style={{ marginTop: '20px' }}>
+                            <Link to="/link-minecraft" className="dashboard-button">Link Account</Link>
+                        </div>
+                    )}
                 </div>
             </div>
         );

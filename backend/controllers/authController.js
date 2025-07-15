@@ -1,7 +1,7 @@
 // backend/controllers/authController.js
 const UserAuth = require('../models/User');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const jwt =require('jsonwebtoken');
 const crypto = require('crypto');
 const axios = require('axios');
 const { collection, getDocs, query, where } = require('firebase/firestore');
@@ -25,7 +25,8 @@ const toUserResponse = (user) => ({
 // Function to call the Minecraft plugin's webhook
 const callMinecraftPlugin = async (endpoint, payload) => {
     try {
-        const pluginUrl = `http://localhost:${process.env.WEBHOOK_PORT || 4567}${endpoint}`;
+        // FIX: Changed WEBHOOK_PORT to PLUGIN_PORT for consistency
+        const pluginUrl = `http://localhost:${process.env.PLUGIN_PORT || 4567}${endpoint}`;
         const secret = process.env.WEBHOOK_SECRET; 
 
         if (!secret) {

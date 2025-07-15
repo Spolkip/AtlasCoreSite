@@ -438,7 +438,8 @@
 
 .carousel-nav-button {
   font-size: 3rem !important;
-  padding: 10px 20px !important;
+  /* FIX: Padding is not needed for centering within a fixed-size flex container. */
+  padding: 0 !important;
   background-color: #2980b9 !important;
   border-radius: 50% !important;
   width: 60px;
@@ -450,21 +451,15 @@
   flex-shrink: 0;
 }
 
+/* FIX: Ensure the arrow character is perfectly centered inside the button. */
+.carousel-nav-button span {
+    line-height: 0;
+}
+
 .carousel-nav-button:hover {
   background-color: #3498db !important;
   box-shadow: 6px 6px 0 #000 !important;
 }
-
-.class-carousel-content {
-  flex-grow: 1;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 300px;
-  position: relative;
-}
-
 .class-card {
   animation: slideIn 0.7s ease-out forwards;
   width: 100%;

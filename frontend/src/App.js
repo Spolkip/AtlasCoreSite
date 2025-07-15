@@ -32,6 +32,7 @@ import AdminChat from './components/AdminChat';
 import Leaderboard from './components/Leaderboard';
 import RedeemCode from './components/RedeemCode';
 import AdminVlog from './components/AdminVlog';
+import Vlog from './components/Vlog'; // Import Vlog component
 import ProfileSearch from './components/ProfileSearch';
 import AdminPromoCodes from './components/AdminPromoCodes';
 
@@ -60,6 +61,11 @@ function App() {
   const [settings, setSettings] = useState(null);
   const [exchangeRates, setExchangeRates] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState('dark'); // State for theme
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
+  };
 
   const handleLogout = useCallback(() => {
     setUser(null);
@@ -139,7 +145,7 @@ function App() {
 
   return (
     <Router>
-      <div className="App">
+      <div className={`App ${theme}-theme`}>
         <NavBar user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={handleLogout} settings={settings} />
         <main className="content">
           <Routes>
@@ -163,12 +169,13 @@ function App() {
             </Route>
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/redeem" element={<RedeemCode />} />
+            <Route path="/vlog" element={<Vlog user={user} />} />
             
             {isAuthenticated && (
               <>
                 <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
                 <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} />
-                <Route path="/settings" element={<Settings user={user} onSettingsUpdate={updateSettings} />} />
+                <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} theme={theme} toggleTheme={toggleTheme} />} />
                 <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} onUpdateCart={setCart} />} />
                 <Route path="/payment/success" element={<PaymentSuccess />} />
                 <Route path="/payment/cancel" element={<PaymentCancel />} />
