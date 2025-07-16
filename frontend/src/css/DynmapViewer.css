@@ -1,0 +1,281 @@
+/* frontend/src/css/DynmapViewer.css */
+
+.dynmap-page-container {
+    max-width: 1400px; /* Wider container for map + sidebar */
+    margin: 2rem auto;
+    padding: 2rem;
+    color: #fff;
+    font-family: 'VT323', monospace;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 3px solid #000;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    text-align: center;
+}
+
+.dynmap-header {
+    margin-bottom: 2rem;
+}
+
+.dynmap-title {
+    font-size: 3.5rem;
+    color: #FFAA00;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px #000;
+}
+
+.dynmap-description {
+    font-size: 1.4rem;
+    color: #ccc;
+}
+
+.dynmap-content-wrapper {
+    display: flex;
+    flex-direction: row; /* Map and sidebar side-by-side */
+    gap: 2rem;
+    justify-content: center;
+    align-items: flex-start; /* Align items to the top */
+}
+
+.dynmap-map-area {
+    flex-grow: 1;
+    min-width: 600px; /* Minimum width for the map area */
+    position: relative; /* For loading overlay and controls positioning */
+    display: flex;
+    flex-direction: column;
+}
+
+.dynmap-iframe {
+    width: 100%;
+    height: 600px; /* Fixed height for the iframe */
+    border: 2px solid #000;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+    background-color: #000; /* Fallback background for iframe */
+}
+
+.dynmap-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #FFAA00;
+    font-size: 1.8rem;
+    z-index: 10;
+}
+
+.spinner {
+    border: 8px solid #f3f3f3; /* Light grey */
+    border-top: 8px solid #FFAA00; /* Orange */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 2s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Removed .map-controls styles */
+
+
+.dynmap-sidebar {
+    width: 350px; /* Fixed width for the sidebar */
+    flex-shrink: 0; /* Prevent shrinking */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative; /* For positioning the toggle button */
+}
+
+/* Removed .dynmap-live-chat-wrapper styles */
+
+/* Info Overlay Styles */
+.toggle-info-overlay-button {
+    width: 100%;
+    padding: 10px 20px !important;
+    font-size: 1.2rem !important;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: #3498db;
+    border: 3px solid #000;
+}
+.toggle-info-overlay-button:hover {
+    background-color: #2980b9;
+}
+
+.dynmap-info-overlay {
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 3px solid #000;
+    box-shadow: 0 0 15px rgba(0,0,0,0.7);
+    padding: 1.5rem;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem; /* Space between info overlay and chat */
+    
+    /* --- NEW/UPDATED: Properties to control visibility --- */
+    max-height: 0; /* Start hidden by collapsing height */
+    overflow: hidden; /* Hide content that exceeds max-height */
+    opacity: 0; /* Start invisible */
+    visibility: hidden; /* Ensure it's not interactive when hidden */
+    transition: max-height 0.5s ease-out, opacity 0.3s ease-out, visibility 0.5s step-end; /* Animate smoothly */
+}
+
+.dynmap-info-overlay.open {
+    max-height: 500px; /* Expand to show content, set a value larger than content */
+    opacity: 1; /* Fully visible */
+    visibility: visible; /* Make interactive */
+    transition: max-height 0.5s ease-in, opacity 0.3s ease-in, visibility 0.5s step-start; /* Animate smoothly */
+}
+
+
+.overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #555;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.overlay-header h3 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #FFFF55;
+    text-shadow: 1px 1px #000;
+}
+
+.close-overlay-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.close-overlay-btn:hover {
+    color: #fff;
+}
+
+.overlay-content .info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed #444;
+}
+.overlay-content .info-item:last-child {
+    border-bottom: none;
+}
+
+.overlay-content .info-label {
+    font-size: 1.2rem;
+    color: #ccc;
+}
+
+.overlay-content .info-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.overlay-content .info-value.online {
+    color: #2ecc71; /* Green for online */
+}
+.overlay-content .info-value.offline {
+    color: #e74c3c; /* Red for offline */
+}
+
+.overlay-tip {
+    font-size: 1rem;
+    color: #aaa;
+    margin-top: 1.5rem;
+    font-style: italic;
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+    .dynmap-content-wrapper {
+        flex-direction: column; /* Stack map and sidebar vertically */
+        align-items: center;
+    }
+
+    .dynmap-map-area {
+        min-width: unset; /* Remove min-width constraint */
+        width: 100%;
+        max-width: 700px; /* Adjust max-width for better mobile display */
+    }
+
+    .dynmap-iframe {
+        height: 450px; /* Adjust height for tablet view */
+    }
+
+    .dynmap-sidebar {
+        width: 100%;
+        max-width: 700px; /* Max width for sidebar on smaller screens */
+    }
+
+    /* Adjust LiveChat position if it's fixed */
+    .live-chat-container {
+        position: relative; /* Remove fixed positioning */
+        bottom: auto;
+        left: auto;
+        width: 100%; /* Take full width */
+        margin: 0;
+    }
+    .live-chat-container .chat-toggle-button {
+        display: none; /* Hide toggle button if chat is always open */
+    }
+    .live-chat-container .chat-window {
+        position: static; /* Remove absolute positioning */
+        height: auto; /* Allow height to adjust */
+        max-height: 400px; /* Max height for chat window on smaller screens */
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .dynmap-page-container {
+        padding: 1rem;
+    }
+    .dynmap-title {
+        font-size: 2.5rem;
+    }
+    .dynmap-description {
+        font-size: 1.2rem;
+    }
+    .dynmap-iframe {
+        height: 300px; /* Adjust height for phone view */
+    }
+    .dynmap-loading-overlay {
+        font-size: 1.4rem;
+    }
+    .spinner {
+        width: 40px;
+        height: 40px;
+    }
+    .dynmap-info-overlay {
+        padding: 1rem;
+    }
+    .overlay-header h3 {
+        font-size: 1.5rem;
+    }
+    .overlay-content .info-label,
+    .overlay-content .info-value {
+        font-size: 1rem;
+    }
+    .overlay-tip {
+        font-size: 0.9rem;
+    }
+}

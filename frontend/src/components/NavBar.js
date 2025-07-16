@@ -15,6 +15,7 @@ const Navbar = ({ isAuthenticated, logout, user, settings }) => {
         <Link to="/vlog">Vlog</Link>
         <Link to="/leaderboard">Leaderboards</Link>
         <Link to="/events">Events</Link> 
+        <Link to="/map">Map</Link>
         
         {isAuthenticated ? (
           <>

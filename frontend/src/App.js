@@ -36,9 +36,11 @@ import ProfileSearch from './components/ProfileSearch';
 import AdminPromoCodes from './components/AdminPromoCodes';
 import Events from './components/Events'; 
 import AdminEvents from './components/AdminEvents'; // Import the new AdminEvents component
+import DynmapViewer from './components/DynmapViewer'; // Import the new DynmapViewer component
 
 import './css/App.css';
 import './css/Leaderboard.css';
+import './css/DynmapViewer.css'; // Import the new DynmapViewer CSS
 
 // Client-side Firebase configuration
 const firebaseConfig = {
@@ -174,6 +176,7 @@ function App() {
             <Route path="/redeem" element={<RedeemCode />} />
             <Route path="/vlog" element={<Vlog user={user} />} />
             <Route path="/events" element={<Events user={user} />} /> {/* Pass user prop to Events */}
+            <Route path="/map" element={<DynmapViewer user={user} db={db} />} /> {/* NEW DynmapViewer Route */}
             
             {isAuthenticated && (
               <>
