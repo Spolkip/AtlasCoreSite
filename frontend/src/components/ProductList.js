@@ -1,6 +1,6 @@
 // frontend/src/components/ProductList.js
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react'; // Import useRef
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -10,7 +10,7 @@ import '../css/ProductList.css';
 function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
     const [categorizedProducts, setCategorizedProducts] = useState({});
     const [selectedCategory, setSelectedCategory] = useState('');
-    const [loading, setLoading] = useState(true);
+    // Removed the 'loading' state to prevent explicit loading messages
     const [error, setError] = useState(null);
     const [isCartSidebarOpen, setIsCartSidebarOpen] = useState(false);
 
@@ -22,6 +22,7 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
     const [sortBy, setSortBy] = useState(''); // e.g., 'priceAsc', 'priceDesc', 'nameAsc', 'nameDesc'
 
     const navigate = useNavigate();
+    const debounceTimeoutRef = useRef(null); // Ref for debounce timeout
 
     // Helper function to get currency symbol
     const getCurrencySymbol = (currencyCode) => {
@@ -111,7 +112,6 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
 
     // Fetch products and categories from the backend
     const fetchData = useCallback(async () => {
-        setLoading(true);
         setError(null);
         try {
             const token = localStorage.getItem('token');
@@ -189,12 +189,30 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
             console.error('Error fetching data:', err.response ? err.response.data : err.message);
             setError('Failed to load products from the store. Please try again later.');
         } finally {
-            setLoading(false);
+            // Removed setLoading(false) here
         }
     }, [searchTerm, minPrice, maxPrice, showInStockOnly, sortBy, selectedCategory, settings?.currency, exchangeRates]); // Add all filter states to dependencies
 
+    // Debounce searchTerm updates to reduce API calls
+    const handleSearchTermChange = useCallback((value) => {
+        setSearchTerm(value);
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+        }
+        debounceTimeoutRef.current = setTimeout(() => {
+            fetchData();
+        }, 500); // 500ms debounce delay
+    }, [fetchData]);
+
+
     useEffect(() => {
         fetchData();
+        // Clear debounce timeout on component unmount
+        return () => {
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+        };
     }, [fetchData]);
 
     // Handle resetting all filters
@@ -229,10 +247,6 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
         }
     };
 
-
-    if (loading) {
-        return <div className="loading-container">Loading products...</div>;
-    }
 
     if (error) {
         return <div className="error-container">{error}</div>;
@@ -314,7 +328,7 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
                         id="search-term"
                         placeholder="Search by name..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => handleSearchTermChange(e.target.value)} // Use debounced handler
                         className="filter-input"
                     />
                 </div>
