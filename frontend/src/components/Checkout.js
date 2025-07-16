@@ -10,7 +10,9 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
     const [error, setError] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('paypal');
     const [promoCode, setPromoCode] = useState('');
+    // REMOVED: creatorCode state, as it will now come from user.appliedCreatorCode
     const [discount, setDiscount] = useState(null);
+    const [appliedDiscountType, setAppliedDiscountType] = useState(null); // 'promo' or 'creator'
     
     const [cardDetails, setCardDetails] = useState({
         cardNumber: '',
@@ -37,7 +39,7 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
         }
 
         const rate = exchangeRates[targetCurrency];
-        return rate ? numericBasePrice * rate : numericBasePrice;
+        return rate ? numericBasePrice * rate : numericPrice;
     };
 
     const initialTotal = cart.reduce((total, item) => {
@@ -45,44 +47,70 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
         return total + displayPrice * item.quantity;
     }, 0);
     
-    const totalAmountInDisplayCurrency = discount ? discount.newTotal : initialTotal;
+    // Determine the total amount based on which discount is applied
+    let currentTotal = initialTotal;
+    if (discount) { // If any discount is set
+        currentTotal = discount.newTotal;
+    }
 
     const handleCardDetailsChange = (e) => {
         const { name, value } = e.target;
         setCardDetails(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleApplyPromoCode = async (e) => {
-        e.preventDefault();
-        if (!promoCode) {
-            setError("Please enter a promo code.");
-            return;
-        }
+    // MODIFIED: Consolidated discount application logic into a single function
+    const applyDiscountCode = async (code, type) => {
         setLoading(true);
         setError('');
+        setDiscount(null); // Clear any existing discount
+        setAppliedDiscountType(null); // Clear discount type
+
         try {
             const token = localStorage.getItem('token');
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            let endpoint = '';
+
+            if (type === 'promo') {
+                endpoint = 'http://localhost:5000/api/v1/promocodes/apply';
+            } else if (type === 'creator') {
+                endpoint = 'http://localhost:5000/api/v1/creatorcodes/apply';
+            } else {
+                throw new Error('Invalid discount type.');
+            }
+
             const { data } = await axios.post(
-                'http://localhost:5000/api/v1/promocodes/apply', 
-                { code: promoCode, totalAmount: initialTotal }, 
-                { headers: { Authorization: `Bearer ${token}` } }
+                endpoint,
+                { code, totalAmount: initialTotal }, // Always apply to initial total
+                { headers }
             );
+
             if (data.success) {
                 setDiscount({
                     amount: data.discountAmount,
                     newTotal: data.newTotal,
-                    code: promoCode
+                    code: code
                 });
+                setAppliedDiscountType(type);
             } else {
                 setError(data.message);
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to apply promo code.');
+            setError(err.response?.data?.message || `Failed to apply ${type} code.`);
         } finally {
             setLoading(false);
         }
     };
 
+    const handleApplyPromoCode = (e) => {
+        e.preventDefault();
+        if (!promoCode) {
+            setError("Please enter a promo code.");
+            return;
+        }
+        applyDiscountCode(promoCode, 'promo');
+    };
+
+    // REMOVED: handleApplyCreatorCode function. Logic is now in applyDiscountCode.
 
     const handlePurchase = async () => {
         if (cart.length === 0) {
@@ -90,12 +118,6 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
             return;
         }
         
-        // FIX: Removed the error message for credit card payments
-        // if (paymentMethod === 'credit-card') {
-        //     setError("Credit card payments are not yet supported.");
-        //     return;
-        // }
-
         setLoading(true);
         setError('');
 
@@ -107,11 +129,13 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
                 name: item.name,
                 price: item.price
             })),
-            totalAmount: totalAmountInDisplayCurrency,
-            paymentMethod: paymentMethod, // This will now correctly be 'credit-card' for simulation
+            totalAmount: currentTotal, // Use the calculated total with discount
+            paymentMethod: paymentMethod,
             currency: settings?.currency || 'USD',
-            promoCode: discount ? discount.code : null,
-            discountAmount: discount ? discount.amount : 0
+            // Pass the applied promoCode or creatorCode based on which was active
+            promoCode: appliedDiscountType === 'promo' ? discount.code : null,
+            creatorCode: appliedDiscountType === 'creator' ? discount.code : null,
+            discountAmount: discount ? discount.amount : 0,
         };
 
         try {
@@ -128,7 +152,6 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
                     throw new Error('PayPal approval URL not received from server.');
                 }
             } else {
-                // This block now handles 'credit-card', 'bank-transfer', and 'crypto' as simulations
                 axios.post(
                     'http://localhost:5000/api/v1/orders',
                     orderData,
@@ -175,27 +198,38 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
                         <hr />
                         {discount && (
                              <div className="cart-total-summary discount">
-                                <strong>Discount ({discount.code}):</strong>
+                                <strong>{appliedDiscountType === 'creator' ? 'Creator Code' : 'Discount'} ({discount.code}):</strong>
                                 <strong>- {getCurrencySymbol(settings?.currency)}{discount.amount.toFixed(2)}</strong>
                             </div>
                         )}
                         <div className="cart-total-summary">
                             <strong>Total:</strong>
-                            <strong>{getCurrencySymbol(settings?.currency)}{totalAmountInDisplayCurrency.toFixed(2)}</strong>
+                            <strong>{getCurrencySymbol(settings?.currency)}{currentTotal.toFixed(2)}</strong>
                         </div>
                     </>
                 )}
             </div>
+            {/* REMOVED: Separate Creator Code Section. Logic now uses user.appliedCreatorCode */}
+            
+            {/* ADDED: Display currently applied creator code from settings if available */}
+            {user.appliedCreatorCode && (
+                <div className="promo-code-section" style={{ border: '1px solid #2ecc71', padding: '10px', marginBottom: '20px' }}>
+                    <p style={{ margin: 0, fontSize: '1.2rem', color: '#2ecc71' }}>
+                        Applying Creator Code: <strong>{user.appliedCreatorCode}</strong>
+                    </p>
+                </div>
+            )}
+
             <div className="promo-code-section">
                 <form onSubmit={handleApplyPromoCode} className="promo-code-form">
                     <input 
                         type="text" 
                         value={promoCode} 
                         onChange={(e) => setPromoCode(e.target.value)} 
-                        placeholder="Enter discount code"
+                        placeholder="Enter promo code"
                         className="promo-code-input"
                     />
-                    <button type="submit" className="mc-button apply-promo-btn">Apply</button>
+                    <button type="submit" className="mc-button apply-promo-btn">Apply Promo Code</button>
                 </form>
             </div>
 

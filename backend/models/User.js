@@ -19,7 +19,10 @@ class User {
     this.used_promo_codes = source.used_promo_codes || [];
     this.reset_password_token = source.reset_password_token || null;
     this.reset_password_expire = source.reset_password_expire || null;
-    this.profile_theme = source.profile_theme || 'default'; // ADDED: New field for profile theme
+    this.profile_theme = source.profile_theme || 'default';
+    this.creatorCode = source.creatorCode || null; // This is *their own* creator code
+    this.points = source.points || 0;
+    this.appliedCreatorCode = source.appliedCreatorCode || null; // ADDED: The code they are *applying* from someone else
     this.created_at = source.created_at || new Date();
     this.updated_at = source.updated_at || new Date();
   }
@@ -38,7 +41,10 @@ class User {
         used_promo_codes: this.used_promo_codes,
         reset_password_token: this.reset_password_token,
         reset_password_expire: this.reset_password_expire,
-        profile_theme: this.profile_theme, // ADDED: Save profile_theme
+        profile_theme: this.profile_theme,
+        creatorCode: this.creatorCode,
+        points: this.points,
+        appliedCreatorCode: this.appliedCreatorCode, // ADDED: Save appliedCreatorCode
         created_at: this.created_at,
         updated_at: new Date(),
       };

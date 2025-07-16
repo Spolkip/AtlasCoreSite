@@ -78,6 +78,32 @@ function App() {
     setCart([]);
   }, []);
 
+  // NEW: Function to fetch the latest user profile from the backend
+  const fetchUserProfile = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      handleLogout();
+      return;
+    }
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await axios.get('http://localhost:5000/api/v1/auth/me', config);
+      if (response.data.success) {
+        const fetchedUser = response.data.user;
+        setUser(fetchedUser);
+        setIsAuthenticated(true);
+        setIsAdmin(fetchedUser.isAdmin === 1 || fetchedUser.isAdmin === true);
+        localStorage.setItem('user', JSON.stringify(fetchedUser)); // Update local storage
+      } else {
+        handleLogout();
+      }
+    } catch (error) {
+      console.error("Failed to fetch user profile:", error);
+      handleLogout();
+    }
+  }, [handleLogout]);
+
+
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -111,6 +137,8 @@ function App() {
             setUser(parsedUser);
             setIsAuthenticated(true);
             setIsAdmin(parsedUser.isAdmin === 1 || parsedUser.isAdmin === true);
+            // After loading from storage, immediately fetch the latest from backend
+            fetchUserProfile(); 
           } catch (e) {
             handleLogout();
           }
@@ -119,7 +147,7 @@ function App() {
 
     loadUserFromStorage();
     fetchInitialData();
-  }, [handleLogout]);
+  }, [handleLogout, fetchUserProfile]);
 
   const handleLogin = (userData = {}) => {
     const { user: loggedInUser, token } = userData;
@@ -129,6 +157,7 @@ function App() {
       setIsAdmin(loggedInUser.isAdmin === 1 || loggedInUser.isAdmin === true);
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
+      fetchUserProfile(); // Fetch latest profile after login
     }
   };
 
@@ -175,13 +204,13 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/redeem" element={<RedeemCode />} />
             <Route path="/vlog" element={<Vlog user={user} />} />
-            <Route path="/events" element={<Events user={user} />} /> {/* Pass user prop to Events */}
-            <Route path="/map" element={<DynmapViewer user={user} db={db} />} /> {/* NEW DynmapViewer Route */}
+            <Route path="/events" element={<Events user={user} />} />
+            <Route path="/map" element={<DynmapViewer user={user} db={db} />} />
             
             {isAuthenticated && (
               <>
-                <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
-                {/* MODIFIED: Pass onUserUpdate to CharacterProfile */}
+                {/* Corrected: Pass fetchUserProfile to Dashboard */}
+                <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} fetchUserProfile={fetchUserProfile} />} />
                 <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} /> 
                 <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} theme={theme} toggleTheme={toggleTheme} />} />
                 <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} onUpdateCart={setCart} />} />
@@ -201,7 +230,7 @@ function App() {
                 <Route path="/admin/vlog" element={<AdminVlog user={user} />} />
                 <Route path="/admin/wiki" element={<AdminWiki />} />
                 <Route path="/admin/chat" element={<AdminChat user={user} db={db} />} /> 
-                <Route path="/admin/events" element={<AdminEvents />} /> {/* New Admin Events Route */}
+                <Route path="/admin/events" element={<AdminEvents />} />
               </>
             )}
 

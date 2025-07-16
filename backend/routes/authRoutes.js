@@ -54,4 +54,12 @@ router.post('/verify-minecraft-link', protect, authController.verifyMinecraftLin
 // @access  Private
 router.put('/unlink-minecraft', protect, authController.unlinkMinecraft);
 
+// Route to generate a creator code for the logged-in user (from dashboard quick action)
+router.post('/generate-creator-code', protect, authController.generateCreatorCode);
+
+// FIX: Changed route from '/applied-creator-code' to '/creator-code' to match frontend
+// @route   PUT /api/v1/auth/creator-code
+// @desc    Update a user's applied creator code (from settings page)
+router.put('/creator-code', protect, authController.updateUserAppliedCreatorCode);
+
 module.exports = router;

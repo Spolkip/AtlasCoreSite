@@ -1,5 +1,6 @@
 // backend/controllers/authController.js
 const UserAuth = require('../models/User');
+const CreatorCode = require('../models/CreatorCode');
 const bcrypt = require('bcryptjs');
 const jwt =require('jsonwebtoken');
 const crypto = require('crypto');
@@ -20,13 +21,15 @@ const toUserResponse = (user) => ({
   minecraft_uuid: user.minecraft_uuid,
   minecraft_username: user.minecraft_username,
   is_profile_public: user.is_profile_public,
-  profile_theme: user.profile_theme, // ADDED: Include profile_theme
+  profile_theme: user.profile_theme,
+  creatorCode: user.creatorCode,
+  points: user.points,
+  appliedCreatorCode: user.appliedCreatorCode, // ADDED: Include appliedCreatorCode
 });
 
 // Function to call the Minecraft plugin's webhook
 const callMinecraftPlugin = async (endpoint, payload) => {
     try {
-        // FIX: Changed WEBHOOK_PORT to PLUGIN_PORT for consistency
         const pluginUrl = `http://localhost:${process.env.PLUGIN_PORT || 4567}${endpoint}`;
         const secret = process.env.WEBHOOK_SECRET; 
 
@@ -154,7 +157,6 @@ exports.googleLogin = async (req, res) => {
 };
 
 exports.updateUserDetails = async (req, res) => {
-    // MODIFIED: Added profile_theme to destructuring
     const { email, is_profile_public, profile_theme } = req.body; 
     try {
         const user = await UserAuth.findById(req.user.id);
@@ -169,7 +171,6 @@ exports.updateUserDetails = async (req, res) => {
         if (typeof is_profile_public === 'boolean') {
             updates.is_profile_public = is_profile_public;
         }
-        // ADDED: Update profile_theme if provided
         if (profile_theme !== undefined) {
             updates.profile_theme = profile_theme;
         }
@@ -250,7 +251,7 @@ exports.verifyMinecraftLink = async (req, res) => {
 
     } catch (error) {
         console.error('Error in verifyMinecraftLink:', error);
-        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error linking Minecraft account.' });
+        res.status(error.status || 500).json({ success: false, message: 'Server error linking Minecraft account.' });
     }
 };
 
@@ -335,5 +336,100 @@ exports.resetPassword = async (req, res) => {
     } catch (error) {
         console.error('Error in resetPassword:', error);
         res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// ADDED: New function to generate and assign a creator code to a user
+exports.generateCreatorCode = async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const user = await UserAuth.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        if (user.creatorCode) {
+            return res.status(400).json({ success: false, message: `You already have a creator code: ${user.creatorCode}.` });
+        }
+
+        // Generate a unique 8-character alphanumeric code
+        let newCode;
+        let isCodeUnique = false;
+        while (!isCodeUnique) {
+            newCode = crypto.randomBytes(4).toString('hex').toUpperCase(); // Generates 8 hex characters
+            const existingCreatorCode = await CreatorCode.findByCode(newCode);
+            if (!existingCreatorCode) {
+                isCodeUnique = true;
+            }
+        }
+
+        // Create the CreatorCode entry
+        const creatorCodeEntry = new CreatorCode({
+            code: newCode,
+            creatorId: userId,
+            discountType: 'percentage', // Default discount type
+            discountValue: 10,          // Default 10% discount
+            isActive: true,
+            maxUses: null,              // Infinite uses by default
+            expiryDate: null,           // No expiry by default
+            referralCount: 0            // Initial referral count
+        });
+        await creatorCodeEntry.save();
+
+        // Assign the code to the user
+        await user.update({ creatorCode: newCode });
+        
+        const updatedUser = await UserAuth.findById(userId); // Re-fetch the user to get the latest data
+        res.status(200).json({ success: true, message: `Your new creator code is: ${newCode}`, code: newCode, user: toUserResponse(updatedUser) });
+
+    } catch (error) {
+        console.error('Error generating creator code:', error);
+        res.status(500).json({ success: false, message: 'Server error generating creator code.' });
+    }
+};
+
+// ADDED: New function to update a user's applied creator code from settings
+exports.updateUserAppliedCreatorCode = async (req, res) => {
+    const userId = req.user.id;
+    const { code } = req.body; // The code the user wants to apply
+
+    try {
+        const user = await UserAuth.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        const trimmedCode = code ? code.trim().toUpperCase() : null;
+
+        // Validation for the entered code
+        if (trimmedCode && (trimmedCode.length < 4 || trimmedCode.length > 16 || !/^[A-Z0-9]+$/.test(trimmedCode))) {
+            return res.status(400).json({ success: false, message: 'Creator code must be 4-16 alphanumeric characters.' });
+        }
+
+        // Check if the user is trying to apply their own creator code
+        if (user.creatorCode && trimmedCode === user.creatorCode) {
+            return res.status(400).json({ success: false, message: 'You cannot apply your own creator code.' });
+        }
+        
+        // Validate if the applied code exists and is active
+        let creatorCodeEntry = null;
+        if (trimmedCode) {
+            creatorCodeEntry = await CreatorCode.findByCode(trimmedCode);
+            if (!creatorCodeEntry || !creatorCodeEntry.isActive) {
+                return res.status(400).json({ success: false, message: 'The creator code you entered is invalid or inactive.' });
+            }
+        }
+
+        // Update the user's appliedCreatorCode field
+        await user.update({ appliedCreatorCode: trimmedCode });
+
+        const updatedUser = await UserAuth.findById(userId);
+        let message = trimmedCode ? `Creator code "${trimmedCode}" applied successfully.` : 'Creator code removed successfully.';
+        res.status(200).json({ success: true, message, user: toUserResponse(updatedUser) });
+
+    } catch (error) {
+        console.error('Error updating user applied creator code:', error);
+        res.status(500).json({ success: false, message: 'Server error updating applied creator code.' });
     }
 };

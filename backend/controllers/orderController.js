@@ -3,7 +3,8 @@ const axios = require('axios');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const PromoCode = require('../models/PromoCode');
-const User = require('../models/User'); // ADDED
+const CreatorCode = require('../models/CreatorCode'); // ADDED: Import CreatorCode model
+const User = require('../models/User');
 const paymentService = require('../services/paymentService');
 const deliveryService = require('../services/DeliveryService');
 
@@ -37,9 +38,9 @@ const handleSuccessfulOrder = async (order) => {
                 await deliveryService.executeCommandsForUser(order.userId, appliedPromoCode.in_game_commands);
             }
             appliedPromoCode.uses = (appliedPromoCode.uses || 0) + 1;
+            // Note: referralCount for promo codes is handled if they are also creator codes.
             await appliedPromoCode.save();
-            
-            // ADDED: Add promo code to user's used list
+
             const user = await User.findById(order.userId);
             if (user && user.is_admin !== 1) {
                 const updatedCodes = [...(user.used_promo_codes || []), appliedPromoCode.id];
@@ -48,11 +49,34 @@ const handleSuccessfulOrder = async (order) => {
         }
     }
 
+    // ADDED: Handle Creator Code referral and points
+    if (order.creatorCode) { // Check if a creatorCode was stored in the order
+        const usedCreatorCode = await CreatorCode.findByCode(order.creatorCode);
+        if (usedCreatorCode && usedCreatorCode.isActive) {
+            usedCreatorCode.referralCount = (usedCreatorCode.referralCount || 0) + 1;
+            await usedCreatorCode.save();
+
+            // Award points to the creator
+            if (usedCreatorCode.creatorId) {
+                const creatorUser = await User.findById(usedCreatorCode.creatorId);
+                // Ensure the user who applied the code is not the creator themselves
+                if (creatorUser && creatorUser.id !== order.userId) { 
+                    // Example: Award 10 points per successful referral, or based on order total
+                    const pointsToAward = 10; // You can make this configurable
+                    creatorUser.points = (creatorUser.points || 0) + pointsToAward;
+                    await creatorUser.save();
+                    console.log(`Awarded ${pointsToAward} points to creator ${creatorUser.username} for code ${usedCreatorCode.code}`);
+                }
+            }
+        }
+    }
+
     await order.update({ status: 'completed' });
 };
 
 exports.createOrder = async (req, res, next) => {
-    const { products, paymentMethod, currency, promoCode } = req.body;
+    // MODIFIED: Remove creatorCode from req.body, it will now come from user.appliedCreatorCode
+    const { products, paymentMethod, currency, promoCode } = req.body; 
     const userId = req.user.id;
 
     try {
@@ -75,23 +99,58 @@ exports.createOrder = async (req, res, next) => {
 
         let finalTotal = originalTotalAmount;
         let discountAmount = 0;
-        if (promoCode) {
-            const appliedPromoCode = await PromoCode.findByCode(promoCode);
-            if (appliedPromoCode && appliedPromoCode.isActive) {
-                // ADDED: Check if user has already used this code before creating order
-                const user = await User.findById(userId);
-                if (user.is_admin !== 1 && user.used_promo_codes && user.used_promo_codes.includes(appliedPromoCode.id)) {
-                     return res.status(400).json({ message: 'You have already used this promo code.' });
-                }
+        let appliedCreatorCode = null; // Track the creator code that was actually applied
 
-                if (appliedPromoCode.discountType === 'percentage') {
-                    discountAmount = (originalTotalAmount * appliedPromoCode.discountValue) / 100;
-                } else {
-                    discountAmount = appliedPromoCode.discountValue;
+        // NEW LOGIC: Check for appliedCreatorCode from the user's profile first
+        const currentUser = await User.findById(userId);
+        if (currentUser && currentUser.appliedCreatorCode) {
+            const codeFromProfile = currentUser.appliedCreatorCode;
+            const creatorCodeEntry = await CreatorCode.findByCode(codeFromProfile);
+
+            if (creatorCodeEntry && creatorCodeEntry.isActive) {
+                if (creatorCodeEntry.expiryDate && new Date(creatorCodeEntry.expiryDate) < new Date()) {
+                    // Expired, do not apply
+                } else if (creatorCodeEntry.maxUses !== null && creatorCodeEntry.referralCount >= creatorCodeEntry.maxUses) {
+                    // Usage limit reached, do not apply
+                } else if (creatorCodeEntry.creatorId === userId) {
+                    // User is trying to use their own code, do not apply for discount/points
                 }
-                finalTotal = Math.max(0, originalTotalAmount - discountAmount);
+                else {
+                    // Valid creator code from user's profile, apply its discount
+                    appliedCreatorCode = creatorCodeEntry.code; // Store the code that was applied
+                    if (creatorCodeEntry.discountType === 'percentage') {
+                        discountAmount = (originalTotalAmount * creatorCodeEntry.discountValue) / 100;
+                    } else {
+                        discountAmount = creatorCodeEntry.discountValue;
+                    }
+                    finalTotal = Math.max(0, originalTotalAmount - discountAmount);
+                }
             }
         }
+
+        // Apply promo code only if no creator code was successfully applied (or if it's a reward code, which doesn't affect total here)
+        if (!appliedCreatorCode && promoCode) { // Only apply promo code if no creator code discount was given
+            const appliedPromoCode = await PromoCode.findByCode(promoCode);
+            if (appliedPromoCode && appliedPromoCode.isActive && appliedPromoCode.codeType === 'discount') {
+                // Check if user has already used this promo code
+                if (currentUser.is_admin !== 1 && currentUser.used_promo_codes && currentUser.used_promo_codes.includes(appliedPromoCode.id)) {
+                     return res.status(400).json({ message: 'You have already used this promo code.' });
+                }
+                if (appliedPromoCode.expiryDate && new Date(appliedPromoCode.expiryDate) < new Date()) {
+                    // Expired, do not apply
+                } else if (appliedPromoCode.maxUses !== null && appliedPromoCode.uses >= appliedPromoCode.maxUses) {
+                    // Usage limit reached, do not apply
+                } else {
+                    if (appliedPromoCode.discountType === 'percentage') {
+                        discountAmount = (originalTotalAmount * appliedPromoCode.discountValue) / 100;
+                    } else {
+                        discountAmount = appliedPromoCode.discountValue;
+                    }
+                    finalTotal = Math.max(0, originalTotalAmount - discountAmount);
+                }
+            }
+        }
+
 
         const storeCurrency = 'USD';
         let processedAmount = finalTotal;
@@ -108,7 +167,8 @@ exports.createOrder = async (req, res, next) => {
             currency,
             processedAmount,
             processedCurrency: storeCurrency,
-            promoCode: promoCode || null,
+            promoCode: promoCode || null, // Keep original promoCode field for tracking
+            creatorCode: appliedCreatorCode, // Store the *actually applied* creator code
             discountAmount
         });
         await newOrder.save();

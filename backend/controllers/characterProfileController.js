@@ -19,35 +19,17 @@ const callMinecraftPlugin = async (endpoint, payload) => {
         }
         
         const pluginResponse = await axios.post(
-            `${pluginBaseUrl}${endpoint}`, // Use the constructed base URL
+            `${pluginBaseUrl}${endpoint}`,
             payload,
             {
                 headers: {
                     'Authorization': `Bearer ${pluginSecret}`,
-                    'Content-Type': 'application/json' // FIX: Added missing closing single quote
+                    'Content-Type': 'application/json'
                 },
                 // FIX: Increased timeout from 10 seconds to 30 seconds
                 timeout: 30000 
             }
         );
-        // MODIFIED: Mock online status and Lands plugin data from plugin response for demonstration
-        // In a real application, this would come from the Minecraft plugin's actual response.
-        if (endpoint === '/player-stats') {
-            const isOnline = payload.username !== 'OfflineTestUser'; // Check username for mock offline status
-            // ADDED: Mock land and nation names. Set to null if offline, or for specific test cases.
-            const landName = isOnline && payload.username !== 'NoLandUser' ? 'AtlasCity' : null;
-            const nationName = isOnline && payload.username !== 'NoNationUser' ? 'AtlasNation' : null;
-
-            return { 
-                ...pluginResponse.data, 
-                stats: { 
-                    ...pluginResponse.data.stats, 
-                    isOnline: isOnline,
-                    land_name: landName, // ADDED: Mock land name
-                    nation_name: nationName // ADDED: Mock nation name
-                } 
-            };
-        }
         return pluginResponse.data;
     } catch (error) {
         console.error(`Error proxying to Minecraft plugin endpoint ${endpoint}:`, error.message);
@@ -112,8 +94,9 @@ exports.getCharacterProfile = async (req, res) => {
                 data: {
                     playerStats: null,
                     activityFeed,
-                    profile_theme: user.profile_theme, // ADDED: Include profile_theme
-                    is_online_public: user.is_online_public, // ADDED: Include user's own online status setting
+                    profile_theme: user.profile_theme,
+                    creatorCode: user.creatorCode, // ADDED: Include creatorCode
+                    points: user.points,           // ADDED: Include points
                 }
             });
         }
@@ -121,7 +104,7 @@ exports.getCharacterProfile = async (req, res) => {
         let statsResponse = null;
         let statsError = null;
         try {
-            statsResponse = await callMinecraftPlugin('/player-stats', { uuid: user.minecraft_uuid, username: user.minecraft_username });
+            statsResponse = await callMinecraftPlugin('/player-stats', { uuid: user.minecraft_uuid });
             if (!statsResponse.success) {
                 statsError = statsResponse.message || 'Failed to retrieve player stats.';
             }
@@ -139,8 +122,9 @@ exports.getCharacterProfile = async (req, res) => {
             data: {
                 playerStats: Object.keys(playerStats).length > 0 ? playerStats : null,
                 activityFeed: activityFeed,
-                profile_theme: user.profile_theme, // ADDED: Include profile_theme
-                is_online_public: user.is_online_public, // ADDED: Include user's own online status setting
+                profile_theme: user.profile_theme,
+                creatorCode: user.creatorCode, // ADDED: Include creatorCode
+                points: user.points,           // ADDED: Include points
             },
             error: statsError 
         });
@@ -177,11 +161,9 @@ exports.getCharacterProfileByUsername = async (req, res) => {
                 data: {
                     playerStats: null,
                     activityFeed,
-                    profile_theme: userToView.profile_theme, // ADDED: Include profile_theme
-                    // ADDED: Always include the target user's online visibility setting
-                    target_is_online_public: userToView.is_online_public,
-                    // ADDED: Include the requesting user's own online visibility setting
-                    requester_is_online_public: req.user ? req.user.is_online_public : false,
+                    profile_theme: userToView.profile_theme,
+                    creatorCode: userToView.creatorCode, // ADDED: Include creatorCode
+                    points: userToView.points,           // ADDED: Include points
                 }
             });
         }
@@ -189,7 +171,7 @@ exports.getCharacterProfileByUsername = async (req, res) => {
         let statsResponse = null;
         let statsError = null;
         try {
-            statsResponse = await callMinecraftPlugin('/player-stats', { uuid: userToView.minecraft_uuid, username: userToView.minecraft_username });
+            statsResponse = await callMinecraftPlugin('/player-stats', { uuid: userToView.minecraft_uuid });
             if (!statsResponse.success) {
                 statsError = statsResponse.message || 'Failed to retrieve player stats.';
             }
@@ -207,11 +189,9 @@ exports.getCharacterProfileByUsername = async (req, res) => {
             data: {
                 playerStats: Object.keys(playerStats).length > 0 ? playerStats : null,
                 activityFeed: activityFeed,
-                profile_theme: userToView.profile_theme, // ADDED: Include profile_theme
-                // ADDED: Always include the target user's online visibility setting
-                target_is_online_public: userToView.is_online_public,
-                // ADDED: Include the requesting user's own online visibility setting
-                requester_is_online_public: req.user ? req.user.is_online_public : false,
+                profile_theme: userToView.profile_theme,
+                creatorCode: userToView.creatorCode, // ADDED: Include creatorCode
+                points: userToView.points,           // ADDED: Include points
             },
             error: statsError
         });

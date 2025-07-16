@@ -30,13 +30,16 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
   const [userDetails, setUserDetails] = useState({ 
       email: user?.email || '',
       is_profile_public: user?.is_profile_public ?? true,
-      profile_theme: user?.profile_theme || 'default', // ADDED: Initialize profile_theme
+      profile_theme: user?.profile_theme || 'default',
   });
   const [passwordDetails, setPasswordDetails] = useState({
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
   });
+  // ADDED: State for Creator Code
+  const [creatorCodeInput, setCreatorCodeInput] = useState(user?.creatorCode || '');
+
 
   // General State
   const [loading, setLoading] = useState(true);
@@ -44,6 +47,12 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
   const [successMessage, setSuccessMessage] = useState('');
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  // Sync creatorCodeInput with user.creatorCode prop
+  useEffect(() => {
+    setCreatorCodeInput(user?.creatorCode || '');
+  }, [user?.creatorCode]);
+
 
   useEffect(() => {
     const fetchAdminSettings = async () => {
@@ -79,6 +88,11 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
       const { name, value } = e.target;
       setPasswordDetails(prev => ({...prev, [name]: value}));
   }
+
+  const handleCreatorCodeChange = (e) => {
+      setCreatorCodeInput(e.target.value);
+  };
+
 
   const handleUpdateAdminSettings = async (e) => {
     e.preventDefault();
@@ -125,6 +139,21 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
           setError(err.response?.data?.message || 'Failed to update password.');
       }
   }
+
+  // ADDED: Handler for updating Creator Code
+  const handleUpdateCreatorCode = async (e) => {
+    e.preventDefault();
+    setSuccessMessage('');
+    setError('');
+    try {
+        const response = await axios.put('http://localhost:5000/api/v1/auth/creator-code', { newCode: creatorCodeInput }, config);
+        onUserUpdate(response.data.user); // Update app-level user state with new creator code
+        setSuccessMessage(response.data.message);
+    } catch (err) {
+        setError(err.response?.data?.message || 'Failed to update creator code.');
+    }
+  };
+
 
   if (loading && user?.isAdmin) return <div className="loading-container"><h1>Loading Settings...</h1></div>;
 
@@ -194,6 +223,30 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
                   <input id="confirmNewPassword" type="password" name="confirmNewPassword" value={passwordDetails.confirmNewPassword} onChange={handlePasswordChange} className="auth-input" required />
               </div>
               <button type="submit" className="mc-button primary">Change Password</button>
+          </form>
+      </div>
+
+      {/* ADDED: Affiliate Code Settings Section */}
+      <div className="profile-section">
+          <h2>Affiliate Code Settings</h2>
+          <form onSubmit={handleUpdateCreatorCode} className="admin-form">
+              <div className="form-group">
+                  <label htmlFor="creatorCode">Your Affiliate Code</label>
+                  <input 
+                      id="creatorCode" 
+                      type="text" 
+                      name="creatorCode" 
+                      value={creatorCodeInput} 
+                      onChange={handleCreatorCodeChange} 
+                      placeholder="Enter your desired code (e.g., YOURNAME123)"
+                      className="auth-input" 
+                      maxLength={16} // Limit length for codes
+                  />
+                  <p style={{fontSize: '1rem', color: '#999', marginTop: '5px'}}>
+                      This code can be shared with others to give them a discount on purchases. You will earn points for each successful referral. Leave empty to remove your code.
+                  </p>
+              </div>
+              <button type="submit" className="mc-button primary">Save Affiliate Code</button>
           </form>
       </div>
       
