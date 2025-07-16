@@ -76,8 +76,8 @@ const StatBar = ({ label, value, max, type }) => {
                 <span>{numericValue} / {numericMax}</span> {/* Display numeric values */}
             </div>
             <div className="stat-bar-background">
-                <div 
-                    className={`stat-bar-foreground ${type}`} 
+                <div
+                    className={`stat-bar-foreground ${type}`}
                     style={{ '--final-width': `${percentage}%` }}
                 ></div>
             </div>
@@ -93,20 +93,20 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     const [successMessage, setSuccessMessage] = useState('');
 
     const auraSkills = [
-        { key: 'fighting', name: 'Fighting', type: 'combat' }, 
+        { key: 'fighting', name: 'Fighting', type: 'combat' },
         { key: 'defense', name: 'Defense', type: 'combat' },
         { key: 'archery', name: 'Archery', type: 'combat' },
         { key: 'mining', name: 'Mining', type: 'utility' },
-        { key: 'farming', name: 'Farming', type: 'utility' }, 
-        { key: 'foraging', name: 'Foraging', type: 'utility' }, 
-        { key: 'fishing', name: 'Fishing', type: 'utility' }, 
-        { key: 'alchemy', name: 'Alchemy', type: 'utility' }, 
-        { key: 'enchanting', name: 'Enchanting', type: 'utility' }, 
-        { key: 'excavation', name: 'Excavation', type: 'utility' }, 
-        { key: 'endurance', name: 'Endurance', type: 'utility' }, 
-        { key: 'agility', name: 'Agility', type: 'utility' }, 
-        { key: 'sorcery', name: 'Sorcery', type: 'utility' }, 
-        { key: 'healing', name: 'Healing', type: 'utility' }, 
+        { key: 'farming', name: 'Farming', type: 'utility' },
+        { key: 'foraging', name: 'Foraging', type: 'utility' },
+        { key: 'fishing', name: 'Fishing', type: 'utility' },
+        { key: 'alchemy', name: 'Alchemy', type: 'utility' },
+        { key: 'enchanting', name: 'Enchanting', type: 'utility' },
+        { key: 'excavation', name: 'Excavation', type: 'utility' },
+        { key: 'endurance', name: 'Endurance', type: 'utility' },
+        { key: 'agility', name: 'Agility', type: 'utility' },
+        { key: 'sorcery', name: 'Sorcery', type: 'utility' },
+        { key: 'healing', name: 'Healing', type: 'utility' },
         { key: 'forging', name: 'Forging', type: 'utility'}
     ];
 
@@ -116,14 +116,14 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
             setError('');
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            
+
             const profileUsername = username || user?.username;
             if (!profileUsername) {
                 setLoading(false);
                 setError("No user specified.");
                 return;
             }
-            
+
             try {
                 const response = await axios.get(`http://localhost:5000/api/v1/profile/${profileUsername}`, config);
                 if (response.data.success) {
@@ -170,7 +170,7 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     if (loading) {
         return <div className="loading-container">Loading Character Profile...</div>;
     }
-    
+
     if (!profileData?.playerStats?.uuid) {
         return (
             <div className="dashboard-container">
@@ -193,7 +193,7 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
 
     return (
         // MODIFIED: Apply profileThemeClass to the main container
-        <div className={`character-profile-container ${profileThemeClass}`}> 
+        <div className={`character-profile-container ${profileThemeClass}`}>
              {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
 
             <div className="profile-upper-section">
@@ -201,6 +201,13 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                 <div className="stats-container">
                     <div className="player-identity">
                         <h2 className="player-name">{playerStats?.player_name || username}</h2>
+                        {/* ADDED: Display land and nation information */}
+                        {(playerStats.lands_land_name && playerStats.lands_land_name !== 'N/A') && (
+                            <p className="player-location">City: {playerStats.lands_land_name}</p>
+                        )}
+                        {(playerStats.lands_nation_name && playerStats.lands_nation_name !== 'N/A') && (
+                            <p className="player-location">Nation: {playerStats.lands_nation_name}</p>
+                        )}
                         <p className="player-class-race">
                            {playerStats ? `Level ${playerStats.fabled_default_currentlevel || 'N/A'} ${playerStats.fabled_player_races_class || ''} ${playerStats.fabled_player_class_mainclass || ''}` : 'In-game data not available.'}
                         </p>
@@ -227,12 +234,12 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                                     if (skill.key === 'defense') barType = 'mana';
                                     if (skill.key === 'archery') barType = 'archery';
                                     return (
-                                        <StatBar 
+                                        <StatBar
                                             key={skill.key}
-                                            label={skill.name} 
+                                            label={skill.name}
                                             value={playerStats[`auraskills_${skill.key}`] || "0"} // Pass as string, StatBar will parse
                                             max={20} // Assuming max level 20 for AuraSkills
-                                            type={barType} 
+                                            type={barType}
                                         />
                                     );
                                 })}
@@ -250,12 +257,12 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                         {auraSkills
                             .filter(skill => skill.type === 'utility')
                             .map(skill => (
-                                <StatBar 
+                                <StatBar
                                     key={skill.key}
-                                    label={skill.name} 
+                                    label={skill.name}
                                     value={playerStats[`auraskills_${skill.key}`] || "0"} // Pass as string, StatBar will parse
                                     max={20} // Assuming max level 20 for AuraSkills
-                                    type="skill" 
+                                    type="skill"
                                 />
                         ))}
                     </div>
