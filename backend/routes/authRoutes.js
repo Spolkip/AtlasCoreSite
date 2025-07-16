@@ -54,7 +54,4 @@ router.post('/verify-minecraft-link', protect, authController.verifyMinecraftLin
 // @access  Private
 router.put('/unlink-minecraft', protect, authController.unlinkMinecraft);
 
-// ADDED: Route to update user's last active time (heartbeat)
-router.post('/heartbeat', protect, authController.updateLastActive);
-
 module.exports = router;

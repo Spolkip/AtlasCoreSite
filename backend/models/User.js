@@ -1,6 +1,6 @@
 // backend/models/User.js
 const { FIREBASE_DB } = require('../config/firebase');
-const { collection, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where } = require('firebase/firestore');
+const { collection, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, getDocs } = require('firebase/firestore');
 
 const usersCollection = collection(FIREBASE_DB, 'users');
 
@@ -16,13 +16,11 @@ class User {
     this.is_admin = typeof source.is_admin === 'number' ? source.is_admin : 0;
     this.is_verified = typeof source.is_verified === 'boolean' ? source.is_verified : false;
     this.is_profile_public = typeof source.is_profile_public === 'boolean' ? source.is_profile_public : true;
-    this.is_online_public = typeof source.is_online_public === 'boolean' ? source.is_online_public : true; 
     this.used_promo_codes = source.used_promo_codes || [];
     this.reset_password_token = source.reset_password_token || null;
     this.reset_password_expire = source.reset_password_expire || null;
-    this.profile_theme = source.profile_theme || 'default'; 
+    this.profile_theme = source.profile_theme || 'default'; // ADDED: New field for profile theme
     this.created_at = source.created_at || new Date();
-    this.last_active_at = source.last_active_at || new Date(); // ADDED: New field to track last active time
     this.updated_at = source.updated_at || new Date();
   }
 
@@ -37,13 +35,11 @@ class User {
         minecraft_uuid: this.minecraft_uuid,
         minecraft_username: this.minecraft_username,
         is_profile_public: this.is_profile_public,
-        is_online_public: this.is_online_public, 
         used_promo_codes: this.used_promo_codes,
         reset_password_token: this.reset_password_token,
         reset_password_expire: this.reset_password_expire,
-        profile_theme: this.profile_theme, 
+        profile_theme: this.profile_theme, // ADDED: Save profile_theme
         created_at: this.created_at,
-        last_active_at: this.last_active_at, // ADDED: Save last_active_at
         updated_at: new Date(),
       };
       if (this.id) {
