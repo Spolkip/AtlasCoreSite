@@ -64,7 +64,6 @@ const SkinViewerComponent = ({ uuid }) => {
 };
 
 const StatBar = ({ label, value, max, type }) => {
-    // FIX: Ensure value and max are parsed as numbers for calculation
     const numericValue = parseFloat(value);
     const numericMax = parseFloat(max);
     const percentage = numericMax > 0 ? (Math.min(numericValue, numericMax) / numericMax) * 100 : 0;
@@ -73,7 +72,7 @@ const StatBar = ({ label, value, max, type }) => {
         <div className="stat-bar">
             <div className="stat-bar-label">
                 <span>{label}</span>
-                <span>{numericValue} / {numericMax}</span> {/* Display numeric values */}
+                <span>{numericValue} / {numericMax}</span> 
             </div>
             <div className="stat-bar-background">
                 <div 
@@ -171,12 +170,42 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
         return <div className="loading-container">Loading Character Profile...</div>;
     }
     
-    if (!profileData?.playerStats?.uuid) {
+    // ADDED: Check if profileData exists before attempting to access its properties
+    if (!profileData || (!profileData.playerStats?.uuid && typeof profileData.isOnline !== 'boolean' && !profileData.activityFeed)) {
+        // Determine online status for the user being viewed, even if no Minecraft data
+        const isOnline = profileData?.isOnline;
+        const isOwner = user && user.username === username;
+        const isAdmin = user && user.isAdmin;
+
+        // Determine if online status should be displayed based on privacy settings
+        // This mirrors the backend logic for consistency
+        let displayOnlineStatus = false;
+        // If the target user's online status is public AND (requester's is public OR requester is owner/admin)
+        if (profileData?.target_is_online_public && (user?.is_online_public || isAdmin || isOwner)) {
+            displayOnlineStatus = true;
+        } else if (isOwner || isAdmin) { // Owner or Admin can always see
+            displayOnlineStatus = true;
+        }
+
+        // If the requester has their own 'is_online_public' set to false, they cannot see anyone else's status (unless they are an admin or the owner of the profile being viewed)
+        if (user && user.is_online_public === false && !isOwner && !isAdmin) {
+            displayOnlineStatus = false;
+        }
+
         return (
             <div className="dashboard-container">
                 <div className="profile-section">
-                    <h2>Account Not Linked</h2>
-                    <p>This user has not linked their Minecraft account yet.</p>
+                    <h2>Account Not Linked or No Data</h2>
+                    <p>This user has not linked their Minecraft account or has no public data.</p>
+                    {/* Display online status here if applicable */}
+                    {typeof isOnline === 'boolean' && displayOnlineStatus && (
+                        <div className="info-item" style={{ marginTop: '1rem', backgroundColor: 'transparent', border: 'none', padding: '0'}}>
+                            <span className="info-label">Online Status:</span>
+                            <span className="info-value" style={{color: isOnline ? '#2ecc71' : '#e74c3c'}}>
+                                {isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        </div>
+                    )}
                     {user && user.username === username && (
                         <div className="action-buttons" style={{ marginTop: '20px' }}>
                             <Link to="/link-minecraft" className="dashboard-button">Link Account</Link>
@@ -189,25 +218,40 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
 
     const playerStats = profileData?.playerStats;
     const playerBalance = playerStats?.vault_eco_balance ? parseFloat(playerStats.vault_eco_balance).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A';
-    const profileThemeClass = `profile-theme-${profileData?.profile_theme || 'default'}`; // ADDED: Get theme class
+    const profileThemeClass = `profile-theme-${profileData?.profile_theme || 'default'}`; 
+
+    // ADDED: Use isOnline from profileData directly
+    const isOnline = profileData?.isOnline;
 
     return (
-        // MODIFIED: Apply profileThemeClass to the main container
         <div className={`character-profile-container ${profileThemeClass}`}> 
              {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
 
             <div className="profile-upper-section">
-                <SkinViewerComponent uuid={playerStats.uuid} />
+                {playerStats?.uuid && <SkinViewerComponent uuid={playerStats.uuid} />}
                 <div className="stats-container">
                     <div className="player-identity">
                         <h2 className="player-name">{playerStats?.player_name || username}</h2>
-                        <p className="player-class-race">
-                           {playerStats ? `Level ${playerStats.fabled_default_currentlevel || 'N/A'} ${playerStats.fabled_player_races_class || ''} ${playerStats.fabled_player_class_mainclass || ''}` : 'In-game data not available.'}
-                        </p>
-                        <div className="info-item" style={{ marginTop: '1rem', backgroundColor: 'transparent', border: 'none', padding: '0'}}>
-                            <span className="info-label">Player Balance:</span>
-                            <span className="info-value" style={{color: '#2ecc71'}}>{playerBalance}</span>
-                        </div>
+                        {playerStats && (
+                            <p className="player-class-race">
+                               {`Level ${playerStats.fabled_default_currentlevel || 'N/A'} ${playerStats.fabled_player_races_class || ''} ${playerStats.fabled_player_class_mainclass || ''}`}
+                            </p>
+                        )}
+                        {playerStats && (
+                            <div className="info-item" style={{ marginTop: '1rem', backgroundColor: 'transparent', border: 'none', padding: '0'}}>
+                                <span className="info-label">Player Balance:</span>
+                                <span className="info-value" style={{color: '#2ecc71'}}>{playerBalance}</span>
+                            </div>
+                        )}
+                        {/* MODIFIED: Display Online Status based on profileData.isOnline */}
+                        {typeof isOnline === 'boolean' && (
+                            <div className="info-item" style={{ marginTop: '1rem', backgroundColor: 'transparent', border: 'none', padding: '0'}}>
+                                <span className="info-label">Online Status:</span>
+                                <span className="info-value" style={{color: isOnline ? '#2ecc71' : '#e74c3c'}}>
+                                    {isOnline ? 'Online' : 'Offline'}
+                                </span>
+                            </div>
+                        )}
                         {user && user.username === username && (
                             <div className="action-buttons" style={{marginTop: '20px'}}>
                                 <Link to="/settings" className="dashboard-button small">Settings</Link>
@@ -222,7 +266,7 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                             {auraSkills
                                 .filter(skill => skill.type === 'combat')
                                 .map(skill => {
-                                    let barType = 'skill'; // default
+                                    let barType = 'skill'; 
                                     if (skill.key === 'fighting') barType = 'hp';
                                     if (skill.key === 'defense') barType = 'mana';
                                     if (skill.key === 'archery') barType = 'archery';
@@ -230,8 +274,8 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                                         <StatBar 
                                             key={skill.key}
                                             label={skill.name} 
-                                            value={playerStats[`auraskills_${skill.key}`] || "0"} // Pass as string, StatBar will parse
-                                            max={20} // Assuming max level 20 for AuraSkills
+                                            value={playerStats[`auraskills_${skill.key}`] || "0"} 
+                                            max={20} 
                                             type={barType} 
                                         />
                                     );
@@ -253,8 +297,8 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                                 <StatBar 
                                     key={skill.key}
                                     label={skill.name} 
-                                    value={playerStats[`auraskills_${skill.key}`] || "0"} // Pass as string, StatBar will parse
-                                    max={20} // Assuming max level 20 for AuraSkills
+                                    value={playerStats[`auraskills_${skill.key}`] || "0"} 
+                                    max={20} 
                                     type="skill" 
                                 />
                         ))}

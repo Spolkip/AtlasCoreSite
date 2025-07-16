@@ -20,13 +20,13 @@ const toUserResponse = (user) => ({
   minecraft_uuid: user.minecraft_uuid,
   minecraft_username: user.minecraft_username,
   is_profile_public: user.is_profile_public,
-  profile_theme: user.profile_theme, // ADDED: Include profile_theme
+  is_online_public: user.is_online_public, 
+  profile_theme: user.profile_theme, 
 });
 
 // Function to call the Minecraft plugin's webhook
 const callMinecraftPlugin = async (endpoint, payload) => {
     try {
-        // FIX: Changed WEBHOOK_PORT to PLUGIN_PORT for consistency
         const pluginUrl = `http://localhost:${process.env.PLUGIN_PORT || 4567}${endpoint}`;
         const secret = process.env.WEBHOOK_SECRET; 
 
@@ -70,6 +70,7 @@ exports.registerUser = async (req, res) => {
       username,
       email,
       password: hashedPassword,
+      last_active_at: new Date(), // ADDED: Set last_active_at on registration
     });
 
     await newUser.save();
@@ -102,6 +103,8 @@ exports.loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }
 
+    await user.update({ last_active_at: new Date() }); // ADDED: Update last_active_at on login
+
     const token = jwt.sign({ id: user.id, isAdmin: user.is_admin === 1 }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(200).json({
@@ -133,10 +136,12 @@ exports.googleLogin = async (req, res) => {
             const newUser = new UserAuth({
                 username,
                 email,
-                // No password for Google-based accounts
+                last_active_at: new Date(), // ADDED: Set last_active_at for new Google users
             });
             await newUser.save();
             user = newUser;
+        } else {
+            await user.update({ last_active_at: new Date() }); // ADDED: Update last_active_at for existing Google users
         }
 
         const token = jwt.sign({ id: user.id, isAdmin: user.is_admin === 1 }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -154,22 +159,23 @@ exports.googleLogin = async (req, res) => {
 };
 
 exports.updateUserDetails = async (req, res) => {
-    // MODIFIED: Added profile_theme to destructuring
-    const { email, is_profile_public, profile_theme } = req.body; 
+    const { email, is_profile_public, profile_theme, is_online_public } = req.body; 
     try {
         const user = await UserAuth.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        const updates = {};
+        const updates = { last_active_at: new Date() }; // ALWAYS update last_active_at on any detail update
         if (email && email !== user.email) {
             updates.email = email;
         }
         if (typeof is_profile_public === 'boolean') {
             updates.is_profile_public = is_profile_public;
         }
-        // ADDED: Update profile_theme if provided
+        if (typeof is_online_public === 'boolean') {
+            updates.is_online_public = is_online_public;
+        }
         if (profile_theme !== undefined) {
             updates.profile_theme = profile_theme;
         }
@@ -242,15 +248,16 @@ exports.verifyMinecraftLink = async (req, res) => {
         await user.update({ 
             minecraft_uuid: minecraftUUID, 
             minecraft_username: username,
-            is_verified: true 
+            is_verified: true,
+            last_active_at: new Date(), // ADDED: Update last_active_at on Minecraft link
         });
         
-        const updatedUser = await UserAuth.findById(userId); // Re-fetch the user to get the latest data
+        const updatedUser = await UserAuth.findById(userId); 
         res.status(200).json({ success: true, message: 'Minecraft account linked successfully.', user: toUserResponse(updatedUser) });
 
     } catch (error) {
         console.error('Error in verifyMinecraftLink:', error);
-        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error linking Minecraft account.' });
+        res.status(error.status || 500).json({ success: false, message: 'Server error linking Minecraft account.' });
     }
 };
 
@@ -265,10 +272,11 @@ exports.unlinkMinecraft = async (req, res) => {
         await user.update({ 
             minecraft_uuid: '', 
             minecraft_username: '',
-            is_verified: false 
+            is_verified: false,
+            last_active_at: new Date(), // ADDED: Update last_active_at on Minecraft unlink
         });
         
-        const updatedUser = await UserAuth.findById(userId); // Re-fetch the user to get the latest data
+        const updatedUser = await UserAuth.findById(userId); 
         res.status(200).json({ success: true, message: 'Minecraft account unlinked successfully.', user: toUserResponse(updatedUser) });
     } catch (error) {
         console.error('Error in unlinkMinecraft:', error);
@@ -328,6 +336,7 @@ exports.resetPassword = async (req, res) => {
             password: hashedPassword,
             reset_password_token: null,
             reset_password_expire: null,
+            last_active_at: new Date(), // ADDED: Update last_active_at on password reset
         });
 
         res.status(200).json({ success: true, message: 'Password has been reset successfully.' });
@@ -335,5 +344,20 @@ exports.resetPassword = async (req, res) => {
     } catch (error) {
         console.error('Error in resetPassword:', error);
         res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+// ADDED: New endpoint to update last_active_at (heartbeat)
+exports.updateLastActive = async (req, res) => {
+    try {
+        const user = await UserAuth.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+        await user.update({ last_active_at: new Date() });
+        res.status(200).json({ success: true, message: 'Last active time updated.' });
+    } catch (error) {
+        console.error('Error updating last active time:', error);
+        res.status(500).json({ success: false, message: 'Server error updating last active time.' });
     }
 };

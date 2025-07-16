@@ -35,12 +35,12 @@ import Vlog from './components/Vlog';
 import ProfileSearch from './components/ProfileSearch';
 import AdminPromoCodes from './components/AdminPromoCodes';
 import Events from './components/Events'; 
-import AdminEvents from './components/AdminEvents'; // Import the new AdminEvents component
-import DynmapViewer from './components/DynmapViewer'; // Import the new DynmapViewer component
+import AdminEvents from './components/AdminEvents'; 
+import DynmapViewer from './components/DynmapViewer'; 
 
 import './css/App.css';
 import './css/Leaderboard.css';
-import './css/DynmapViewer.css'; // Import the new DynmapViewer CSS
+import './css/DynmapViewer.css'; 
 
 // Client-side Firebase configuration
 const firebaseConfig = {
@@ -121,6 +121,42 @@ function App() {
     fetchInitialData();
   }, [handleLogout]);
 
+  // ADDED: Effect for sending heartbeat to update last_active_at
+  useEffect(() => {
+    let heartbeatInterval;
+    if (isAuthenticated) {
+      const sendHeartbeat = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          if (token) {
+            await axios.post('http://localhost:5000/api/v1/auth/heartbeat', {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            // console.log('Heartbeat sent.'); // For debugging
+          }
+        } catch (error) {
+          console.error('Failed to send heartbeat:', error);
+          // If heartbeat fails, it might be due to expired token, log out user
+          if (error.response && error.response.status === 401) {
+            handleLogout();
+          }
+        }
+      };
+
+      // Send heartbeat immediately on login/mount
+      sendHeartbeat();
+      // Then send every 3 minutes (less than OFFLINE_THRESHOLD_MINUTES in backend)
+      heartbeatInterval = setInterval(sendHeartbeat, 3 * 60 * 1000); 
+    }
+
+    return () => {
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+      }
+    };
+  }, [isAuthenticated, handleLogout]);
+
+
   const handleLogin = (userData = {}) => {
     const { user: loggedInUser, token } = userData;
     if (loggedInUser && token) {
@@ -134,7 +170,6 @@ function App() {
 
   const handleUserUpdate = (updatedUser) => {
     setUser(updatedUser);
-    // MODIFIED: Ensure updated user object is saved to local storage
     localStorage.setItem('user', JSON.stringify(updatedUser)); 
   };
 
@@ -164,7 +199,6 @@ function App() {
                 exchangeRates={exchangeRates} 
               />} 
             />
-            {/* These routes now point to the new AuthPage component */}
             <Route path="/login" element={<AuthPage onLoginSuccess={handleLogin} />} />
             <Route path="/register" element={<AuthPage onLoginSuccess={handleLogin} />} />
             
@@ -175,13 +209,12 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/redeem" element={<RedeemCode />} />
             <Route path="/vlog" element={<Vlog user={user} />} />
-            <Route path="/events" element={<Events user={user} />} /> {/* Pass user prop to Events */}
-            <Route path="/map" element={<DynmapViewer user={user} db={db} />} /> {/* NEW DynmapViewer Route */}
+            <Route path="/events" element={<Events user={user} />} /> 
+            <Route path="/map" element={<DynmapViewer user={user} db={db} />} /> 
             
             {isAuthenticated && (
               <>
                 <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
-                {/* MODIFIED: Pass onUserUpdate to CharacterProfile */}
                 <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} /> 
                 <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} theme={theme} toggleTheme={toggleTheme} />} />
                 <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} onUpdateCart={setCart} />} />
@@ -201,7 +234,7 @@ function App() {
                 <Route path="/admin/vlog" element={<AdminVlog user={user} />} />
                 <Route path="/admin/wiki" element={<AdminWiki />} />
                 <Route path="/admin/chat" element={<AdminChat user={user} db={db} />} /> 
-                <Route path="/admin/events" element={<AdminEvents />} /> {/* New Admin Events Route */}
+                <Route path="/admin/events" element={<AdminEvents />} /> 
               </>
             )}
 
