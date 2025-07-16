@@ -25,7 +25,6 @@ const Navbar = ({ isAuthenticated, logout, user, settings }) => {
         ) : (
           <>
             <Link to="/login">Login</Link>
-            <Link to="/register">Register</Link>
           </>
         )}
       </div>
