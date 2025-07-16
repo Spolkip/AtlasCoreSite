@@ -2,19 +2,43 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 
 // @desc    Get all products, grouped by category
+// MODIFIED: Now accepts filter and sort parameters
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.findAll();
+    // Extract filter parameters from query
+    const { searchTerm, minPrice, maxPrice, inStockOnly, sortBy } = req.query;
+
+    // Build filter object for the model
+    const filters = {
+      searchTerm,
+      minPrice: minPrice ? parseFloat(minPrice) : null,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : null,
+      inStockOnly: inStockOnly === 'true', // Convert string to boolean
+      sortBy,
+    };
+
+    // Fetch products using the new filtered method
+    const products = await Product.findAllFiltered(filters);
     const categories = await Category.findAll();
+    
+    // Group products by category name
     const categorizedProducts = {};
-    categories.forEach(cat => { categorizedProducts[cat.name] = []; });
+    categories.forEach(cat => { categorizedProducts[cat.name] = []; }); // Initialize all categories
+
     products.forEach(p => {
         const category = categories.find(c => c.id === p.category);
-        if (category) categorizedProducts[category.name].push(p);
+        if (category) {
+            // Ensure the category exists in our initialized map before pushing
+            if (categorizedProducts[category.name]) {
+                categorizedProducts[category.name].push(p);
+            }
+        }
     });
+
     res.status(200).json({ success: true, products: categorizedProducts });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error in getProducts (with filters):', error);
+    res.status(500).json({ success: false, message: 'Server error fetching products.' });
   }
 };
 
