@@ -5,9 +5,6 @@ import axios from 'axios';
 import { SkinViewer, WalkingAnimation } from 'skinview3d';
 import '../css/CharacterProfile.css';
 
-/**
- * Helper component for the 3D skin viewer with robust error handling.
- */
 const SkinViewerComponent = ({ uuid }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -66,10 +63,6 @@ const SkinViewerComponent = ({ uuid }) => {
     return <canvas ref={canvasRef} className="skin-viewer-container"></canvas>;
 };
 
-
-/**
- * Helper component for stat bars (HP, Mana, Skills).
- */
 const StatBar = ({ label, value, max, type }) => {
     const percentage = max > 0 ? (Math.min(value, max) / max) * 100 : 0;
     return (
@@ -79,15 +72,15 @@ const StatBar = ({ label, value, max, type }) => {
                 <span>{value} / {max}</span>
             </div>
             <div className="stat-bar-background">
-                <div className={`stat-bar-foreground ${type}`} style={{ width: `${percentage}%` }}></div>
+                <div 
+                    className={`stat-bar-foreground ${type}`} 
+                    style={{ '--final-width': `${percentage}%` }}
+                ></div>
             </div>
         </div>
     );
 };
 
-/**
- * Main CharacterProfile Component - REWRITTEN FOR RESILIENCY
- */
 const CharacterProfile = ({ user, onUserUpdate }) => {
     const { username } = useParams();
     const [profileData, setProfileData] = useState(null);
@@ -96,7 +89,7 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
     const [successMessage, setSuccessMessage] = useState('');
 
     const auraSkills = [
-        { key: 'fighting', name: 'Combat', type: 'combat' }, 
+        { key: 'fighting', name: 'Fighting', type: 'combat' }, 
         { key: 'defense', name: 'Defense', type: 'combat' },
         { key: 'archery', name: 'Archery', type: 'combat' },
         { key: 'mining', name: 'Mining', type: 'utility' },
@@ -174,7 +167,6 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
         return <div className="loading-container">Loading Character Profile...</div>;
     }
     
-    // If the user hasn't linked their account yet
     if (!profileData?.playerStats?.uuid) {
         return (
             <div className="dashboard-container">
@@ -191,7 +183,6 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
         );
     }
 
-    // Main component render
     const playerStats = profileData?.playerStats;
     const playerBalance = playerStats?.vault_eco_balance ? parseFloat(playerStats.vault_eco_balance).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A';
 
@@ -203,12 +194,10 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                 <SkinViewerComponent uuid={playerStats.uuid} />
                 <div className="stats-container">
                     <div className="player-identity">
-                        {/* Use user's web username as a fallback if in-game name isn't available */}
                         <h2 className="player-name">{playerStats?.player_name || username}</h2>
                         <p className="player-class-race">
                            {playerStats ? `Level ${playerStats.fabled_default_currentlevel || 'N/A'} ${playerStats.fabled_player_races_class || ''} ${playerStats.fabled_player_class_mainclass || ''}` : 'In-game data not available.'}
                         </p>
-                        {/* Display Player Balance */}
                         <div className="info-item" style={{ marginTop: '1rem', backgroundColor: 'transparent', border: 'none', padding: '0'}}>
                             <span className="info-label">Player Balance:</span>
                             <span className="info-value" style={{color: '#2ecc71'}}>{playerBalance}</span>
@@ -221,30 +210,33 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                         )}
                     </div>
 
-                    {/* Only render stats panel if stats are available */}
                     {playerStats ? (
                          <div className="skills-combat-panel">
                             <h3>Combat Skills</h3>
                             {auraSkills
                                 .filter(skill => skill.type === 'combat')
-                                .map(skill => (
-                                    <StatBar 
-                                        key={skill.key}
-                                        label={skill.name} 
-                                        value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
-                                        max={20}
-                                        type={skill.key === 'fighting' ? 'hp' : 'mana'} 
-                                    />
-                            ))}
+                                .map(skill => {
+                                    let barType = 'skill'; // default
+                                    if (skill.key === 'fighting') barType = 'hp';
+                                    if (skill.key === 'defense') barType = 'mana';
+                                    if (skill.key === 'archery') barType = 'archery';
+                                    return (
+                                        <StatBar 
+                                            key={skill.key}
+                                            label={skill.name} 
+                                            value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
+                                            max={20}
+                                            type={barType} 
+                                        />
+                                    );
+                                })}
                         </div>
                     ) : (
-                        // Show a specific error for the combat stats section if they failed to load
                         <div className="auth-error-message">{error || "Could not load in-game combat stats."}</div>
                     )}
                 </div>
             </div>
 
-            {/* Only render lower skills section if stats are available */}
             {playerStats ? (
                 <div className="skills-lower-section">
                      <h3>General & Utility Skills</h3>
@@ -263,7 +255,6 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                     </div>
                 </div>
             ) : (
-                // If there were no player stats, you can omit this section or show a message
                 <div className="skills-lower-section">
                     <h3>General & Utility Skills</h3>
                     <p>In-game skill data is currently unavailable.</p>

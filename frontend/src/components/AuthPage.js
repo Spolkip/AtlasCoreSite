@@ -1,3 +1,4 @@
+// frontend/src/components/AuthPage.js
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -6,15 +7,23 @@ import '../css/AuthForms.css';
 
 const AuthPage = ({ onLoginSuccess }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  
+  // State for Login form
   const [loginFormData, setLoginFormData] = useState({ identifier: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // State for Register form
   const [registerFormData, setRegisterFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
+  
+  // Shared state
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
-    setError('');
+    setError(''); // Clear errors when flipping
   };
 
   const handleLoginChange = (e) => {
@@ -32,7 +41,10 @@ const AuthPage = ({ onLoginSuccess }) => {
     setError('');
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/v1/auth/login', loginFormData);
+      const response = await axios.post('http://localhost:5000/api/v1/auth/login', {
+        ...loginFormData,
+        rememberMe: rememberMe
+      });
       if (response.data.success) {
         onLoginSuccess(response.data);
         navigate('/dashboard');
@@ -93,14 +105,33 @@ const AuthPage = ({ onLoginSuccess }) => {
               <p className="auth-subtitle">Sign in to your account</p>
               {error && !isFlipped && <div className="auth-error-message">{error}</div>}
               <form onSubmit={handleLoginSubmit}>
-                {/* Login fields */}
                 <div className="form-group">
                   <label htmlFor="identifier">Username or Email</label>
-                  <input id="identifier" type="text" name="identifier" onChange={handleLoginChange} className="auth-input" required />
+                  <input id="identifier" type="text" name="identifier" value={loginFormData.identifier} onChange={handleLoginChange} className="auth-input" required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="password">Password</label>
-                  <input id="password" type="password" name="password" onChange={handleLoginChange} className="auth-input" required />
+                  <div className="password-input-wrapper">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={loginFormData.password}
+                      onChange={handleLoginChange}
+                      className="auth-input"
+                      required
+                    />
+                    <button type="button" className="password-toggle-icon" onClick={() => setShowPassword(!showPassword)}>
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </div>
+                <div className="form-options">
+                  <label className="remember-me-label">
+                    <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+                    Remember Me
+                  </label>
+                  <Link to="/forgot-password">Forgot Password?</Link>
                 </div>
                 <button type="submit" className="mc-button primary auth-button" disabled={isLoading}>
                   {isLoading ? 'Logging In...' : 'Log In'}
@@ -125,14 +156,13 @@ const AuthPage = ({ onLoginSuccess }) => {
               <p className="auth-subtitle">Join the Atlas Core community!</p>
               {error && isFlipped && <div className="auth-error-message">{error}</div>}
               <form onSubmit={handleRegisterSubmit}>
-                {/* Register fields */}
                 <div className="form-group">
-                  <label htmlFor="username">Username</label>
-                  <input id="username" type="text" name="username" onChange={handleRegisterChange} className="auth-input" required />
+                  <label htmlFor="reg-username">Username</label>
+                  <input id="reg-username" type="text" name="username" onChange={handleRegisterChange} className="auth-input" required />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="email">Email</label>
-                  <input id="email" type="email" name="email" onChange={handleRegisterChange} className="auth-input" required />
+                  <label htmlFor="reg-email">Email</label>
+                  <input id="reg-email" type="email" name="email" onChange={handleRegisterChange} className="auth-input" required />
                 </div>
                 <div className="form-group">
                   <label htmlFor="reg-password">Password</label>

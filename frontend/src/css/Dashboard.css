@@ -1,4 +1,15 @@
 /* frontend/src/css/Dashboard.css */
+@keyframes section-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .dashboard-container {
   max-width: 1200px;
   margin: 20px auto;
@@ -66,7 +77,15 @@
   padding: 30px;
   border: 3px solid var(--color-border);
   box-shadow: 0 0 20px rgba(0,0,0,0.7);
+  animation: section-fade-in 0.5s ease-out forwards;
 }
+
+/* Staggered animation for sections */
+.profile-section { animation-delay: 0.1s; }
+.quick-actions { animation-delay: 0.2s; }
+.account-info-section { animation-delay: 0.3s; }
+.recent-activity-section { animation-delay: 0.4s; }
+
 
 /* Action Buttons Grid */
 .action-buttons-grid {
@@ -91,19 +110,24 @@
   border: 3px solid var(--color-border);
   box-shadow: 4px 4px 0 var(--color-border);
   cursor: pointer;
-  transition: all 0.1s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .dashboard-button .icon {
     font-size: 3rem !important;
     margin-bottom: 5px;
     color: var(--color-accent);
+    transition: transform 0.3s ease;
 }
 
 .dashboard-button:hover {
   background-color: var(--color-border-subtle);
-  transform: translateY(-2px);
-  box-shadow: 6px 6px 0 var(--color-border);
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 8px 8px 15px var(--color-border);
+}
+
+.dashboard-button:hover .icon {
+    transform: scale(1.1);
 }
 
 .dashboard-button:active {
@@ -117,6 +141,12 @@
     border: 2px solid var(--color-border-subtle);
     padding: 1rem;
     margin-bottom: 1rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.account-info-section .info-item:hover, .recent-activity-section .activity-item:hover {
+    background-color: rgba(255, 255, 85, 0.05);
+    border-color: var(--color-accent);
 }
 
 .account-info-section .info-label {

@@ -1,0 +1,279 @@
+/* frontend/src/css/Events.css */
+
+.events-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  color: #fff;
+  font-family: 'VT323', monospace;
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 3px solid #000;
+  box-shadow: 0 0 20px rgba(0,0,0,0.7);
+  position: relative; /* Added for positioning the admin button */
+}
+
+.events-title {
+  text-align: center;
+  font-size: 3.5rem;
+  color: #FFAA00;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px #000;
+}
+
+.events-subtitle {
+  text-align: center;
+  font-size: 1.4rem;
+  color: #ccc;
+  margin-bottom: 3rem;
+}
+
+.calendar-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 1rem;
+  border: 2px solid #555;
+}
+
+.calendar-navigation h2 {
+  margin: 0;
+  color: #FFFF55;
+  font-size: 2rem;
+}
+
+.calendar-grid {
+  border: 3px solid #000;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background-color: #1a1a1a;
+  border-bottom: 2px solid #000;
+}
+
+.calendar-weekdays div {
+  text-align: center;
+  padding: 0.8rem 0.5rem;
+  font-size: 1.3rem;
+  color: #FFAA00;
+  border-right: 1px solid #000;
+}
+
+.calendar-weekdays div:last-child {
+  border-right: none;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day {
+  border: 1px solid #333;
+  min-height: 100px;
+  padding: 0.5rem;
+  font-size: 1.1rem;
+  position: relative;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.calendar-day.empty {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.day-number {
+  color: #ccc;
+  font-weight: bold;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+.day-events {
+  margin-top: 25px; /* Space for day number */
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* Updated styling for event titles on the calendar */
+.event-title-calendar {
+  font-size: 0.9rem; /* Smaller font for titles */
+  background-color: rgba(52, 152, 219, 0.7); /* A default background for event titles */
+  color: white;
+  padding: 3px 6px;
+  margin-bottom: 3px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap; /* Prevent text wrapping */
+  overflow: hidden; /* Hide overflow text */
+  text-overflow: ellipsis; /* Show ellipsis for overflow */
+  max-width: 100%; /* Ensure it doesn't overflow its parent */
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  border: 1px solid rgba(0,0,0,0.2);
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.event-title-calendar:hover {
+  background-color: rgba(52, 152, 219, 1);
+  transform: translateY(-2px);
+}
+
+/* Event Type Specific Styling for titles */
+.event-title-calendar.event-major {
+  background-color: rgba(231, 76, 60, 0.7); /* Red */
+}
+
+.event-title-calendar.event-event {
+  background-color: rgba(52, 152, 219, 0.7); /* Blue */
+}
+
+.event-title-calendar.event-announcement {
+  background-color: rgba(46, 204, 113, 0.7); /* Green */
+}
+
+.event-title-calendar.event-info {
+  background-color: rgba(243, 156, 18, 0.7); /* Orange */
+}
+
+
+/* Event Details Modal */
+.event-details-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.event-details-modal-content {
+    background-color: #1e1e1e;
+    border: 4px solid #FFAA00;
+    box-shadow: 0 0 30px rgba(255, 170, 0, 0.5), inset 0 0 15px #000;
+    padding: 30px 40px;
+    max-width: 500px;
+    width: 90%;
+    color: #fff;
+    font-family: 'VT323', monospace;
+    position: relative;
+    text-align: center;
+}
+
+.event-details-modal-content h3 {
+    color: #FFFF55;
+    font-size: 2.5rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px #000;
+}
+
+.modal-event-date {
+    color: #a0a0a0;
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+.modal-event-description {
+    font-size: 1.4rem;
+    line-height: 1.7;
+    color: #e0e0e0;
+}
+
+.close-modal-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #c0392b;
+    border: 2px solid #000;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'VT323', monospace;
+    box-shadow: 3px 3px 0 #000;
+    transition: all 0.2s;
+}
+.close-modal-button:hover {
+    background: #e74c3c;
+}
+
+/* Admin Events Button */
+.admin-events-button {
+    position: absolute;
+    top: 2.5rem;
+    right: 2.5rem;
+    font-family: 'VT323', monospace;
+    padding: 10px 20px !important;
+    font-size: 1.2rem !important;
+    color: white;
+    text-decoration: none;
+    background-color: #f0ad4e; /* Orange color */
+    border: 2px solid #000;
+    box-shadow: 3px 3px 0 #000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.admin-events-button:hover {
+    background-color: #ec971f; /* Darker orange on hover */
+    transform: translateY(-1px);
+    box-shadow: 4px 4px 0 #000;
+}
+
+@media (max-width: 768px) {
+  .events-container {
+    padding: 1rem;
+  }
+  .events-title {
+    font-size: 2.5rem;
+  }
+  .events-subtitle {
+    font-size: 1.2rem;
+  }
+  .calendar-weekdays div {
+    font-size: 1rem;
+  }
+  .calendar-day {
+    min-height: 70px;
+    font-size: 0.9rem;
+  }
+  .day-number {
+    font-size: 0.9rem;
+  }
+  .event-title-calendar { /* Apply responsive styles to the title instead of dot */
+    font-size: 0.7rem;
+    padding: 2px 4px;
+  }
+  .event-details-modal-content {
+    padding: 20px;
+  }
+  .event-details-modal-content h3 {
+    font-size: 2rem;
+  }
+  .modal-event-date {
+    font-size: 1rem;
+  }
+  .modal-event-description {
+    font-size: 1.1rem;
+  }
+  .admin-events-button {
+    top: 1rem;
+    right: 1rem;
+    font-size: 1rem !important;
+    padding: 8px 15px !important;
+  }
+}

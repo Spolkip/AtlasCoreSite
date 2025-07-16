@@ -1,20 +1,49 @@
 /* frontend/src/css/CharacterProfile.css */
 
+@keyframes stat-bar-fill {
+  from { width: 0; }
+  to { width: var(--final-width); }
+}
+
+@keyframes section-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes activity-item-fade-in {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 .character-profile-container {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  animation: section-fade-in 0.5s ease-out forwards;
 }
 
 .profile-upper-section {
   display: flex;
   flex-direction: row;
-  align-items: center; /* This centers the items vertically */
+  align-items: center;
   gap: 2rem;
   background-color: rgba(0, 0, 0, 0.6);
   padding: 2rem;
   border: 3px solid #000;
   box-shadow: 0 0 20px rgba(0,0,0,0.7);
+  transition: box-shadow 0.3s ease;
+}
+
+.profile-upper-section:hover {
+    box-shadow: 0 0 30px rgba(255, 170, 0, 0.4);
 }
 
 .skin-viewer-container {
@@ -27,6 +56,12 @@
   cursor: grab;
   margin-top: auto;
   margin-bottom: auto;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.skin-viewer-container:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 }
 
 .skin-viewer-container:grabbing {
@@ -74,29 +109,38 @@
   background-color: #2a2a2a;
   border: 2px solid #000;
   padding: 2px;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .stat-bar-foreground {
   height: 100%;
-  transition: width 0.5s ease-in-out;
+  animation: stat-bar-fill 1s ease-out forwards;
+  border-radius: 2px;
 }
 
+/* Updated Skill Bar Gradients */
 .stat-bar-foreground.hp {
-  background: linear-gradient(90deg, #c0392b, #e74c3c); /* Red for Combat */
+  background: linear-gradient(90deg, black, #c0392b);
 }
 
 .stat-bar-foreground.mana {
-  background: linear-gradient(90deg, #2980b9, #3498db); /* Blue for Defense */
+  background: linear-gradient(90deg, black, #2980b9);
+}
+
+.stat-bar-foreground.archery {
+  background: linear-gradient(90deg, black, orange);
 }
 
 .stat-bar-foreground.skill {
-  background: linear-gradient(90deg, #27ae60, #2ecc71); /* Green for other skills */
+  background: linear-gradient(90deg, black, #27ae60);
 }
+
 
 .skills-combat-panel {
     display: flex;
     flex-direction: column;
-    gap: 1rem; /* Spacing for combat skills */
+    gap: 1rem;
     margin-top: 1.5rem;
 }
 
@@ -107,6 +151,8 @@
     padding: 2rem;
     border: 3px solid #000;
     box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    animation: section-fade-in 0.5s ease-out forwards;
+    animation-delay: 0.2s;
 }
 
 .skills-lower-section h3, 
@@ -123,8 +169,8 @@
 
 .skills-bars-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* Four columns for the main skill bars */
-    gap: 1rem 2rem; /* Row and column gap */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem 2rem;
 }
 
 .account-info-grid {
@@ -137,6 +183,12 @@
     background-color: rgba(0, 0, 0, 0.2);
     padding: 1rem;
     border: 2px solid #555;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.info-item:hover {
+    background-color: rgba(255, 255, 85, 0.05);
+    border-color: var(--color-accent);
 }
 
 .info-item.full-width {
@@ -168,7 +220,17 @@
     gap: 1.5rem;
     padding: 1rem 0;
     border-bottom: 1px dashed #444;
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: activity-item-fade-in 0.5s ease-out forwards;
 }
+
+/* Staggered animation for activity items */
+.activity-item:nth-child(1) { animation-delay: 0.1s; }
+.activity-item:nth-child(2) { animation-delay: 0.2s; }
+.activity-item:nth-child(3) { animation-delay: 0.3s; }
+/* ...and so on */
+
 
 .activity-item:last-child {
     border-bottom: none;
@@ -183,10 +245,15 @@
     justify-content: center;
     border-radius: 50%;
     flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.activity-item:hover .activity-icon {
+    transform: scale(1.1);
 }
 
 .activity-icon.purchase {
-    background-color: #27ae60; /* Green */
+    background-color: #27ae60;
 }
 
 .activity-details {
@@ -207,7 +274,7 @@
 .activity-value {
     font-size: 1.4rem;
     font-weight: bold;
-    color: #2ecc71; /* Green */
+    color: #2ecc71;
 }
 
 .dashboard-button.small {

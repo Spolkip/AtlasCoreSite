@@ -2,15 +2,27 @@
 .order-history-container {
   max-width: 900px;
   margin: 20px auto;
-  padding: 20px;
-  color: #fff;
+  padding: 2rem; /* Increased padding */
+  color: var(--color-text); /* Use theme text color */
+  background-color: var(--color-background); /* Use theme background color */
+  background-image: var(--background-image); /* Use theme background texture */
+  /* REMOVED BORDER */
+  box-shadow: 0 0 25px rgba(0,0,0,0.9); /* Enhanced container shadow */
+  border-radius: 10px; /* Rounded corners */
 }
 
 .order-history-container h2 {
   text-align: center;
-  font-size: 3rem;
-  color: #FFAA00;
-  margin-bottom: 30px;
+  font-size: 3.5rem; /* Larger title */
+  color: var(--color-primary); /* Use theme primary color (Gold) */
+  margin-bottom: 2.5rem; /* Increased margin */
+  text-shadow: 3px 3px var(--color-border); /* Enhanced text shadow */
+}
+
+.order-history-container p {
+    font-size: 1.2rem;
+    color: var(--color-text-muted);
+    text-align: center;
 }
 
 .orders-list {
@@ -19,61 +31,170 @@
   gap: 15px;
 }
 
+/* New, more distinct blocky style for order headers */
 .order-header {
-  background-color: rgba(0, 0, 0, 0.6);
-  border: 3px solid #000;
-  padding: 20px;
+  background-color: var(--color-surface-1); /* Use a lighter surface for header */
+  /* REMOVED BORDER */
+  padding: 18px 25px; /* Generous padding */
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background-color 0.3s;
+  transition: all 0.1s ease-in-out; /* Fast, responsive transitions */
+  border-radius: 5px; /* Slightly less rounded, more blocky */
+  box-shadow: 6px 6px 0px var(--color-border); /* Prominent 3D shadow */
 }
 
 .order-header:hover {
-  background-color: rgba(255, 170, 0, 0.2);
+  background-color: #555; /* Darker grey on hover */
+  transform: translateY(-2px); /* Slight lift */
+  box-shadow: 8px 8px 0px var(--color-border); /* Larger shadow on hover */
 }
 
+/* Active state: simulates a pressed button */
 .order-header.active {
-  background-color: rgba(46, 204, 113, 0.3);
+  background-color: var(--color-secondary); /* Lapis blue for active state */
+  /* REMOVED BORDER-COLOR, RELY ON SHADOW FOR DEFINITION */
+  transform: translateY(2px); /* Presses down */
+  box-shadow: 2px 2px 0px var(--color-border); /* Smaller shadow when pressed */
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  border-bottom: none;
+  border-bottom: 2px solid var(--color-accent); /* Connects to details content */
 }
 
 .order-header h3 {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: 1.9rem; /* Slightly larger heading */
+  color: var(--color-text); /* White text for contrast */
+  text-shadow: 1px 1px var(--color-border);
 }
 
 .order-status {
-  font-size: 1.5rem;
-  padding: 5px 15px;
-  border-radius: 5px;
-  text-transform: capitalize;
+  font-size: 1.4rem; /* Slightly smaller for badge */
+  padding: 6px 16px;
+  border-radius: 4px; /* More rectangular badge */
+  text-transform: uppercase; /* All caps for badge */
+  font-weight: bold;
+  color: var(--color-text); /* White text on badges */
+  /* REMOVED BORDER */
+  box-shadow: 1px 1px 0 var(--color-border); /* Small shadow for depth */
 }
 
-.status-completed { background-color: #27ae60; }
-.status-pending { background-color: #f39c12; }
-.status-cancelled { background-color: #c0392b; }
+/* Specific status colors, possibly darker shades for badges */
+.status-completed { 
+  background-color: #2196F3; /* Bright blue for completed */
+}
+.status-pending { 
+  background-color: #FFC107; /* Amber for pending */
+  color: var(--color-border); /* Dark text for amber */
+}
+.status-cancelled { 
+  background-color: #F44336; /* Red for cancelled */
+}
 
+/* Order Details Content - resembling an open inventory/chest */
 .order-details-content {
-  background-color: rgba(0, 0, 0, 0.4);
-  border: 3px solid #000;
-  border-top: none;
-  padding: 25px;
+  background-color: rgba(30, 30, 30, 0.9); /* Darker, more solid background */
+  /* REMOVED BORDER */
+  border-top: none; /* No top border as it connects to header */
+  padding: 30px; /* More padding */
   display: flex;
+  flex-direction: row; /* Keep side-by-side on larger screens */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
   gap: 25px;
+  border-bottom-left-radius: 8px; /* Rounded bottom corners */
+  border-bottom-right-radius: 8px;
+  box-shadow: 6px 6px 0 var(--color-border); /* Consistent shadow */
 }
 
-.order-details-content img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border: 2px solid #555;
+.order-info, .order-products {
+    flex: 1; /* Distribute space evenly */
+    min-width: 280px; /* Ensure content doesn't get too squeezed */
 }
 
-.order-details-content p {
+.order-details-content h4 {
+    font-size: 1.8rem;
+    color: var(--color-primary); /* Gold for item list header */
+    margin-top: 0;
+    margin-bottom: 15px; /* More spacing */
+    border-bottom: 2px dashed var(--color-border-subtle); /* Clearer separator */
+    padding-bottom: 8px;
+}
+
+.order-details-content p, 
+.order-details-content ul li {
   margin: 8px 0;
-  font-size: 1.3rem;
+  font-size: 1.4rem; /* Slightly larger text */
+  color: var(--color-text); /* Use theme text color */
+}
+
+.order-details-content strong {
+    color: var(--color-accent); /* Yellow for labels */
+}
+
+.order-details-content ul {
+    list-style: none; /* Remove default list style */
+    padding: 0;
+    margin: 0;
+}
+
+.order-details-content ul li {
+    background-color: rgba(60, 60, 60, 0.6); /* Darker, more distinct background for list items */
+    padding: 10px;
+    margin-bottom: 8px;
+    /* REMOVED BORDER */
+    border-radius: 4px; /* Slight rounding */
+    display: flex;
+    justify-content: space-between; /* Space out product name and price */
+    align-items: center;
+}
+.order-details-content ul li:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .order-history-container {
+    padding: 1rem;
+  }
+  .order-history-container h2 {
+    font-size: 2.8rem;
+  }
+  .order-header {
+    padding: 15px;
+    flex-direction: column; /* Stack header content vertically */
+    align-items: flex-start;
+    gap: 10px;
+    border-radius: 5px; /* Ensure rounded corners are maintained */
+    box-shadow: 3px 3px 0px var(--color-border); /* Smaller shadow for mobile */
+    transform: none; /* Remove hover/active transforms */
+  }
+  .order-header:hover {
+      transform: none; /* Remove hover transform on mobile */
+      box-shadow: 3px 3px 0px var(--color-border);
+  }
+  .order-header.active {
+      transform: none; /* Remove active transform on mobile */
+      box-shadow: 3px 3px 0px var(--color-border);
+  }
+  .order-details-content {
+    flex-direction: column; /* Stack details content vertically */
+    gap: 15px;
+    padding: 15px;
+    border-radius: 8px; /* Ensure rounded corners are maintained */
+    box-shadow: 3px 3px 0px var(--color-border); /* Smaller shadow for mobile */
+  }
+  .order-details-content p,
+  .order-details-content ul li {
+    font-size: 1.1rem;
+  }
+  .order-status {
+    align-self: flex-end; /* Align status to the right when stacked */
+    font-size: 1.2rem;
+    padding: 4px 10px;
+  }
+  .order-info, .order-products {
+      min-width: unset; /* Remove min-width constraint for very small screens */
+      width: 100%;
+  }
 }

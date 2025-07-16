@@ -1,0 +1,181 @@
+/* frontend/src/css/AdminEvents.css */
+
+.admin-events-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    color: #fff;
+    font-family: 'VT323', monospace;
+}
+
+.admin-events-container h1 {
+    text-align: center;
+    font-size: 3rem;
+    color: #FFAA00;
+    margin-bottom: 2rem;
+    text-shadow: 2px 2px #000;
+}
+
+.admin-section {
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 30px;
+    border: 3px solid #000;
+    margin-bottom: 30px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+}
+
+.admin-section h2 {
+    font-size: 2.2rem;
+    color: #FFFF55;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #555;
+    padding-bottom: 0.5rem;
+    text-shadow: 1px 1px #000;
+}
+
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.admin-form.grid-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+    width: 100%;
+    padding: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 1.2rem;
+    background-color: #2a2a2a;
+    border: 2px solid #000;
+    color: #fff;
+    box-sizing: border-box;
+}
+
+.admin-form textarea {
+    grid-column: 1 / -1;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.admin-form .full-width {
+    grid-column: 1 / -1;
+}
+
+.event-management-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.event-manage-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border: 2px solid #555;
+    font-size: 1.3rem;
+}
+
+.event-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.mc-button.small {
+    padding: 8px 15px !important;
+    font-size: 1.1rem !important;
+}
+
+.mc-button.danger {
+    background-color: #c0392b;
+}
+
+.mc-button.danger:hover {
+    background-color: #e74c3c;
+}
+
+/* Modal styles (reused from AdminWiki/AddProducts for consistency) */
+.event-details-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001; /* Ensure it's on top */
+}
+
+.event-details-modal-content {
+    max-width: 600px; /* Optimal width for a simple input modal */
+    width: 90%;
+    padding: 30px 40px;
+    background-color: #1e1e1e; /* Darker background for contrast */
+    border: 4px solid #000;
+    box-shadow: 0 0 30px rgba(255, 170, 0, 0.5), inset 0 0 15px #000; /* Thematic glow */
+    color: #fff;
+    font-family: 'VT323', monospace;
+    position: relative;
+}
+
+.event-details-modal-content h2 {
+    color: #00FFFF; /* Bright cyan title */
+    text-shadow: 2px 2px #000;
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 25px;
+}
+
+.close-modal-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #c0392b;
+    border: 2px solid #000;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'VT323', monospace;
+    box-shadow: 3px 3px 0 #000;
+    transition: all 0.2s;
+}
+.close-modal-button:hover {
+    background: #e74c3c;
+}
+.close-modal-button:active {
+    transform: translateY(2px);
+    box-shadow: 1px 1px 0 #000;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-form.grid-form {
+        grid-template-columns: 1fr;
+    }
+    .event-manage-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .event-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

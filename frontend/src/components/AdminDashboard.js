@@ -41,7 +41,6 @@ const AdminDashboard = ({ user }) => {
             try {
                 const dashboardPromise = axios.get('http://localhost:5000/api/v1/admin/dashboard', config);
                 const trendsPromise = axios.get('http://localhost:5000/api/v1/admin/trends/registrations', config);
-                // FIX: Added the 'config' object to include the authentication token.
                 const serverStatsPromise = axios.get('http://localhost:5000/api/v1/server/stats', config);
                 const newPlayerTrendsPromise = axios.get('http://localhost:5000/api/v1/admin/trends/new-players', config);
 
@@ -70,7 +69,6 @@ const AdminDashboard = ({ user }) => {
                 }
 
                 // Server Stats
-                // FIX: The backend sends stats in the 'data' property, not 'stats'.
                 if (serverStatsResponse.data.success) {
                     setServerStats(serverStatsResponse.data.data);
                 }
@@ -183,28 +181,14 @@ const AdminDashboard = ({ user }) => {
                 </ResponsiveContainer>
             </div>
 
-            <div className="statistics-section">
-                <h2>Order Status Distribution</h2>
-                <ResponsiveContainer width="100%" height={300}>
-                    <BarChart
-                        data={orderStatusData}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#555" />
-                        <XAxis dataKey="name" stroke="#ccc" />
-                        <YAxis stroke="#ccc" />
-                        <Tooltip contentStyle={{ backgroundColor: '#3a3a3a', border: '1px solid #FFAA00' }} itemStyle={{ color: '#fff' }} />
-                        <Legend wrapperStyle={{ color: '#fff', paddingTop: '10px' }} />
-                        <Bar dataKey="value" fill="#FFAA00" />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
-
             <div className="quick-actions">
                 <h2>Management</h2>
                 <div className="action-buttons">
                     <Link to="/admin" className="dashboard-button">Manage Products & Categories</Link>
                     <Link to="/admin/promocodes" className="dashboard-button">Manage Promo Codes</Link>
+                    <Link to="/admin/vlog" className="dashboard-button">Manage Vlog</Link>
+                    <Link to="/admin/wiki" className="dashboard-button">Manage Wiki</Link>
+                    <Link to="/admin/events" className="dashboard-button">Manage Events</Link> {/* New link for Admin Events */}
                     <Link to="/admin/chat" className="dashboard-button">Live Chat</Link>
                 </div>
             </div>

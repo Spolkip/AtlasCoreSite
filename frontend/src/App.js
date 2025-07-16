@@ -9,7 +9,7 @@ import { getFirestore } from 'firebase/firestore';
 import NavBar from './components/NavBar';
 import LandingPage from './components/LandingPage';
 import ProductList from './components/ProductList';
-import AuthPage from './components/AuthPage'; // Import the new AuthPage
+import AuthPage from './components/AuthPage'; 
 import AddProducts from './components/AddProducts';
 import Settings from './components/Settings';
 import Checkout from './components/Checkout';
@@ -34,6 +34,8 @@ import AdminVlog from './components/AdminVlog';
 import Vlog from './components/Vlog';
 import ProfileSearch from './components/ProfileSearch';
 import AdminPromoCodes from './components/AdminPromoCodes';
+import Events from './components/Events'; 
+import AdminEvents from './components/AdminEvents'; // Import the new AdminEvents component
 
 import './css/App.css';
 import './css/Leaderboard.css';
@@ -170,6 +172,7 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/redeem" element={<RedeemCode />} />
             <Route path="/vlog" element={<Vlog user={user} />} />
+            <Route path="/events" element={<Events user={user} />} /> {/* Pass user prop to Events */}
             
             {isAuthenticated && (
               <>
@@ -193,6 +196,7 @@ function App() {
                 <Route path="/admin/vlog" element={<AdminVlog user={user} />} />
                 <Route path="/admin/wiki" element={<AdminWiki />} />
                 <Route path="/admin/chat" element={<AdminChat user={user} db={db} />} /> 
+                <Route path="/admin/events" element={<AdminEvents />} /> {/* New Admin Events Route */}
               </>
             )}
 
