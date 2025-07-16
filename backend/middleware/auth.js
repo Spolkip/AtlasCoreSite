@@ -34,19 +34,51 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-// Grant access to admin users only
+// MODIFIED: Generic authorization middleware to check for specific roles
+exports.authorize = (roles = []) => {
+  // Ensure roles is an array
+  if (typeof roles === 'string') {
+    roles = [roles];
+  }
+
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Authentication required' 
+      });
+    }
+    
+    // Check if the user has any of the required roles
+    const userRoles = req.user.roles || [];
+    const hasRequiredRole = roles.some(role => userRoles.includes(role));
+
+    if (!hasRequiredRole) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to access this route' 
+      });
+    }
+
+    next();
+  };
+};
+
+// MODIFIED: Grant access to admin users only (now checks is_admin field directly for super admin)
+// This ensures only users with is_admin: 1 can access these routes,
+// regardless of what's in their 'roles' array.
 exports.authorizeAdmin = (req, res, next) => {
-  // Check the is_admin field (1 for admin, 0 for user)
-  if (req.user.is_admin !== 1) {
+  if (!req.user || req.user.is_admin !== 1) {
     return res.status(403).json({
       success: false,
-      message: `User is not authorized to access this route`,
+      message: `User is not authorized to access this route. Admin privileges required.`,
     });
   }
   next();
 };
 
-// Middleware to identify user or allow guest access
+
+// Middleware to identify user or allow guest access (no change needed here)
 exports.identifyUser = async (req, res, next) => {
   let token;
 

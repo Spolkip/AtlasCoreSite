@@ -3,59 +3,11 @@ const PromoCode = require('../models/PromoCode');
 const deliveryService = require('../services/DeliveryService');
 const User = require('../models/User'); // ADDED
 
-// @desc    Get all promo codes
-// @route   GET /api/v1/promocodes
-// @access  Private/Admin
-exports.getAllPromoCodes = async (req, res) => {
-    try {
-        const codes = await PromoCode.findAll();
-        res.status(200).json({ success: true, codes });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error fetching promo codes.' });
-    }
-};
-
-// @desc    Create a new promo code
-// @route   POST /api/v1/promocodes
-// @access  Private/Admin
-exports.createPromoCode = async (req, res) => {
-    try {
-        const newCode = new PromoCode(req.body);
-        await newCode.save();
-        res.status(201).json({ success: true, code: newCode });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error creating promo code.' });
-    }
-};
-
-// @desc    Update a promo code
-// @route   PUT /api/v1/promocodes/:id
-// @access  Private/Admin
-exports.updatePromoCode = async (req, res) => {
-    try {
-        const code = await PromoCode.findById(req.params.id);
-        if (!code) {
-            return res.status(404).json({ success: false, message: 'Promo code not found.' });
-        }
-        Object.assign(code, req.body);
-        await code.save();
-        res.status(200).json({ success: true, code });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error updating promo code.' });
-    }
-};
-
-// @desc    Delete a promo code
-// @route   DELETE /api/v1/promocodes/:id
-// @access  Private/Admin
-exports.deletePromoCode = async (req, res) => {
-    try {
-        await PromoCode.delete(req.params.id);
-        res.status(200).json({ success: true, message: 'Promo code deleted.' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Server error deleting promo code.' });
-    }
-};
+// REMOVED: Admin-specific promo code functions are moved to adminController.js
+// exports.getAllPromoCodes = async (req, res) => { ... }
+// exports.createPromoCode = async (req, res) => { ... }
+// exports.updatePromoCode = async (req, res) => { ... }
+// exports.deletePromoCode = async (req, res) => { ... }
 
 // @desc    Apply a discount code to a cart total
 // @route   POST /api/v1/promocodes/apply
@@ -76,7 +28,8 @@ exports.applyPromoCode = async (req, res) => {
         }
 
         // ADDED: Check if non-admin user has already used this code
-        if (req.user.is_admin !== 1 && req.user.used_promo_codes && req.user.used_promo_codes.includes(promoCode.id)) {
+        // MODIFIED: Check for 'admin' role instead of is_admin === 1
+        if (!req.user.roles.includes('admin') && req.user.used_promo_codes && req.user.used_promo_codes.includes(promoCode.id)) {
             return res.status(400).json({ success: false, message: 'You have already used this code.' });
         }
 
@@ -121,7 +74,8 @@ exports.redeemRewardCode = async (req, res) => {
         }
         
         // ADDED: Check if non-admin user has already used this code
-        if (req.user.is_admin !== 1 && req.user.used_promo_codes && req.user.used_promo_codes.includes(promoCode.id)) {
+        // MODIFIED: Check for 'admin' role instead of is_admin === 1
+        if (!req.user.roles.includes('admin') && req.user.used_promo_codes && req.user.used_promo_codes.includes(promoCode.id)) {
             return res.status(400).json({ success: false, message: 'You have already used this code.' });
         }
 
@@ -131,7 +85,8 @@ exports.redeemRewardCode = async (req, res) => {
         await promoCode.save();
 
         // ADDED: Add code to user's used codes list if they are not an admin
-        if (req.user.is_admin !== 1) {
+        // MODIFIED: Check for 'admin' role instead of is_admin === 1
+        if (!req.user.roles.includes('admin')) {
             const user = await User.findById(userId);
             if (user) {
                 const updatedCodes = [...(user.used_promo_codes || []), promoCode.id];
