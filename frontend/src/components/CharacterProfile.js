@@ -201,11 +201,11 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                 <div className="stats-container">
                     <div className="player-identity">
                         <h2 className="player-name">{playerStats?.player_name || username}</h2>
-                        {/* ADDED: Display land and nation information */}
-                        {(playerStats.lands_land_name && playerStats.lands_land_name !== 'N/A') && (
+                        {/* UPDATED: Check for "None" in addition to "N/A" */}
+                        {(playerStats.lands_land_name && playerStats.lands_land_name !== 'N/A' && playerStats.lands_land_name !== '§8None') && (
                             <p className="player-location">City: {playerStats.lands_land_name}</p>
                         )}
-                        {(playerStats.lands_nation_name && playerStats.lands_nation_name !== 'N/A') && (
+                        {(playerStats.lands_nation_name && playerStats.lands_nation_name !== 'N/A' && playerStats.lands_nation_name !== '§8None') && (
                             <p className="player-location">Nation: {playerStats.lands_nation_name}</p>
                         )}
                         <p className="player-class-race">
