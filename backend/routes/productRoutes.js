@@ -10,9 +10,4 @@ router.get('/', getProducts);
 // @desc    Get a single product by its ID.
 router.get('/:id', getSingleProduct);
 
-// REMOVED: Admin-only routes are moved to adminRoutes.js
-// router.post('/', protect, authorizeAdmin, createProduct);
-// router.put('/:id', protect, authorizeAdmin, updateProduct);
-// router.delete('/:id', protect, authorizeAdmin, deleteProduct);
-
 module.exports = router;

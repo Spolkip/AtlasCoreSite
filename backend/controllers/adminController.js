@@ -232,40 +232,18 @@ exports.deleteCategory = async (req, res) => {
 };
 
 // --- User Management ---
-// MODIFIED: This function now updates user roles
-exports.updateUserRoles = async (req, res) => {
-    const { roles } = req.body;
+exports.updateUserAdminStatus = async (req, res) => {
+    const { is_admin } = req.body;
     try {
-        if (!Array.isArray(roles)) {
-            return res.status(400).json({ success: false, message: 'Roles must be an array.' });
+        if (typeof is_admin !== 'number' || (is_admin !== 0 && is_admin !== 1)) {
+            return res.status(400).json({ success: false, message: 'Invalid is_admin value' });
         }
-        
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-        // Prevent changing roles of the super admin if not the super admin themselves
-        // Or prevent a super admin from removing their own admin role
-        if (user.is_admin === 1 && req.user.id !== user.id) {
-            return res.status(403).json({ success: false, message: 'You cannot change the roles of a super admin.' });
-        }
-        // Prevent a super admin from removing their own admin role
-        if (user.id === req.user.id && user.is_admin === 1 && !roles.includes('admin')) {
-             return res.status(403).json({ success: false, message: 'You cannot remove your own "admin" role.' });
-        }
-
-        // Update roles and synchronize is_admin
-        const updatedFields = { roles: roles };
-        if (roles.includes('admin')) {
-            updatedFields.is_admin = 1;
-        } else {
-            updatedFields.is_admin = 0;
-        }
-
-        await user.update(updatedFields);
-        res.status(200).json({ success: true, message: 'User roles updated', user: user });
+        await user.update({ is_admin });
+        res.status(200).json({ success: true, message: 'User admin status updated' });
     } catch (error) {
-        console.error('Error updating user roles:', error);
-        res.status(500).json({ success: false, message: 'Server error updating roles.' });
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 };
 
@@ -273,12 +251,6 @@ exports.deleteUserByAdmin = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-        
-        // Prevent super admin from deleting themselves
-        if (user.id === req.user.id && user.is_admin === 1) {
-            return res.status(403).json({ success: false, message: 'You cannot delete your own super admin account.' });
-        }
-
         await User.delete(req.params.id);
         res.status(200).json({ success: true, message: 'User deleted' });
     } catch (error) {
