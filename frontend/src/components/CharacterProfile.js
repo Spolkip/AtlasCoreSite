@@ -107,7 +107,7 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
         { key: 'agility', name: 'Agility', type: 'utility' }, 
         { key: 'sorcery', name: 'Sorcery', type: 'utility' }, 
         { key: 'healing', name: 'Healing', type: 'utility' }, 
-        { key: 'forging', name: 'Forging', type: 'utility' }
+        { key: 'forging', name: 'Forging', type: 'utility'}
     ];
 
     useEffect(() => {
@@ -189,9 +189,11 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
 
     const playerStats = profileData?.playerStats;
     const playerBalance = playerStats?.vault_eco_balance ? parseFloat(playerStats.vault_eco_balance).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) : 'N/A';
+    const profileThemeClass = `profile-theme-${profileData?.profile_theme || 'default'}`; // ADDED: Get theme class
 
     return (
-        <div className="character-profile-container">
+        // MODIFIED: Apply profileThemeClass to the main container
+        <div className={`character-profile-container ${profileThemeClass}`}> 
              {successMessage && <div className="auth-success-message" style={{marginBottom: '20px'}}>{successMessage}</div>}
 
             <div className="profile-upper-section">

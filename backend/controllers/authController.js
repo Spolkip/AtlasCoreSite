@@ -18,8 +18,9 @@ const toUserResponse = (user) => ({
   isAdmin: user.is_admin === 1,
   isVerified: user.is_verified,
   minecraft_uuid: user.minecraft_uuid,
-  minecraft_username: user.minecraft_username, // ADDED
-  is_profile_public: user.is_profile_public
+  minecraft_username: user.minecraft_username,
+  is_profile_public: user.is_profile_public,
+  profile_theme: user.profile_theme, // ADDED: Include profile_theme
 });
 
 // Function to call the Minecraft plugin's webhook
@@ -153,7 +154,8 @@ exports.googleLogin = async (req, res) => {
 };
 
 exports.updateUserDetails = async (req, res) => {
-    const { email, is_profile_public } = req.body;
+    // MODIFIED: Added profile_theme to destructuring
+    const { email, is_profile_public, profile_theme } = req.body; 
     try {
         const user = await UserAuth.findById(req.user.id);
         if (!user) {
@@ -166,6 +168,10 @@ exports.updateUserDetails = async (req, res) => {
         }
         if (typeof is_profile_public === 'boolean') {
             updates.is_profile_public = is_profile_public;
+        }
+        // ADDED: Update profile_theme if provided
+        if (profile_theme !== undefined) {
+            updates.profile_theme = profile_theme;
         }
 
         if (Object.keys(updates).length > 0) {
@@ -235,7 +241,7 @@ exports.verifyMinecraftLink = async (req, res) => {
 
         await user.update({ 
             minecraft_uuid: minecraftUUID, 
-            minecraft_username: username, // ADDED
+            minecraft_username: username,
             is_verified: true 
         });
         
@@ -258,7 +264,7 @@ exports.unlinkMinecraft = async (req, res) => {
 
         await user.update({ 
             minecraft_uuid: '', 
-            minecraft_username: '', // ADDED
+            minecraft_username: '',
             is_verified: false 
         });
         

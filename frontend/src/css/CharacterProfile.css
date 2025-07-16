@@ -23,27 +23,32 @@
     }
 }
 
+/* ADDED: Base styles for the profile container, using theme variables */
 .character-profile-container {
   display: flex;
   flex-direction: column;
   gap: 2rem;
   animation: section-fade-in 0.5s ease-out forwards;
+  /* Apply theme-specific background and text colors */
+  background-color: var(--profile-bg-color);
+  color: var(--profile-info-value-color); /* General text color for profile */
 }
 
+/* ADDED: Specific styles for themed sections within the profile */
 .profile-upper-section {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 2rem;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: var(--profile-skill-section-bg); /* Reusing skill section background */
   padding: 2rem;
-  border: 3px solid #000;
-  box-shadow: 0 0 20px rgba(0,0,0,0.7);
+  border: 3px solid var(--profile-border-color);
+  box-shadow: 0 0 20px var(--profile-shadow-color);
   transition: box-shadow 0.3s ease;
 }
 
 .profile-upper-section:hover {
-    box-shadow: 0 0 30px rgba(255, 170, 0, 0.4);
+    box-shadow: 0 0 30px var(--profile-shadow-color); /* Adjust hover shadow */
 }
 
 .skin-viewer-container {
@@ -52,7 +57,7 @@
   max-width: 300px;
   height: 400px;
   background-color: rgba(0, 0, 0, 0.3);
-  border: 2px solid #555;
+  border: 2px solid var(--profile-info-item-border); /* Use info item border */
   cursor: grab;
   margin-top: auto;
   margin-bottom: auto;
@@ -61,7 +66,7 @@
 
 .skin-viewer-container:hover {
     transform: scale(1.02);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 15px var(--profile-info-label-color); /* Use a subtle highlight color */
 }
 
 .skin-viewer-container:grabbing {
@@ -80,14 +85,14 @@
 
 .player-name {
   font-size: 2.5rem;
-  color: #FFAA00;
+  color: var(--profile-player-name-color); /* Themed player name */
   margin: 0;
   text-shadow: 2px 2px #000;
 }
 
 .player-class-race {
   font-size: 1.5rem;
-  color: #ccc;
+  color: var(--profile-player-class-color); /* Themed player class/race */
   margin-top: 0.5rem;
 }
 
@@ -100,14 +105,14 @@
   justify-content: space-between;
   font-size: 1.2rem;
   margin-bottom: 0.5rem;
-  color: #fff;
+  color: var(--profile-stat-bar-label); /* Themed stat bar label */
 }
 
 .stat-bar-background {
   width: 100%;
   height: 25px;
-  background-color: #2a2a2a;
-  border: 2px solid #000;
+  background-color: var(--profile-stat-bar-bg); /* Themed stat bar background */
+  border: 2px solid var(--profile-stat-bar-border); /* Themed stat bar border */
   padding: 2px;
   border-radius: 4px;
   overflow: hidden;
@@ -120,6 +125,7 @@
 }
 
 /* Updated Skill Bar Gradients */
+/* These will remain hardcoded or can be further themed with more variables */
 .stat-bar-foreground.hp {
   background: linear-gradient(90deg, black, #c0392b);
 }
@@ -147,10 +153,10 @@
 .skills-lower-section,
 .account-info-section,
 .recent-activity-section {
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: var(--profile-skill-section-bg); /* Themed section background */
     padding: 2rem;
-    border: 3px solid #000;
-    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    border: 3px solid var(--profile-skill-section-border); /* Themed section border */
+    box-shadow: 0 0 20px var(--profile-skill-section-shadow); /* Themed section shadow */
     animation: section-fade-in 0.5s ease-out forwards;
     animation-delay: 0.2s;
 }
@@ -160,11 +166,11 @@
 .account-info-section h3,
 .recent-activity-section h3 {
     font-size: 1.8rem;
-    color: #FFFF55;
+    color: var(--profile-skill-heading-color); /* Themed section heading */
     margin-top: 0;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid #555;
+    border-bottom: 2px solid var(--profile-info-item-border); /* Reusing info item border */
 }
 
 .skills-bars-grid {
@@ -180,15 +186,15 @@
 }
 
 .info-item {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: var(--profile-info-item-bg); /* Themed info item background */
     padding: 1rem;
-    border: 2px solid #555;
+    border: 2px solid var(--profile-info-item-border); /* Themed info item border */
     transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .info-item:hover {
-    background-color: rgba(255, 255, 85, 0.05);
-    border-color: var(--color-accent);
+    background-color: rgba(255, 255, 85, 0.05); /* Keep a subtle yellow hover */
+    border-color: var(--profile-skill-heading-color); /* Themed border on hover */
 }
 
 .info-item.full-width {
@@ -198,13 +204,13 @@
 .info-label {
     display: block;
     font-size: 1.2rem;
-    color: #ccc;
+    color: var(--profile-info-label-color); /* Themed info label color */
     margin-bottom: 0.5rem;
 }
 
 .info-value {
     font-size: 1.4rem;
-    color: #fff;
+    color: var(--profile-info-value-color); /* Themed info value color */
     word-break: break-all;
 }
 
@@ -219,7 +225,7 @@
     align-items: center;
     gap: 1.5rem;
     padding: 1rem 0;
-    border-bottom: 1px dashed #444;
+    border-bottom: 1px dashed var(--profile-info-item-border); /* Themed dashed border */
     opacity: 0;
     transform: translateX(-20px);
     animation: activity-item-fade-in 0.5s ease-out forwards;
@@ -253,7 +259,7 @@
 }
 
 .activity-icon.purchase {
-    background-color: #27ae60;
+    background-color: var(--profile-activity-icon-bg); /* Themed activity icon background */
 }
 
 .activity-details {
@@ -263,18 +269,18 @@
 .activity-description {
     display: block;
     font-size: 1.3rem;
-    color: #fff;
+    color: var(--profile-activity-description-color); /* Themed activity description */
 }
 
 .activity-timestamp {
     font-size: 1rem;
-    color: #999;
+    color: var(--profile-activity-timestamp-color); /* Themed activity timestamp */
 }
 
 .activity-value {
     font-size: 1.4rem;
     font-weight: bold;
-    color: #2ecc71;
+    color: var(--profile-activity-value-color); /* Themed activity value */
 }
 
 .dashboard-button.small {

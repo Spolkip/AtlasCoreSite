@@ -30,6 +30,28 @@
   --color-border-subtle: #555;
   --text-shadow: 2px 2px #000000a0;
   --background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+
+  /* Profile Theme Variables (Default to main theme colors) */
+  --profile-bg-color: var(--color-surface-2);
+  --profile-border-color: var(--color-border);
+  --profile-shadow-color: rgba(0,0,0,0.7);
+  --profile-player-name-color: var(--color-primary);
+  --profile-player-class-color: var(--color-text-muted);
+  --profile-stat-bar-bg: #2a2a2a;
+  --profile-stat-bar-border: #000;
+  --profile-stat-bar-label: #fff;
+  --profile-skill-section-bg: rgba(0, 0, 0, 0.6);
+  --profile-skill-section-border: #000;
+  --profile-skill-section-shadow: rgba(0,0,0,0.7);
+  --profile-skill-heading-color: var(--color-accent);
+  --profile-info-item-bg: rgba(0, 0, 0, 0.2);
+  --profile-info-item-border: #555;
+  --profile-info-label-color: #ccc;
+  --profile-info-value-color: #fff;
+  --profile-activity-icon-bg: #27ae60;
+  --profile-activity-description-color: #fff;
+  --profile-activity-timestamp-color: #999;
+  --profile-activity-value-color: #2ecc71;
 }
 
 .light-theme {
@@ -48,6 +70,123 @@
   --text-shadow: 1px 1px #00000030;
   --background-image: url('https://www.transparenttextures.com/patterns/subtle-stripes.png');
 }
+
+/* ADDED: Custom Profile Themes */
+.profile-theme-forest {
+  --profile-bg-color: #2e4a2e; /* Dark forest green */
+  --profile-border-color: #1a2b1a;
+  --profile-shadow-color: rgba(0,100,0,0.7);
+  --profile-player-name-color: #a2e0a2; /* Light green */
+  --profile-player-class-color: #c0d0c0;
+  --profile-stat-bar-bg: #1f331f;
+  --profile-stat-bar-border: #0f1a0f;
+  --profile-stat-bar-label: #e0f0e0;
+  --profile-skill-section-bg: rgba(30, 60, 30, 0.8);
+  --profile-skill-section-border: #1a2b1a;
+  --profile-skill-section-shadow: rgba(0,100,0,0.7);
+  --profile-skill-heading-color: #a2e0a2;
+  --profile-info-item-bg: rgba(10, 30, 10, 0.5);
+  --profile-info-item-border: #3a5a3a;
+  --profile-info-label-color: #c0d0c0;
+  --profile-info-value-color: #e0f0e0;
+  --profile-activity-icon-bg: #4caf50; /* Darker green */
+  --profile-activity-description-color: #e0f0e0;
+  --profile-activity-timestamp-color: #b0c0b0;
+  --profile-activity-value-color: #8bc34a; /* Lighter green */
+}
+
+.profile-theme-lava {
+  --profile-bg-color: #4a2e2e; /* Dark reddish-brown */
+  --profile-border-color: #2b1a1a;
+  --profile-shadow-color: rgba(200,50,0,0.7);
+  --profile-player-name-color: #ff8c00; /* Dark orange */
+  --profile-player-class-color: #e0b0b0;
+  --profile-stat-bar-bg: #331f1f;
+  --profile-stat-bar-border: #1a0f0f;
+  --profile-stat-bar-label: #f0e0e0;
+  --profile-skill-section-bg: rgba(60, 30, 30, 0.8);
+  --profile-skill-section-border: #2b1a1a;
+  --profile-skill-section-shadow: rgba(200,50,0,0.7);
+  --profile-skill-heading-color: #ff8c00;
+  --profile-info-item-bg: rgba(30, 10, 10, 0.5);
+  --profile-info-item-border: #5a3a3a;
+  --profile-info-label-color: #e0b0b0;
+  --profile-info-value-color: #f0e0e0;
+  --profile-activity-icon-bg: #ff5722; /* Deep orange */
+  --profile-activity-description-color: #f0e0e0;
+  --profile-activity-timestamp-color: #c0b0b0;
+  --profile-activity-value-color: #ff9800; /* Orange */
+}
+
+.profile-theme-night {
+  --profile-bg-color: #1a1a2e; /* Dark blue/purple */
+  --profile-border-color: #0f0f1a;
+  --profile-shadow-color: rgba(0,0,50,0.7);
+  --profile-player-name-color: #add8e6; /* Light blue */
+  --profile-player-class-color: #c0c0d0;
+  --profile-stat-bar-bg: #0f0f1a;
+  --profile-stat-bar-border: #05050a;
+  --profile-stat-bar-label: #e0e0f0;
+  --profile-skill-section-bg: rgba(10, 10, 30, 0.8);
+  --profile-skill-section-border: #0f0f1a;
+  --profile-skill-section-shadow: rgba(0,0,50,0.7);
+  --profile-skill-heading-color: #add8e6;
+  --profile-info-item-bg: rgba(5, 5, 15, 0.5);
+  --profile-info-item-border: #2a2a4a;
+  --profile-info-label-color: #c0c0d0;
+  --profile-info-value-color: #e0e0f0;
+  --profile-activity-icon-bg: #6a5acd; /* Slate blue */
+  --profile-activity-description-color: #e0e0f0;
+  --profile-activity-timestamp-color: #a0a0b0;
+  --profile-activity-value-color: #87ceeb; /* Sky blue */
+}
+
+.profile-theme-space {
+  --profile-bg-color: #0d0d1a; /* Very dark blue/black */
+  --profile-border-color: #000000;
+  --profile-shadow-color: rgba(50,0,100,0.7);
+  --profile-player-name-color: #e6e6fa; /* Lavender */
+  --profile-player-class-color: #d0d0e0;
+  --profile-stat-bar-bg: #05050a;
+  --profile-stat-bar-border: #000000;
+  --profile-stat-bar-label: #f0f0ff;
+  --profile-skill-section-bg: rgba(5, 5, 15, 0.8);
+  --profile-skill-section-border: #000000;
+  --profile-skill-section-shadow: rgba(50,0,100,0.7);
+  --profile-skill-heading-color: #e6e6fa;
+  --profile-info-item-bg: rgba(0, 0, 0, 0.5);
+  --profile-info-item-border: #1a1a2e;
+  --profile-info-label-color: #d0d0e0;
+  --profile-info-value-color: #f0f0ff;
+  --profile-activity-icon-bg: #8a2be2; /* Blue violet */
+  --profile-activity-description-color: #f0f0ff;
+  --profile-activity-timestamp-color: #b0b0c0;
+  --profile-activity-value-color: #9370db; /* Medium purple */
+}
+
+.profile-theme-water {
+  --profile-bg-color: #2e3a4a; /* Dark blue-grey */
+  --profile-border-color: #1a2a3a;
+  --profile-shadow-color: rgba(0,50,100,0.7);
+  --profile-player-name-color: #87ceeb; /* Sky blue */
+  --profile-player-class-color: #c0d0e0;
+  --profile-stat-bar-bg: #1f2a3a;
+  --profile-stat-bar-border: #0f1a2a;
+  --profile-stat-bar-label: #e0f0f0;
+  --profile-skill-section-bg: rgba(30, 40, 50, 0.8);
+  --profile-skill-section-border: #1a2a3a;
+  --profile-skill-section-shadow: rgba(0,50,100,0.7);
+  --profile-skill-heading-color: #87ceeb;
+  --profile-info-item-bg: rgba(10, 20, 30, 0.5);
+  --profile-info-item-border: #3a4a5a;
+  --profile-info-label-color: #c0d0e0;
+  --profile-info-value-color: #e0f0f0;
+  --profile-activity-icon-bg: #4682b4; /* Steel blue */
+  --profile-activity-description-color: #e0f0f0;
+  --profile-activity-timestamp-color: #a0b0c0;
+  --profile-activity-value-color: #6495ed; /* Cornflower blue */
+}
+
 
 /* Global Styles */
 body {

@@ -93,7 +93,8 @@ exports.getCharacterProfile = async (req, res) => {
                 success: true,
                 data: {
                     playerStats: null,
-                    activityFeed
+                    activityFeed,
+                    profile_theme: user.profile_theme, // ADDED: Include profile_theme
                 }
             });
         }
@@ -118,7 +119,8 @@ exports.getCharacterProfile = async (req, res) => {
             success: true,
             data: {
                 playerStats: Object.keys(playerStats).length > 0 ? playerStats : null,
-                activityFeed: activityFeed
+                activityFeed: activityFeed,
+                profile_theme: user.profile_theme, // ADDED: Include profile_theme
             },
             error: statsError 
         });
@@ -154,7 +156,8 @@ exports.getCharacterProfileByUsername = async (req, res) => {
                 success: true,
                 data: {
                     playerStats: null,
-                    activityFeed
+                    activityFeed,
+                    profile_theme: userToView.profile_theme, // ADDED: Include profile_theme
                 }
             });
         }
@@ -179,7 +182,8 @@ exports.getCharacterProfileByUsername = async (req, res) => {
             success: true,
             data: {
                 playerStats: Object.keys(playerStats).length > 0 ? playerStats : null,
-                activityFeed: activityFeed
+                activityFeed: activityFeed,
+                profile_theme: userToView.profile_theme, // ADDED: Include profile_theme
             },
             error: statsError
         });

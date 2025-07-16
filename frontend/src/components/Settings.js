@@ -11,6 +11,16 @@ const currencies = [
   // ... other currencies
 ];
 
+// ADDED: Define available profile themes
+const profileThemes = [
+    { id: 'default', name: 'Default' },
+    { id: 'forest', name: 'Forest Theme' },
+    { id: 'lava', name: 'Lava Theme' },
+    { id: 'night', name: 'Night Theme' }, // ADDED: Night Theme
+    { id: 'space', name: 'Space Theme' }, // ADDED: Space Theme
+    { id: 'water', name: 'Water Theme' }, // ADDED: Water Theme
+];
+
 const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) => {
   // State for Admin Settings
   const [adminSettings, setAdminSettings] = useState({});
@@ -20,6 +30,7 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
   const [userDetails, setUserDetails] = useState({ 
       email: user?.email || '',
       is_profile_public: user?.is_profile_public ?? true,
+      profile_theme: user?.profile_theme || 'default', // ADDED: Initialize profile_theme
   });
   const [passwordDetails, setPasswordDetails] = useState({
     currentPassword: '',
@@ -144,6 +155,26 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
                 <p style={{fontSize: '1rem', color: '#999', marginTop: '5px'}}>
                     If unchecked, other players will not be able to search for or view your profile.
                 </p>
+              </div>
+              {/* ADDED: Profile Theme Selection */}
+              <div className="form-group">
+                  <label htmlFor="profile_theme">Profile Theme</label>
+                  <select 
+                      id="profile_theme" 
+                      name="profile_theme" 
+                      value={userDetails.profile_theme} 
+                      onChange={handleUserSettingsChange} 
+                      className="auth-input"
+                  >
+                      {profileThemes.map(themeOption => (
+                          <option key={themeOption.id} value={themeOption.id}>
+                              {themeOption.name}
+                          </option>
+                      ))}
+                  </select>
+                  <p style={{fontSize: '1rem', color: '#999', marginTop: '5px'}}>
+                      Choose a custom theme for your public character profile.
+                  </p>
               </div>
               <button type="submit" className="mc-button primary">Update Details</button>
           </form>

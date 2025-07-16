@@ -132,7 +132,8 @@ function App() {
 
   const handleUserUpdate = (updatedUser) => {
     setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    // MODIFIED: Ensure updated user object is saved to local storage
+    localStorage.setItem('user', JSON.stringify(updatedUser)); 
   };
 
   const updateSettings = (newSettings) => {
@@ -177,7 +178,8 @@ function App() {
             {isAuthenticated && (
               <>
                 <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} />} />
-                <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} />
+                {/* MODIFIED: Pass onUserUpdate to CharacterProfile */}
+                <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} /> 
                 <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} theme={theme} toggleTheme={toggleTheme} />} />
                 <Route path="/checkout" element={<Checkout cart={cart} user={user} settings={settings} exchangeRates={exchangeRates} onUpdateCart={setCart} />} />
                 <Route path="/payment/success" element={<PaymentSuccess />} />
