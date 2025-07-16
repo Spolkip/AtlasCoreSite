@@ -11,14 +11,14 @@ const currencies = [
   // ... other currencies
 ];
 
-// ADDED: Define available profile themes
+// Define available profile themes
 const profileThemes = [
     { id: 'default', name: 'Default' },
     { id: 'forest', name: 'Forest Theme' },
     { id: 'lava', name: 'Lava Theme' },
-    { id: 'night', name: 'Night Theme' }, // ADDED: Night Theme
-    { id: 'space', name: 'Space Theme' }, // ADDED: Space Theme
-    { id: 'water', name: 'Water Theme' }, // ADDED: Water Theme
+    { id: 'night', name: 'Night Theme' },
+    { id: 'space', name: 'Space Theme' },
+    { id: 'water', name: 'Water Theme' },
 ];
 
 const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) => {
@@ -37,8 +37,8 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
     newPassword: '',
     confirmNewPassword: '',
   });
-  // ADDED: State for Creator Code
-  const [creatorCodeInput, setCreatorCodeInput] = useState(user?.creatorCode || '');
+  // State for applied creator code input
+  const [appliedCreatorCodeInput, setAppliedCreatorCodeInput] = useState(user?.appliedCreatorCode || '');
 
 
   // General State
@@ -48,10 +48,11 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
   const token = localStorage.getItem('token');
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
-  // Sync creatorCodeInput with user.creatorCode prop
+  // Sync appliedCreatorCodeInput with user.appliedCreatorCode prop
+  // This useEffect will ensure the input field always reflects the latest value from the user prop.
   useEffect(() => {
-    setCreatorCodeInput(user?.creatorCode || '');
-  }, [user?.creatorCode]);
+    setAppliedCreatorCodeInput(user?.appliedCreatorCode || '');
+  }, [user?.appliedCreatorCode]);
 
 
   useEffect(() => {
@@ -89,8 +90,9 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
       setPasswordDetails(prev => ({...prev, [name]: value}));
   }
 
-  const handleCreatorCodeChange = (e) => {
-      setCreatorCodeInput(e.target.value);
+  // Handler for applied creator code input
+  const handleAppliedCreatorCodeChange = (e) => {
+      setAppliedCreatorCodeInput(e.target.value);
   };
 
 
@@ -140,17 +142,20 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
       }
   }
 
-  // ADDED: Handler for updating Creator Code
-  const handleUpdateCreatorCode = async (e) => {
+  // Handler for updating Applied Creator Code
+  const handleUpdateAppliedCreatorCode = async (e) => {
     e.preventDefault();
     setSuccessMessage('');
     setError('');
+    
+    const codeToSend = appliedCreatorCodeInput.trim(); 
+
     try {
-        const response = await axios.put('http://localhost:5000/api/v1/auth/creator-code', { newCode: creatorCodeInput }, config);
-        onUserUpdate(response.data.user); // Update app-level user state with new creator code
+        const response = await axios.put('http://localhost:5000/api/v1/auth/creator-code', { code: codeToSend }, config);
+        onUserUpdate(response.data.user); // Update app-level user state with new applied creator code
         setSuccessMessage(response.data.message);
     } catch (err) {
-        setError(err.response?.data?.message || 'Failed to update creator code.');
+        setError(err.response?.data?.message || 'Failed to update applied creator code.');
     }
   };
 
@@ -185,7 +190,7 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
                     If unchecked, other players will not be able to search for or view your profile.
                 </p>
               </div>
-              {/* ADDED: Profile Theme Selection */}
+              {/* Profile Theme Selection */}
               <div className="form-group">
                   <label htmlFor="profile_theme">Profile Theme</label>
                   <select 
@@ -226,28 +231,33 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
           </form>
       </div>
 
-      {/* ADDED: Affiliate Code Settings Section */}
+      {/* ADDED: Apply Creator Code Settings Section */}
       <div className="profile-section">
-          <h2>Affiliate Code Settings</h2>
-          <form onSubmit={handleUpdateCreatorCode} className="admin-form">
+          <h2>Apply a Creator Code</h2>
+          <form onSubmit={handleUpdateAppliedCreatorCode} className="admin-form">
               <div className="form-group">
-                  <label htmlFor="creatorCode">Your Affiliate Code</label>
+                  <label htmlFor="appliedCreatorCode">Creator Code to Apply</label>
                   <input 
-                      id="creatorCode" 
+                      id="appliedCreatorCode" 
                       type="text" 
-                      name="creatorCode" 
-                      value={creatorCodeInput} 
-                      onChange={handleCreatorCodeChange} 
-                      placeholder="Enter your desired code (e.g., YOURNAME123)"
+                      name="appliedCreatorCode" 
+                      value={appliedCreatorCodeInput} 
+                      onChange={handleAppliedCreatorCodeChange} 
+                      placeholder="Enter a creator's code (e.g., FRIENDLYGAMER)"
                       className="auth-input" 
                       maxLength={16} // Limit length for codes
                   />
                   <p style={{fontSize: '1rem', color: '#999', marginTop: '5px'}}>
-                      This code can be shared with others to give them a discount on purchases. You will earn points for each successful referral. Leave empty to remove your code.
+                      Enter a creator's code to support them with your purchases. You will still receive any associated discounts. Leave empty to clear.
                   </p>
               </div>
-              <button type="submit" className="mc-button primary">Save Affiliate Code</button>
+              <button type="submit" className="mc-button primary">Apply Code</button>
           </form>
+          {user.appliedCreatorCode && (
+              <p style={{marginTop: '1rem', fontSize: '1.2rem', color: '#FFFF55'}}>
+                  Currently applying: <strong>{user.appliedCreatorCode}</strong>
+              </p>
+          )}
       </div>
       
       <div className="profile-section">

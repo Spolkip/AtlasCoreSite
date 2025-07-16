@@ -14,13 +14,16 @@ const Navbar = ({ isAuthenticated, logout, user, settings }) => {
         <Link to="/wiki">Wiki</Link>
         <Link to="/vlog">Vlog</Link>
         <Link to="/leaderboard">Leaderboards</Link>
-        <Link to="/events">Events</Link> 
+        <Link to="/events">Events</Link>
         <Link to="/map">Map</Link>
         
         {isAuthenticated ? (
           <>
             <Link to="/dashboard">Dashboard</Link>
             <Link to={`/profile/${user.username}`}>Profile</Link>
+            {user?.isAdmin && ( // Conditionally render Admin Promo Codes link for admins
+              <Link to="/admin/promocodes">Admin Codes</Link>
+            )}
             <button onClick={logout} className="mc-button-nav">Logout</button>
           </>
         ) : (

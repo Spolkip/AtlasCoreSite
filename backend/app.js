@@ -22,7 +22,8 @@ const characterProfileRoutes = require('./routes/characterProfileRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes'); 
 const promoCodeRoutes = require('./routes/promoCodeRoutes');
 const vlogRoutes = require('./routes/vlogRoutes');
-const eventRoutes = require('./routes/eventRoutes'); // Import event routes
+const eventRoutes = require('./routes/eventRoutes');
+const creatorCodeRoutes = require('./routes/creatorCodeRoutes'); // ADDED: Import creatorCode routes
 
 const app = express();
 
@@ -43,7 +44,8 @@ app.use('/api/v1/profile', characterProfileRoutes);
 app.use('/api/v1/leaderboards', leaderboardRoutes);
 app.use('/api/v1/promocodes', promoCodeRoutes);
 app.use('/api/v1/vlog', vlogRoutes);
-app.use('/api/v1/events', eventRoutes); // Mount event routes
+app.use('/api/v1/events', eventRoutes);
+app.use('/api/v1/creatorcodes', creatorCodeRoutes);
 
 app.use(errorHandler);
 

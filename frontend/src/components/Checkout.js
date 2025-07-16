@@ -1,5 +1,5 @@
 // frontend/src/components/Checkout.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Corrected import: removed ' => '
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../css/Checkout.css';
@@ -10,7 +10,6 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
     const [error, setError] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('paypal');
     const [promoCode, setPromoCode] = useState('');
-    // REMOVED: creatorCode state, as it will now come from user.appliedCreatorCode
     const [discount, setDiscount] = useState(null);
     const [appliedDiscountType, setAppliedDiscountType] = useState(null); // 'promo' or 'creator'
     
@@ -47,7 +46,7 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
         return total + displayPrice * item.quantity;
     }, 0);
     
-    // Determine the total amount based on which discount is applied
+    // Determine the total amount based on which discount is applied (creator code takes precedence)
     let currentTotal = initialTotal;
     if (discount) { // If any discount is set
         currentTotal = discount.newTotal;
@@ -110,7 +109,18 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
         applyDiscountCode(promoCode, 'promo');
     };
 
-    // REMOVED: handleApplyCreatorCode function. Logic is now in applyDiscountCode.
+    // ADDED: useEffect to apply creator code from user profile automatically
+    useEffect(() => {
+        // Only apply if user is logged in and has an appliedCreatorCode set
+        if (user && user.appliedCreatorCode && user.appliedCreatorCode.trim() !== '') {
+            // Check if a discount is already applied, if not, apply the creator code
+            // This prevents the creator code from overriding a manually entered promo code
+            if (!discount) { 
+                applyDiscountCode(user.appliedCreatorCode, 'creator');
+            }
+        }
+    }, [user, initialTotal]); // Re-run if user or initialTotal changes
+
 
     const handlePurchase = async () => {
         if (cart.length === 0) {
@@ -134,7 +144,8 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
             currency: settings?.currency || 'USD',
             // Pass the applied promoCode or creatorCode based on which was active
             promoCode: appliedDiscountType === 'promo' ? discount.code : null,
-            creatorCode: appliedDiscountType === 'creator' ? discount.code : null,
+            // UPDATED: Pass the appliedCreatorCode from user profile if it was used for discount
+            creatorCode: appliedDiscountType === 'creator' ? discount.code : null, 
             discountAmount: discount ? discount.amount : 0,
         };
 
@@ -209,13 +220,12 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
                     </>
                 )}
             </div>
-            {/* REMOVED: Separate Creator Code Section. Logic now uses user.appliedCreatorCode */}
             
             {/* ADDED: Display currently applied creator code from settings if available */}
             {user.appliedCreatorCode && (
                 <div className="promo-code-section" style={{ border: '1px solid #2ecc71', padding: '10px', marginBottom: '20px' }}>
                     <p style={{ margin: 0, fontSize: '1.2rem', color: '#2ecc71' }}>
-                        Applying Creator Code: <strong>{user.appliedCreatorCode}</strong>
+                        Applying Creator Code from settings: <strong>{user.appliedCreatorCode}</strong>
                     </p>
                 </div>
             )}
