@@ -64,12 +64,16 @@ const SkinViewerComponent = ({ uuid }) => {
 };
 
 const StatBar = ({ label, value, max, type }) => {
-    const percentage = max > 0 ? (Math.min(value, max) / max) * 100 : 0;
+    // FIX: Ensure value and max are parsed as numbers for calculation
+    const numericValue = parseFloat(value);
+    const numericMax = parseFloat(max);
+    const percentage = numericMax > 0 ? (Math.min(numericValue, numericMax) / numericMax) * 100 : 0;
+
     return (
         <div className="stat-bar">
             <div className="stat-bar-label">
                 <span>{label}</span>
-                <span>{value} / {max}</span>
+                <span>{numericValue} / {numericMax}</span> {/* Display numeric values */}
             </div>
             <div className="stat-bar-background">
                 <div 
@@ -224,8 +228,8 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                                         <StatBar 
                                             key={skill.key}
                                             label={skill.name} 
-                                            value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
-                                            max={20}
+                                            value={playerStats[`auraskills_${skill.key}`] || "0"} // Pass as string, StatBar will parse
+                                            max={20} // Assuming max level 20 for AuraSkills
                                             type={barType} 
                                         />
                                     );
@@ -247,8 +251,8 @@ const CharacterProfile = ({ user, onUserUpdate }) => {
                                 <StatBar 
                                     key={skill.key}
                                     label={skill.name} 
-                                    value={parseInt(playerStats[`auraskills_${skill.key}`]) || 0} 
-                                    max={20}
+                                    value={playerStats[`auraskills_${skill.key}`] || "0"} // Pass as string, StatBar will parse
+                                    max={20} // Assuming max level 20 for AuraSkills
                                     type="skill" 
                                 />
                         ))}

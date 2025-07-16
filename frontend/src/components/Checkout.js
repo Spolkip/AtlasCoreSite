@@ -90,10 +90,11 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
             return;
         }
         
-        if (paymentMethod === 'credit-card') {
-            setError("Credit card payments are not yet supported.");
-            return;
-        }
+        // FIX: Removed the error message for credit card payments
+        // if (paymentMethod === 'credit-card') {
+        //     setError("Credit card payments are not yet supported.");
+        //     return;
+        // }
 
         setLoading(true);
         setError('');
@@ -107,7 +108,7 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
                 price: item.price
             })),
             totalAmount: totalAmountInDisplayCurrency,
-            paymentMethod: paymentMethod,
+            paymentMethod: paymentMethod, // This will now correctly be 'credit-card' for simulation
             currency: settings?.currency || 'USD',
             promoCode: discount ? discount.code : null,
             discountAmount: discount ? discount.amount : 0
@@ -127,6 +128,7 @@ const Checkout = ({ cart, user, settings, exchangeRates, onUpdateCart }) => {
                     throw new Error('PayPal approval URL not received from server.');
                 }
             } else {
+                // This block now handles 'credit-card', 'bank-transfer', and 'crypto' as simulations
                 axios.post(
                     'http://localhost:5000/api/v1/orders',
                     orderData,

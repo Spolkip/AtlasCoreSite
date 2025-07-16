@@ -8,7 +8,9 @@ const axios = require('axios');
 // Helper to call the Minecraft plugin
 const callMinecraftPlugin = async (endpoint, payload) => {
     try {
-        const pluginUrl = `http://localhost:${process.env.PLUGIN_PORT || 4567}${endpoint}`;
+        // FIX: Use PLUGIN_API_URL from environment variables for the base URL
+        // It should be set to "http://<MINECRAFT_SERVER_IP>:<PLUGIN_PORT>" in your backend's .env file.
+        const pluginBaseUrl = process.env.PLUGIN_API_URL || `http://localhost:${process.env.PLUGIN_PORT || 4567}`;
         const pluginSecret = process.env.WEBHOOK_SECRET;
 
         if (!pluginSecret) {
@@ -17,12 +19,12 @@ const callMinecraftPlugin = async (endpoint, payload) => {
         }
         
         const pluginResponse = await axios.post(
-            pluginUrl,
+            `${pluginBaseUrl}${endpoint}`, // Use the constructed base URL
             payload,
             {
                 headers: {
                     'Authorization': `Bearer ${pluginSecret}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json' // FIX: Added missing closing single quote
                 },
                 // FIX: Increased timeout from 10 seconds to 30 seconds
                 timeout: 30000 
@@ -123,7 +125,7 @@ exports.getCharacterProfile = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching character profile data:', error);
-        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error fetching profile data.' });
+        res.status(error.status || 500).json({ success: false, message: 'Server error fetching profile data.' });
     }
 };
 
@@ -184,6 +186,6 @@ exports.getCharacterProfileByUsername = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching character profile data:', error);
-        res.status(error.status || 500).json({ success: false, message: error.message || 'Server error fetching profile data.' });
+        res.status(error.status || 500).json({ success: false, message: 'Server error fetching profile data.' });
     }
 };

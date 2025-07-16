@@ -84,9 +84,10 @@ exports.getPublicStats = async (req, res) => {
 
             if ((now - lastUpdated) > timeoutMilliseconds) {
                 // It's been too long since the last update, declare it offline.
+                // FIX: Retain last known onlinePlayers count when server is offline due to timeout
                 res.status(200).json({ 
                     success: true, 
-                    data: { onlinePlayers: 0, serverStatus: 'offline' } 
+                    data: { onlinePlayers: allStats.onlinePlayers || 0, serverStatus: 'offline' } 
                 });
             } else {
                 // The last update was recent, so it's online.
@@ -97,7 +98,7 @@ exports.getPublicStats = async (req, res) => {
                 res.status(200).json({ success: true, data: publicData });
             }
         } else {
-            // If the document doesn't exist at all, it's definitely offline.
+            // If the document doesn't exist at all, it's definitely offline with 0 players.
             res.status(200).json({ 
                 success: true, 
                 data: { onlinePlayers: 0, serverStatus: 'offline' } 
