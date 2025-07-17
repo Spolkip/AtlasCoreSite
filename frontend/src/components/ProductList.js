@@ -148,11 +148,11 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
                 // If no category is selected initially, or if the previously selected category
                 // is no longer present after filtering, default to the first available category.
                 if (selectedCategory === '' || !(selectedCategory in fetchedProducts)) {
-                    const firstCategory = Object.keys(fetchedProducts)[0];
+                    const firstCategory = Object.keys(fetchedProducts).length > 0 ? Object.keys(fetchedProducts).find(cat => fetchedProducts[cat].length > 0) : undefined;
                     if (firstCategory) {
                         setSelectedCategory(firstCategory);
                     } else {
-                        setSelectedCategory(''); // No products, no selected category
+                        setSelectedCategory(Object.keys(fetchedProducts)[0] || ''); // Fallback to first category name even if empty
                     }
                 }
             } else {
@@ -161,26 +161,16 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
 
             // Set categories for the navigation buttons
             if (categoriesResponse.data && categoriesResponse.data.success) {
-                // We only need the category names and IDs for the buttons
-                // The actual product grouping is done by the backend with filters applied.
-                // This ensures all categories are shown in the nav, even if they have no products
-                // matching the current filters.
                 const allCategoryNames = categoriesResponse.data.categories.map(cat => cat.name);
-                // Reconstruct categorizedProducts based on fetched products and all category names
                 const finalCategorizedProducts = {};
                 allCategoryNames.forEach(catName => {
                     finalCategorizedProducts[catName] = productsResponse.data.products[catName] || [];
                 });
                 setCategorizedProducts(finalCategorizedProducts);
 
-                // Ensure a category is selected if products exist
-                if (Object.keys(finalCategorizedProducts).length > 0 && !selectedCategory) {
-                    setSelectedCategory(Object.keys(finalCategorizedProducts)[0]);
-                } else if (Object.keys(finalCategorizedProducts).length > 0 && !finalCategorizedProducts[selectedCategory]) {
-                    // If current selected category has no products after filter, switch to first available
-                    setSelectedCategory(Object.keys(finalCategorizedProducts)[0]);
-                } else if (Object.keys(finalCategorizedProducts).length === 0) {
-                    setSelectedCategory(''); // No products at all
+                if (Object.keys(finalCategorizedProducts).length > 0 && (!selectedCategory || !allCategoryNames.includes(selectedCategory))) {
+                    const firstAvailableCategory = allCategoryNames.find(cat => finalCategorizedProducts[cat]?.length > 0) || allCategoryNames[0];
+                    setSelectedCategory(firstAvailableCategory);
                 }
             }
 
@@ -188,32 +178,28 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
         } catch (err) {
             console.error('Error fetching data:', err.response ? err.response.data : err.message);
             setError('Failed to load products from the store. Please try again later.');
-        } finally {
-            // Removed setLoading(false) here
-        }
-    }, [searchTerm, minPrice, maxPrice, showInStockOnly, sortBy, selectedCategory, settings?.currency, exchangeRates]); // Add all filter states to dependencies
+        } 
+    }, [searchTerm, minPrice, maxPrice, showInStockOnly, sortBy, settings?.currency, exchangeRates]); 
 
     // Debounce searchTerm updates to reduce API calls
     const handleSearchTermChange = useCallback((value) => {
         setSearchTerm(value);
+    }, []); 
+
+    useEffect(() => {
         if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
         }
         debounceTimeoutRef.current = setTimeout(() => {
             fetchData();
-        }, 500); // 500ms debounce delay
-    }, [fetchData]);
+        }, 300); // 300ms debounce delay
 
-
-    useEffect(() => {
-        fetchData();
-        // Clear debounce timeout on component unmount
         return () => {
             if (debounceTimeoutRef.current) {
                 clearTimeout(debounceTimeoutRef.current);
             }
         };
-    }, [fetchData]);
+    }, [searchTerm, minPrice, maxPrice, showInStockOnly, sortBy, fetchData]);
 
     // Handle resetting all filters
     const handleResetFilters = () => {
@@ -319,116 +305,128 @@ function ProductList({ isAdmin, cart, setCart, settings, exchangeRates }) {
                 )}
             </div>
 
-            {/* New Filters Section */}
-            <div className="filters-section">
-                <div className="filter-group">
-                    <label htmlFor="search-term">Search Product:</label>
-                    <input
-                        type="text"
-                        id="search-term"
-                        placeholder="Search by name..."
-                        value={searchTerm}
-                        onChange={(e) => handleSearchTermChange(e.target.value)} // Use debounced handler
-                        className="filter-input"
-                    />
-                </div>
-
-                <div className="filter-group price-range-group">
-                    <label>Price Range:</label>
-                    <input
-                        type="number"
-                        id="min-price"
-                        placeholder="Min"
-                        value={minPrice}
-                        onChange={(e) => setMinPrice(e.target.value)}
-                        className="filter-input price-input"
-                    />
-                    <span>-</span>
-                    <input
-                        type="number"
-                        id="max-price"
-                        placeholder="Max"
-                        value={maxPrice}
-                        onChange={(e) => setMaxPrice(e.target.value)}
-                        className="filter-input price-input"
-                    />
-                </div>
-
-                <div className="filter-group checkbox-group">
-                    <input
-                        type="checkbox"
-                        id="in-stock-only"
-                        checked={showInStockOnly}
-                        onChange={(e) => setShowInStockOnly(e.target.checked)}
-                    />
-                    <label htmlFor="in-stock-only">In Stock Only</label>
-                </div>
-
-                <div className="filter-group">
-                    <label htmlFor="sort-by">Sort By:</label>
-                    <select
-                        id="sort-by"
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="">Default</option>
-                        <option value="priceAsc">Price: Low to High</option>
-                        <option value="priceDesc">Price: High to Low</option>
-                        <option value="nameAsc">Name: A-Z</option>
-                        <option value="nameDesc">Name: Z-A</option>
-                    </select>
-                </div>
-
-                <button onClick={handleResetFilters} className="mc-button small reset-filters-btn">
-                    Reset Filters
-                </button>
-            </div>
-
-            <nav className="category-nav">
-                {Object.keys(categorizedProducts).length > 0 ? (
-                    Object.keys(categorizedProducts).map(category => (
-                        <button
-                            key={category}
-                            className={`category-button ${selectedCategory === category ? 'active' : ''}`}
-                            onClick={() => handleCategoryClick(category)}
-                        >
-                            {category}
-                        </button>
-                    ))
-                ) : (
-                    <p>No categories found.</p>
-                )}
-            </nav>
-            <div className="products-grid">
-                {selectedCategory && categorizedProducts[selectedCategory]?.length > 0 ? (
-                    categorizedProducts[selectedCategory].map(product => (
-                        <div className="product-card" key={product.id}>
-                            <div className="product-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="9" cy="21" r="1"></circle>
-                                    <circle cx="20" cy="21" r="1"></circle>
-                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                                </svg>
-                            </div>
-                            <h3 className="product-name">{product.name}</h3>
-                            <p className="product-description">{product.description}</p>
-                            {renderPrice(product)}
-                            {product.stock === null || product.stock > 0 ? (
-                                <button className="mc-button purchase-button" onClick={() => addToCart(product)}>Add to Cart</button>
-                            ) : (
-                                <button className="mc-button purchase-button" disabled style={{ backgroundColor: '#c0392b', cursor: 'not-allowed' }}>Out of Stock</button>
-                            )}
+            {/* FIX: New two-column layout wrapper */}
+            <div className="store-layout-container">
+                {/* Filters Sidebar */}
+                <aside className="filters-sidebar">
+                    <div className="filters-section">
+                        <div className="filter-group">
+                            <label htmlFor="search-term"><i className="fas fa-search"></i> Search</label>
+                            <input
+                                type="text"
+                                id="search-term"
+                                placeholder="Search..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearchTermChange(e.target.value)}
+                                className="filter-input"
+                            />
                         </div>
-                    ))
-                ) : (
-                    <div className="empty-category-container">
-                        {Object.keys(categorizedProducts).length === 0
-                            ? "The store is currently empty. Admins can add categories and products in the dashboard."
-                            : "There are no products in this category yet."
-                        }
+
+                        <div className="filter-group">
+                            <label><i className="fas fa-dollar-sign"></i> Price Range</label>
+                            <div className="price-range-group">
+                                <input
+                                    type="number"
+                                    id="min-price"
+                                    placeholder="Min"
+                                    value={minPrice}
+                                    onChange={(e) => setMinPrice(e.target.value)}
+                                    className="filter-input price-input"
+                                />
+                                <span>-</span>
+                                <input
+                                    type="number"
+                                    id="max-price"
+                                    placeholder="Max"
+                                    value={maxPrice}
+                                    onChange={(e) => setMaxPrice(e.target.value)}
+                                    className="filter-input price-input"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="filter-group">
+                            <label htmlFor="sort-by"><i className="fas fa-sort"></i> Sort By</label>
+                            <select
+                                id="sort-by"
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="filter-select"
+                            >
+                                <option value="">Default</option>
+                                <option value="priceAsc">Price: Low to High</option>
+                                <option value="priceDesc">Price: High to Low</option>
+                                <option value="nameAsc">Name: A-Z</option>
+                                <option value="nameDesc">Name: Z-A</option>
+                            </select>
+                        </div>
+                        
+                        <div className="filter-group checkbox-group">
+                             <label htmlFor="in-stock-only">
+                                <input
+                                    type="checkbox"
+                                    id="in-stock-only"
+                                    checked={showInStockOnly}
+                                    onChange={(e) => setShowInStockOnly(e.target.checked)}
+                                />
+                                In Stock Only <i className="fas fa-box-open"></i>
+                            </label>
+                        </div>
+
+                        <button onClick={handleResetFilters} className="mc-button small reset-filters-btn">
+                            <i className="fas fa-undo"></i> Reset Filters
+                        </button>
                     </div>
-                )}
+                </aside>
+
+                {/* Main Content Area */}
+                <div className="store-main-content">
+                    <nav className="category-nav">
+                        {Object.keys(categorizedProducts).length > 0 ? (
+                            Object.keys(categorizedProducts).map(category => (
+                                <button
+                                    key={category}
+                                    className={`category-button ${selectedCategory === category ? 'active' : ''}`}
+                                    onClick={() => handleCategoryClick(category)}
+                                >
+                                    {category}
+                                </button>
+                            ))
+                        ) : (
+                            <p>No categories found.</p>
+                        )}
+                    </nav>
+                    <div className="products-grid">
+                        {selectedCategory && categorizedProducts[selectedCategory]?.length > 0 ? (
+                            categorizedProducts[selectedCategory].map(product => (
+                                <div className="product-card" key={product.id}>
+                                    <div className="product-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="9" cy="21" r="1"></circle>
+                                            <circle cx="20" cy="21" r="1"></circle>
+                                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 className="product-name">{product.name}</h3>
+                                    <p className="product-description">{product.description}</p>
+                                    {renderPrice(product)}
+                                    {product.stock === null || product.stock > 0 ? (
+                                        <button className="mc-button purchase-button" onClick={() => addToCart(product)}>Add to Cart</button>
+                                    ) : (
+                                        <button className="mc-button purchase-button" disabled style={{ backgroundColor: '#c0392b', cursor: 'not-allowed' }}>Out of Stock</button>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-category-container">
+                                {Object.values(categorizedProducts).flat().length === 0
+                                    ? "The store is currently empty. Admins can add categories and products in the dashboard."
+                                    : "There are no products in this category that match your filters."
+                                }
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

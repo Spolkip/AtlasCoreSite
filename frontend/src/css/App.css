@@ -1,7 +1,5 @@
-/* frontend/src/css/App.css */
-@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+// spolkip/atlascoresite/AtlasCoreSite-f29cb75ca12a8acd353eb7e7a6930248bcf44861/frontend/src/css/App.css
 
-/* --- KEYFRAMES --- */
 @keyframes contentFadeIn {
   from {
     opacity: 0;
@@ -208,7 +206,8 @@ body {
 
 .content {
   flex: 1;
-  padding: 20px;
+  /* FIX: Increased top padding to push content below the fixed navbar */
+  padding: 100px 20px 20px 20px;
   /* Added animation */
   animation: contentFadeIn 0.6s ease-out forwards;
 }
