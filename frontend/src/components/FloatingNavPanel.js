@@ -20,25 +20,32 @@ const FloatingNavPanel = ({ user, isAuthenticated, isAdmin, logout, settings, th
                 { name: 'Events', path: '/events' },
                 { name: 'Wiki', path: '/wiki' },
                 { name: 'Vlog', path: '/vlog' },
-                { name: 'Map', path: '/map', ariaLabel: 'World map page' }, // MOVED: Map link from top-level to Information dropdown
             ],
             icon: '📜', // Example icon for Information
             ariaLabel: 'Information menu'
         },
         {
+            name: 'Explore', // NEW CATEGORY
+            path: null,
+            subitems: [
+                { name: 'Map', path: '/map', ariaLabel: 'World map page' },
+                { name: 'Leaderboards', path: '/leaderboard' },
+            ],
+            icon: '🧭', // Example icon for Explore
+            ariaLabel: 'Explore menu'
+        },
+                {
             name: 'Account',
             path: null,
             subitems: [
+                { name: 'Profile', path: user ? `/profile/${user.username}` : '/login' },
                 { name: 'Dashboard', path: '/dashboard' },
-                // REMOVED: Profile from here as it's now a top-level item
                 { name: 'Settings', path: '/settings' }, // Settings link
             ],
             icon: '👤', // Example icon for Account
             ariaLabel: 'Account menu'
         },
-        { name: 'Profile', path: user ? `/profile/${user.username}` : '/login', subitems: [], icon: '👤', ariaLabel: 'Profile page' }, // ADDED: Profile as a top-level item
         { name: 'Store', path: '/shop', subitems: [], icon: '💰', ariaLabel: 'Store page' },
-        // REMOVED: Map from here as it's now in Information dropdown
     ];
 
     // Handle clicks outside the mobile menu to close it

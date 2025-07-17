@@ -87,7 +87,9 @@ const MobileDrawerMenu = ({ isOpen, onClose, navStructure, isAuthenticated, user
                         ))}
                         {isAuthenticated && (
                             <>
-                                {/* REMOVED: Conditional rendering for Admin Codes and Logout button from mobile drawer */}
+                                <li className="drawer-nav-item">
+                                    <button onClick={() => { logout(); handleLinkClick(); }} className="drawer-link" role="menuitem">Logout</button>
+                                </li>
                             </>
                         )}
                         {!isAuthenticated && (
