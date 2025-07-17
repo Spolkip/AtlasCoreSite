@@ -6,9 +6,10 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 // Import Components
-import NavBar from './components/NavBar';
+import FloatingNavPanel from './components/FloatingNavPanel'; // NEW: Import FloatingNavPanel
+
 import LandingPage from './components/LandingPage';
-import ProductList from './components/ProductList';
+import ProductList from './components/ProductList'; 
 import AuthPage from './components/AuthPage'; 
 import AddProducts from './components/AddProducts';
 import Settings from './components/Settings';
@@ -35,14 +36,47 @@ import Vlog from './components/Vlog';
 import ProfileSearch from './components/ProfileSearch';
 import AdminPromoCodes from './components/AdminPromoCodes';
 import Events from './components/Events'; 
-import AdminEvents from './components/AdminEvents'; // Import the new AdminEvents component
-import DynmapViewer from './components/DynmapViewer'; // Import the new DynmapViewer component
+import AdminEvents from './components/AdminEvents';
+import DynmapViewer from './components/DynmapViewer'; 
 
+// Import main CSS for global styles and theme variables
 import './css/App.css';
-import './css/Leaderboard.css';
-import './css/DynmapViewer.css'; // Import the new DynmapViewer CSS
+// Import new base CSS that defines global variables and animations
+import './css/_base.css'; // NEW: Import base styles first
 
-// Client-side Firebase configuration
+// Import component-specific CSS files (ensure they use CSS variables for theming)
+// These should ideally be imported globally if used across multiple components,
+// or within the component's JS file if using CSS Modules or Styled Components.
+// For this structure, keeping them in App.js for simplicity.
+import './css/Leaderboard.css';
+import './css/DynmapViewer.css'; 
+import './css/AuthForms.css';
+import './css/CharacterProfile.css';
+import './css/Checkout.css';
+import './css/Dashboard.css';
+import './css/Events.css';
+import './css/Footer.css';
+import './css/LandingPage.css';
+import './css/LinkMinecraft.css';
+import './css/LiveChat.css';
+import './css/OrderHistory.css';
+import './css/PrivacyPolicy.css';
+import './css/ProductList.css';
+import './css/TermsOfService.css';
+import './css/Vlog.css';
+import './css/Wiki.css';
+import './css/AdminChat.css';
+import './css/AdminEvents.css';
+import './css/AdminWiki.css';
+import './css/AddProducts.css';
+
+// NEW: Import FloatingNavPanel and its related CSS files directly here
+import './css/_FloatingNavPanel.css'; // New styles for the main floating navigation
+import './css/_NavItem.css'; // Styles for individual navigation items and dropdowns
+import './css/_MobileDrawerMenu.css'; // Styles for the mobile drawer and hamburger
+
+// Client-side Firebase configuration (from provided content)
+// This configuration is used to initialize Firebase services like Firestore.
 const firebaseConfig = {
   apiKey: "AIzaSyDVJv5KBf7DiFxLPw7-DaR0sQNGZd5zko8",
   authDomain: "atlascoreweb.firebaseapp.com",
@@ -52,23 +86,46 @@ const firebaseConfig = {
   appId: "1:1017567515762:web:a16e81b3cf33287db3deeb",
 };
 
+// Initialize Firebase App and Firestore Database instance
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 
+/**
+ * Main application component responsible for routing, authentication,
+ * global state management (user, cart, theme), and fetching initial settings.
+ */
 function App() {
+  // State for user authentication and details
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // State for shopping cart
   const [cart, setCart] = useState([]);
+  
+  // State for global application settings (e.g., store name, currency)
   const [settings, setSettings] = useState(null);
+  
+  // State for currency exchange rates (fetched from external API)
   const [exchangeRates, setExchangeRates] = useState(null);
+  
+  // Loading state for initial data fetch
   const [loading, setLoading] = useState(true);
+  
+  // Theme state ('dark' or 'light')
   const [theme, setTheme] = useState('dark');
 
+  /**
+   * Toggles the application's theme between 'dark' and 'light'.
+   */
   const toggleTheme = () => {
     setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
   };
 
+  /**
+   * Handles user logout: clears user state, authentication flags,
+   * removes items from local storage, and resets the cart.
+   */
   const handleLogout = useCallback(() => {
     setUser(null);
     setIsAuthenticated(false);
@@ -78,11 +135,15 @@ function App() {
     setCart([]);
   }, []);
 
-  // NEW: Function to fetch the latest user profile from the backend
+  /**
+   * Fetches the latest user profile from the backend API.
+   * This is called on initial load (if token exists) and after login/updates
+   * to ensure the user state is always up-to-date.
+   */
   const fetchUserProfile = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      handleLogout();
+      handleLogout(); // If no token, user is not authenticated
       return;
     }
     try {
@@ -92,25 +153,32 @@ function App() {
         const fetchedUser = response.data.user;
         setUser(fetchedUser);
         setIsAuthenticated(true);
+        // Ensure isAdmin is correctly set based on the fetched user data
         setIsAdmin(fetchedUser.isAdmin === 1 || fetchedUser.isAdmin === true);
         localStorage.setItem('user', JSON.stringify(fetchedUser)); // Update local storage
       } else {
-        handleLogout();
+        handleLogout(); // If API call fails or returns no user, log out
       }
     } catch (error) {
       console.error("Failed to fetch user profile:", error);
-      handleLogout();
+      handleLogout(); // Log out on API error
     }
   }, [handleLogout]);
 
-
+  /**
+   * useEffect hook for initial data fetching and user session loading.
+   * Runs once on component mount.
+   */
   useEffect(() => {
+    /**
+     * Fetches initial application settings and currency exchange rates.
+     */
     const fetchInitialData = async () => {
       setLoading(true);
       try {
         const [settingsResponse, ratesResponse] = await Promise.all([
           axios.get('http://localhost:5000/api/v1/settings'),
-          axios.get('https://open.er-api.com/v6/latest/USD')
+          axios.get('https://open.er-api.com/v6/latest/USD') // Fetch exchange rates from USD base
         ]);
 
         if (settingsResponse.data) {
@@ -121,13 +189,18 @@ function App() {
         }
 
       } catch (error) {
-        console.error("Could not fetch initial data", error);
+        console.error("Could not fetch initial data:", error);
+        // Fallback settings if API calls fail
         setSettings(s => s || { store_name: 'AtlasCore', currency: 'USD' });
       } finally {
         setLoading(false);
       }
     };
 
+    /**
+     * Attempts to load user authentication details from local storage.
+     * If found, it then calls `fetchUserProfile` to validate and get the latest data.
+     */
     const loadUserFromStorage = () => {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
@@ -140,15 +213,21 @@ function App() {
             // After loading from storage, immediately fetch the latest from backend
             fetchUserProfile(); 
           } catch (e) {
-            handleLogout();
+            console.error("Error parsing stored user data:", e);
+            handleLogout(); // Clear invalid stored data
           }
         }
     };
 
-    loadUserFromStorage();
-    fetchInitialData();
-  }, [handleLogout, fetchUserProfile]);
+    loadUserFromStorage(); // Attempt to load user session
+    fetchInitialData();   // Fetch global app settings and rates
+  }, [handleLogout, fetchUserProfile]); // Dependencies ensure this runs correctly
 
+  /**
+   * Handles successful user login. Updates state, local storage, and fetches
+   * the latest user profile.
+   * @param {object} userData - Contains user object and authentication token.
+   */
   const handleLogin = (userData = {}) => {
     const { user: loggedInUser, token } = userData;
     if (loggedInUser && token) {
@@ -157,30 +236,71 @@ function App() {
       setIsAdmin(loggedInUser.isAdmin === 1 || loggedInUser.isAdmin === true);
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(loggedInUser));
-      fetchUserProfile(); // Fetch latest profile after login
+      fetchUserProfile(); // Fetch latest profile after login to ensure consistency
     }
   };
 
+  /**
+   * Updates the user state and local storage with new user data.
+   * @param {object} updatedUser - The updated user object.
+   */
   const handleUserUpdate = (updatedUser) => {
     setUser(updatedUser);
-    // MODIFIED: Ensure updated user object is saved to local storage
     localStorage.setItem('user', JSON.stringify(updatedUser)); 
   };
 
+  /**
+   * Updates the global application settings state.
+   * @param {object} newSettings - The new settings object.
+   */
   const updateSettings = (newSettings) => {
     setSettings(newSettings);
   };
 
+  // Display a loading indicator while initial data is being fetched
   if (loading) {
       return <div className="loading-container">Loading...</div>;
   }
 
   return (
     <Router>
+      {/* The main application container. The 'theme' class is applied here
+          to control global CSS variables for light/dark mode. */}
       <div className={`App ${theme}-theme`}>
-        <NavBar user={user} isAuthenticated={isAuthenticated} isAdmin={isAdmin} logout={handleLogout} settings={settings} />
+        {/* SVG filter for digital noise transition (can be used for page transitions) */}
+        <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+            <filter id="noiseFilter1">
+                <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch" result="noise" />
+                <feColorMatrix type="saturate" values="0" />
+                <feBlend mode="multiply" in="SourceGraphic" in2="noise" />
+            </filter>
+            <filter id="noiseFilter2">
+                <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" result="noise" />
+                <feColorMatrix type="saturate" values="0" />
+                <feBlend mode="multiply" in="SourceGraphic" in2="noise" />
+            </filter>
+            <filter id="noiseFilter3">
+                <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" stitchTiles="stitch" result="noise" />
+                <feColorMatrix type="saturate" values="0" />
+                <feBlend mode="multiply" in="SourceGraphic" in2="noise" />
+            </filter>
+        </svg>
+
+        {/* Navigation Bar component, passed necessary props for dynamic display */}
+        <FloatingNavPanel 
+            user={user} 
+            isAuthenticated={isAuthenticated} 
+            isAdmin={isAdmin} 
+            logout={handleLogout} 
+            settings={settings}
+            theme={theme}
+            toggleTheme={toggleTheme}
+        />
+        
+        {/* Main content area, where routes are rendered */}
         <main className="content">
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route 
               path="/shop" 
@@ -193,23 +313,37 @@ function App() {
                 exchangeRates={exchangeRates} 
               />} 
             />
-            {/* These routes now point to the new AuthPage component */}
             <Route path="/login" element={<AuthPage onLoginSuccess={handleLogin} />} />
             <Route path="/register" element={<AuthPage onLoginSuccess={handleLogin} />} />
-            
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/wiki" element={<Wiki user={user} />}>
-              <Route path=":type/:id" element={<Wiki user={user} />} />
+              <Route path=":type/:id" element={<Wiki user={user} />} /> {/* Nested route for wiki pages */}
             </Route>
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/redeem" element={<RedeemCode />} />
             <Route path="/vlog" element={<Vlog user={user} />} />
             <Route path="/events" element={<Events user={user} />} />
             <Route path="/map" element={<DynmapViewer user={user} db={db} />} />
-            
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+
+            {/* Placeholder Routes for new pages (removed "Join Server" and "Vote" specific ones) */}
+            <Route path="/about" element={
+                <div style={{textAlign: 'center', marginTop: '50px', fontSize: '2em', color: 'var(--color-text)'}}>
+                    <h2>About Us</h2>
+                    <p>Information about the server will go here.</p>
+                </div>
+            } />
+            <Route path="/community/forums" element={
+                <div style={{textAlign: 'center', marginTop: '50px', fontSize: '2em', color: 'var(--color-text)'}}>
+                    <h2>Forums</h2>
+                    <p>Our community forums will be hosted here.</p>
+                </div>
+            } />
+
+            {/* Authenticated User Routes */}
             {isAuthenticated && (
               <>
-                {/* Corrected: Pass fetchUserProfile to Dashboard */}
                 <Route path="/dashboard" element={<Dashboard user={user} onUserUpdate={handleUserUpdate} fetchUserProfile={fetchUserProfile} />} />
                 <Route path="/profile/:username" element={<CharacterProfile user={user} onUserUpdate={handleUserUpdate} />} /> 
                 <Route path="/settings" element={<Settings user={user} onUserUpdate={handleUserUpdate} onSettingsUpdate={updateSettings} theme={theme} toggleTheme={toggleTheme} />} />
@@ -222,6 +356,7 @@ function App() {
               </>
             )}
 
+            {/* Admin-only Routes */}
             {isAdmin && (
               <>
                 <Route path="/admin" element={<AddProducts />} />
@@ -233,14 +368,14 @@ function App() {
                 <Route path="/admin/events" element={<AdminEvents />} />
               </>
             )}
-
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-
           </Routes>
         </main>
+        
+        {/* Footer component */}
         <Footer storeName={settings?.store_name} />
-        <LiveChat user={user} isAdmin={isAdmin} />
+        
+        {/* Live Chat component, passed user and admin status, and Firestore DB instance */}
+        <LiveChat user={user} isAdmin={isAdmin} db={db} />
       </div>
     </Router>
   );

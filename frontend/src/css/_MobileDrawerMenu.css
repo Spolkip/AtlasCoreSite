@@ -1,0 +1,207 @@
+/* src/css/_MobileDrawerMenu.css */
+
+/* Hamburger Icon (positioned within FloatingNavPanel for mobile) */
+/* The hamburger icon itself is defined in FloatingNavPanel.css */
+
+/* Mobile Drawer Overlay */
+.mobile-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+
+.mobile-drawer-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease;
+}
+
+/* Mobile Drawer Panel */
+.mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px; /* Fixed width for the drawer */
+    max-width: 80vw; /* Max width on very small screens */
+    height: 100vh;
+    background-color: var(--color-surface-2); /* Same as nav panel background */
+    border-right: 4px solid var(--color-primary); /* Gold border for emphasis */
+    box-shadow: 10px 0 20px rgba(0,0,0,0.5); /* Shadow for depth */
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    transform: translateX(-100%); /* Start off-screen */
+    transition: transform 0.4s var(--transition-timing-function); /* Slide in transition */
+    overflow-y: auto; /* Allow scrolling for long menus */
+    pointer-events: auto; /* Enable interaction inside drawer */
+
+    /* Minecraft block-build animation on open */
+    &.open {
+        transform: translateX(0);
+        animation: block-build 0.5s var(--transition-timing-function) forwards;
+    }
+}
+
+/* Drawer Title */
+.mobile-drawer .drawer-title {
+    font-family: var(--font-pixel);
+    font-size: 2.5rem;
+    color: var(--color-accent);
+    text-align: center;
+    margin-bottom: 20px;
+    border-bottom: 2px dotted var(--color-border-subtle); /* Redstone wiring feel */
+    padding-bottom: 10px;
+}
+
+/* Drawer Content (for scrolling) */
+.mobile-drawer .drawer-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Theme Switcher (Minecraft Lever Style) */
+.theme-switcher {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: rgba(0,0,0,0.5);
+    border: 2px solid var(--color-border);
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    justify-content: center;
+    filter: drop-shadow(0 0 5px var(--color-redstone-red));
+}
+
+.theme-switcher:hover {
+    background-color: rgba(0,0,0,0.7);
+}
+
+.theme-switcher .lever {
+    width: 50px;
+    height: 25px;
+    background-color: #555;
+    border: 2px solid #000;
+    border-radius: 5px;
+    position: relative;
+    transition: background-color 0.3s;
+}
+
+.theme-switcher .lever.dark-mode {
+    background-color: #555;
+}
+
+.theme-switcher .lever.light-mode {
+    background-color: #bbbbbb;
+}
+
+.theme-switcher .lever-handle {
+    width: 20px;
+    height: 20px;
+    background-color: #c0392b; /* Redstone feel */
+    border: 2px solid #000;
+    border-radius: 3px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    transition: left 0.3s var(--transition-timing-function), background-color 0.3s;
+}
+
+.theme-switcher .lever.light-mode .lever-handle {
+    left: 26px; /* Move to right for light mode */
+    background-color: #2ecc71; /* Green for light mode */
+}
+
+.theme-switcher .theme-text {
+    font-family: var(--font-pixel);
+    font-size: 1.2rem;
+    color: var(--color-text);
+    text-shadow: var(--text-shadow);
+}
+
+/* Drawer Navigation List */
+.drawer-nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.drawer-nav-item {
+    background-color: rgba(0,0,0,0.4); /* Dark background for items */
+    border: 2px solid var(--color-border);
+    box-shadow: 3px 3px 0 var(--color-border);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.drawer-nav-item:hover {
+    transform: translateX(5px);
+    box-shadow: 5px 5px 0 var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.drawer-nav-item:active {
+    transform: translateX(2px) translateY(2px);
+    box-shadow: 1px 1px 0 var(--color-border);
+}
+
+.drawer-link {
+    display: block;
+    padding: 15px 20px;
+    font-family: var(--font-pixel);
+    font-size: 1.3rem;
+    color: var(--color-text);
+    text-decoration: none;
+    text-shadow: 1px 1px var(--color-border);
+    transition: color 0.15s;
+}
+
+.drawer-link:hover {
+    color: var(--color-primary);
+}
+
+.drawer-link.parent-link {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.drawer-sub-list {
+    list-style: none;
+    padding-left: 20px;
+    margin-top: 5px;
+    border-left: 2px dotted var(--color-redstone-red); /* Redstone wiring for submenus */
+}
+
+.drawer-sub-list li {
+    padding: 8px 0;
+}
+
+.drawer-sub-link {
+    font-family: var(--font-futuristic); /* Slightly different font for sub-links */
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.drawer-sub-link:hover {
+    color: var(--color-emerald-green);
+}
+
+.drawer-logout-button {
+    width: 100%;
+    margin-top: 10px;
+}

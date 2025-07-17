@@ -1,0 +1,194 @@
+/* src/css/_base.css */
+
+/* Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=VT323&display=swap');
+
+/* Global Theme Variables - Merged with existing App.css variables */
+:root {
+    /* Dark Theme (Default) */
+    --color-background: #3a3a3a;
+    --color-text: #fff;
+    --color-text-muted: #ccc;
+    --color-primary: #FFAA00; /* Minecraft Gold */
+    --color-secondary: #3498db; /* Lapis Blue */
+    --color-accent: #FFFF55; /* Minecraft Yellow */
+    --color-success: #2ecc71;
+    --color-error: #c0392b;
+    --color-surface-1: rgba(0, 0, 0, 0.5);
+    --color-surface-2: rgba(0, 0, 0, 0.7);
+    --color-border: #000;
+    --color-border-subtle: #555;
+    --text-shadow: 2px 2px #000000a0;
+    --background-image: url('https://www.transparenttextures.com/patterns/cubes.png');
+
+    /* Futuristic Palette */
+    --color-neon-cyan: #00fff7;
+    --color-emerald-green: #1aff87;
+    --color-pixel-gold: #ffcc00;
+    --color-redstone-red: #ff4747;
+
+    /* Fonts */
+    --font-pixel: 'VT323', monospace;
+    --font-futuristic: 'Orbitron', sans-serif;
+
+    /* Animations */
+    --transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.light-theme {
+    /* Existing light theme variables from App.css */
+    --color-background: #f0f2f5;
+    --color-text: #333;
+    --color-text-muted: #555;
+    --color-primary: #d35400;
+    --color-secondary: #2980b9;
+    --color-accent: #f1c40f;
+    --color-success: #27ae60;
+    --color-error: #c0392b;
+    --color-surface-1: #ffffff;
+    --color-surface-2: #f9f9f9;
+    --color-border: #ccc;
+    --color-border-subtle: #ddd;
+    --text-shadow: 1px 1px #00000030;
+    --background-image: url('https://www.transparenttextures.com/patterns/subtle-stripes.png');
+
+    /* Light Theme Futuristic adjustments */
+    --color-neon-cyan: #00aacc;
+    --color-emerald-green: #00aa55;
+    --color-pixel-gold: #ccaa00;
+    --color-redstone-red: #cc2222;
+}
+
+/* Basic Resets & Global Styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-futuristic); /* Default body font */
+    background-color: var(--color-background);
+    background-image: var(--background-image);
+    background-repeat: repeat;
+    color: var(--color-text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden; /* Prevent horizontal scroll due to animations */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: normal;
+    text-shadow: var(--text-shadow);
+    font-family: var(--font-pixel); /* Pixel font for headings */
+    text-rendering: optimizeLegibility; /* Keep sharp edges for pixel font */
+    -webkit-font-smoothing: none; /* Disable anti-aliasing for pixel font */
+    font-smoothing: none;
+}
+
+p, span, div {
+    font-family: var(--font-futuristic); /* Futuristic font for general text */
+}
+
+/* Base button style for consistent Minecraft feel */
+.mc-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-pixel);
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    background-color: #7f8c8d; /* Stone color */
+    border: 3px solid var(--color-border);
+    box-shadow: 4px 4px 0 var(--color-border);
+    cursor: pointer;
+    transition: all 0.15s var(--transition-timing-function);
+    text-shadow: 2px 2px var(--color-border);
+    position: relative; /* For ring burst effect */
+    overflow: hidden;
+}
+
+.mc-button:hover {
+    background-color: #95a5a6;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 6px 6px 0 var(--color-border);
+}
+
+.mc-button:active {
+    transform: translateY(2px);
+    box-shadow: 2px 2px 0 var(--color-border);
+}
+
+.mc-button.primary { background-color: var(--color-success); }
+.mc-button.primary:hover { background-color: #2ecc71; }
+.mc-button.secondary { background-color: var(--color-secondary); }
+.mc-button.secondary:hover { background-color: #3498db; }
+.mc-button.danger { background-color: var(--color-error); }
+.mc-button.danger:hover { background-color: #e74c3c; }
+
+/* Click effect animation (neon ring burst) */
+.mc-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, var(--color-neon-cyan) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    transition: none; /* No transition for this initial state */
+}
+
+.mc-button:active::after {
+    animation: neon-ring-burst 0.3s forwards;
+}
+
+@keyframes neon-ring-burst {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 0.8;
+    }
+    100% {
+        width: 200%;
+        height: 200%;
+        opacity: 0;
+    }
+}
+
+
+/* Low-opacity radial flash (digital pulse) for hover */
+@keyframes digital-pulse {
+    0% { box-shadow: 0 0 0 rgba(0,0,0,0); }
+    50% { box-shadow: 0 0 15px var(--color-neon-cyan); }
+    100% { box-shadow: 0 0 0 rgba(0,0,0,0); }
+}
+
+/* Glitch-blink for pop-up effects */
+@keyframes glitch-blink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    10% { opacity: 0.8; transform: scale(1.01) skewX(2deg); }
+    20% { opacity: 1; transform: scale(1) skewX(-2deg); }
+    30% { opacity: 0.9; transform: scale(1.005) skewY(1deg); }
+    40% { opacity: 1; transform: scale(1) skewY(-1deg); }
+    50% { opacity: 0.7; transform: scale(0.99) translateX(2px); }
+    60% { opacity: 1; transform: scale(1) translateX(-2px); }
+    70% { opacity: 0.8; transform: scale(1.01) skewX(2deg); }
+    80% { opacity: 1; transform: scale(1) skewX(-2deg); }
+    90% { opacity: 0.9; transform: scale(1.005) skewY(1deg); }
+}
+
+/* Block-build animation for mobile drawer */
+@keyframes block-build {
+    0% {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+    50% {
+        transform: translateX(0);
+        box-shadow: 10px 0 20px rgba(0,0,0,0.5);
+    }
+    100% {
+        box-shadow: 10px 0 20px rgba(0,0,0,0.5);
+    }
+}

@@ -21,7 +21,7 @@ const profileThemes = [
     { id: 'water', name: 'Water Theme' },
 ];
 
-const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) => {
+const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme, logout }) => {
   // State for Admin Settings
   const [adminSettings, setAdminSettings] = useState({});
   const [newAdminSettings, setNewAdminSettings] = useState({});
@@ -298,6 +298,19 @@ const Settings = ({ user, onUserUpdate, onSettingsUpdate, theme, toggleTheme }) 
           </form>
         </div>
       )}
+
+      {/* NEW SECTION: Security Actions (for Logout) */}
+      <div className="profile-section" style={{marginTop: '40px'}}>
+          <h2>Security Actions</h2>
+          <div className="form-group">
+              <button onClick={logout} className="mc-button danger full-width">
+                  Logout
+              </button>
+              <p style={{fontSize: '1rem', color: '#999', marginTop: '10px'}}>
+                  Log out of your account on this device.
+              </p>
+          </div>
+      </div>
     </div>
   );
 };
